@@ -7,7 +7,15 @@ Simple and lightweight base classes for web components with a beautiful API
 `element` lets you write simple, declarative and beautiful web components without the boilerplate. It uses `lit-html`
 for rendering.
 
-## Example Element
+## How to use
+
+#### Installation
+
+```sh
+npm install --save @currentjs/element
+```
+
+#### Use / Example Element
 
 CurrentJS elements are plain ES6 classes with some nice mappings (eg. properties, watch, etc.).
 
@@ -55,9 +63,10 @@ class ExampleElement extends BaseElement {
 defineElement('example-element', ExampleElement);
 ```
 
-To use this element, just use it like any other HTML element
+To use this element, just import it and use it like any other HTML element
 
 ```html
+<script type="module" src="example-element.js" />
 <example-element family-name="Smith"></example-element>
 ```
 
