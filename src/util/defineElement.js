@@ -4,9 +4,9 @@
  * @param constructor for the custom element
  */
 export function defineElement(name, constructor) {
-    try {
-        customElements.define(name, constructor);
-    } catch (e) {
-        // console.log('error defining custom element', e);
-    }
+	try {
+		customElements.define(name, constructor);
+	} catch (e) {
+		// console.log('error defining custom element', e);
+	}
 }

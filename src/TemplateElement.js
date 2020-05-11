@@ -33,10 +33,16 @@ class TemplateElement extends StyledElement {
 			this.getRoot().innerHTML = `${template}`;
 		} else {
 			// render via lit-html
-			render(html` ${template} `, this.getRoot(), {
-				scopeName: this.localName,
-				eventContext: this,
-			});
+			render(
+				html`
+					${template}
+				`,
+				this.getRoot(),
+				{
+					scopeName: this.localName,
+					eventContext: this,
+				},
+			);
 		}
 	}
 

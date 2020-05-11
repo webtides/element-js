@@ -6,12 +6,12 @@
  * @return String of the translated key or fallback or original key
  */
 export function i18n(key, fallback) {
-    try {
-        const translations = window.elementjs.i18n();
+	try {
+		const translations = window.elementjs.i18n();
 
-        return translations && translations[key];
-    } catch (err) {
-        if (fallback) return fallback;
-        else return key;
-    }
+		return translations && translations[key];
+	} catch (err) {
+		if (fallback) return fallback;
+		else return key;
+	}
 }

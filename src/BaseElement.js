@@ -50,8 +50,8 @@ class BaseElement extends HTMLElement {
 
 	defineObserver() {
 		// see: https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver#Example_usage
-		this._mutationObserver = new MutationObserver(mutations => {
-			mutations.forEach(mutation => {
+		this._mutationObserver = new MutationObserver((mutations) => {
+			mutations.forEach((mutation) => {
 				if (mutation.type === 'attributes' && this._state.hasOwnProperty(dashToCamel(mutation.attributeName))) {
 					// update property by invoking the setter
 					this[dashToCamel(mutation.attributeName)] = parseAttribute(
@@ -135,10 +135,10 @@ class BaseElement extends HTMLElement {
 	defineAttributesAsProperties() {
 		const ignoreAttributes = ['class', 'style'];
 		Array.from(this.attributes)
-			.filter(attribute => {
+			.filter((attribute) => {
 				return !ignoreAttributes.includes(attribute.name);
 			})
-			.forEach(attribute => {
+			.forEach((attribute) => {
 				this.defineProperty(dashToCamel(attribute.name), parseAttribute(attribute.value), true);
 			});
 	}
@@ -158,7 +158,7 @@ class BaseElement extends HTMLElement {
 	 * Will trigger update() when a property was changed
 	 */
 	defineProperties() {
-		Object.keys(this.properties()).forEach(prop => {
+		Object.keys(this.properties()).forEach((prop) => {
 			// when mixing shadow dom elements with light dom elements and nesting custom elements
 			// it might occur that properties where set on an element before it was
 			// registered or connected. To avoid such timing issues we check
@@ -186,7 +186,7 @@ class BaseElement extends HTMLElement {
 			get: () => {
 				return this._state[property];
 			},
-			set: newValue => {
+			set: (newValue) => {
 				const oldValue = this._state[property];
 				const newValueString = JSON.stringify(newValue);
 
@@ -259,7 +259,9 @@ class BaseElement extends HTMLElement {
 	// Triggers a lifecycle hook based on the name
 	triggerHook(name) {
 		if (this.hooks && name in this.hooks()) {
-			console.warn(`[${this.localName}] Using the hooks() map for lifecycle hooks is deprecated! Please overwrite the existing lifecycle hook functions. See the docs for more info`);
+			console.warn(
+				`[${this.localName}] Using the hooks() map for lifecycle hooks is deprecated! Please overwrite the existing lifecycle hook functions. See the docs for more info`,
+			);
 			this.hooks()[name]();
 			return;
 		}
@@ -287,9 +289,11 @@ class BaseElement extends HTMLElement {
 
 	// Deprecated
 	defineComputedProperties() {
-		Object.keys(this.computed()).forEach(prop => {
+		Object.keys(this.computed()).forEach((prop) => {
 			if (!this.hasOwnProperty(prop)) {
-				console.warn(`[${this.localName}] Using the computed() map for computed properties is deprecated! Please use regular JS getters and return the computed value. See the docs for more info`);
+				console.warn(
+					`[${this.localName}] Using the computed() map for computed properties is deprecated! Please use regular JS getters and return the computed value. See the docs for more info`,
+				);
 				Object.defineProperty(this, prop, {
 					get: () => this.computed()[prop](),
 				});
@@ -319,7 +323,7 @@ class BaseElement extends HTMLElement {
 
 		// register events
 		const eventDefinitions = this.events();
-		Object.keys(eventDefinitions).forEach(elementSelector => {
+		Object.keys(eventDefinitions).forEach((elementSelector) => {
 			const events = eventDefinitions[elementSelector];
 			const selectorWhiteList = { window, document, this: this.getRoot() };
 			const whiteListElement = selectorWhiteList[elementSelector];
@@ -327,8 +331,8 @@ class BaseElement extends HTMLElement {
 				? [whiteListElement]
 				: this.getRoot().querySelectorAll(elementSelector);
 
-			eventTargets.forEach(eventTarget => {
-				Object.keys(events).forEach(eventName => {
+			eventTargets.forEach((eventTarget) => {
+				Object.keys(events).forEach((eventName) => {
 					const callback = events[eventName].bind(this);
 					eventTarget.addEventListener(eventName, callback);
 					this._registeredEvents.push({ eventTarget, eventName, callback });
@@ -358,7 +362,7 @@ class BaseElement extends HTMLElement {
 		const refsArray = Array.from(refsNodeList);
 		const refsMap = {};
 
-		refsArray.forEach(refNode => {
+		refsArray.forEach((refNode) => {
 			const refKey = refNode.getAttribute('ref');
 			refsMap[refKey] = refNode;
 		});

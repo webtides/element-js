@@ -4,8 +4,7 @@ Simple and lightweight base classes for web components with a beautiful API
 
 ## Introduction
 
-`element` lets you write simple, declarative and beautiful web components without the boilerplate. It uses `lit-html`
-for rendering.
+`element` lets you write simple, declarative and beautiful web components without the boilerplate. It uses `lit-html` for rendering.
 
 ## How to use
 
@@ -37,7 +36,7 @@ class ExampleElement extends BaseElement {
     // reactive attributes/properties
     properties() {
         return {
-            familyName: 'Doe',
+            familyName: 'Doe'
         };
     }
 
@@ -46,7 +45,7 @@ class ExampleElement extends BaseElement {
         return {
             familyName: (newValue, oldValue) => {
                 console.log('familyName changed', newValue, oldValue);
-            },
+            }
         };
     }
 

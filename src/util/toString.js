@@ -5,9 +5,9 @@
  * @return String of the stringified value
  */
 export function toString(value) {
-    try {
-        return JSON.stringify(value);
-    } catch (e) {
-        return '';
-    }
+	try {
+		return JSON.stringify(value);
+	} catch (e) {
+		return '';
+	}
 }

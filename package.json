@@ -35,6 +35,7 @@
 		]
 	},
 	"scripts": {
+		"lint": "eslint src/**/*.js",
 		"test": "karma start",
 		"test:coverage": "karma start --coverage",
 		"test:watch": "karma start --auto-watch=true --single-run=false"
