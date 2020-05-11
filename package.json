@@ -1,6 +1,6 @@
 {
 	"name": "@currentjs/element",
-	"version": "0.1.0",
+	"version": "0.1.0-0",
 	"module": "index.js",
 	"private": true,
 	"repository": "https://github.com/currentjs/element.git",
