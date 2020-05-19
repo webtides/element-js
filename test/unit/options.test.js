@@ -1,21 +1,6 @@
 /* eslint-disable no-unused-expressions */
 import { fixture, defineCE, assert } from '@open-wc/testing';
-import { BaseElement } from '../../../src/BaseElement';
-
-const deferTag = defineCE(
-    class extends BaseElement {
-        properties() {
-            return {
-                updateCalled: false,
-            };
-        }
-
-        update(options = { notify: true }) {
-            this.updateCalled = true;
-            super.update(options);
-        }
-    },
-);
+import { BaseElement } from 'src/BaseElement';
 
 const immediateTag = defineCE(
     class extends BaseElement {
@@ -36,14 +21,9 @@ const immediateTag = defineCE(
     },
 );
 
-describe('Options', () => {
-    it('will defer initial rendering by default', async () => {
-        const el = await fixture(`<${deferTag}></${deferTag}>`);
-        assert.isFalse(el.updateCalled);
-    });
-
+describe('options', () => {
     it('can disable initial rendering via attribute', async () => {
-        const el = await fixture(`<${immediateTag} deferUpdate></${immediateTag}>`);
+        const el = await fixture(`<${immediateTag} defer-update></${immediateTag}>`);
         assert.isFalse(el.updateCalled);
     });
 

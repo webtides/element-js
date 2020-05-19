@@ -1,13 +1,9 @@
 /* eslint-disable no-unused-expressions */
-import { fixture, defineCE, assert } from '@open-wc/testing';
-import { BaseElement } from '../../../src/BaseElement';
+import { fixture, defineCE, assert, nextFrame } from '@open-wc/testing';
+import { BaseElement } from 'src/BaseElement';
 
 const tag = defineCE(
     class extends BaseElement {
-        constructor() {
-            super({ autoUpdate: false });
-        }
-
         properties() {
             return {
                 count: 0,
@@ -52,18 +48,20 @@ const tag = defineCE(
     },
 );
 
-describe('EventsMap', () => {
+describe('events-map', async () => {
     it('maintains instance context even tho context is not bound explicitly when added via events map', async () => {
         const el = await fixture(`<${tag}><button ref="nobind"></button></${tag}>`);
         assert.equal(el.count, 0);
         el.$refs.nobind.click();
+        await nextFrame();
         assert.equal(el.count, 1);
     });
 
-    it('allows the auto-bound instance context to be overwriten by rebinding when added via events map', async () => {
+    it('allows the auto-bound instance context to be overwritten by rebinding when added via events map', async () => {
         const el = await fixture(`<${tag}><button ref="windowbind"></button></${tag}>`);
         assert.equal(el.clickedByEventComponent, false);
         el.$refs.windowbind.click();
+        await nextFrame();
         assert.equal(el.clickedByEventComponent, false);
         assert.equal(window.clickedByEventComponent, true);
     });
@@ -72,9 +70,11 @@ describe('EventsMap', () => {
         const el = await fixture(`<${tag}></${tag}>`);
         assert.equal(el.windowEventCount, 0);
         window.dispatchEvent(new Event('click'));
+        await nextFrame();
         assert.equal(el.windowEventCount, 1);
-        el.update();
+        await nextFrame();
         window.dispatchEvent(new Event('click'));
+        await nextFrame();
         assert.equal(el.windowEventCount, 2);
     });
 
@@ -82,9 +82,10 @@ describe('EventsMap', () => {
         const el = await fixture(`<${tag}></${tag}>`);
         assert.equal(el.documentEventCount, 0);
         window.document.dispatchEvent(new Event('click'));
+        await nextFrame();
         assert.equal(el.documentEventCount, 1);
-        el.update();
         window.document.dispatchEvent(new Event('click'));
+        await nextFrame();
         assert.equal(el.documentEventCount, 2);
     });
 });

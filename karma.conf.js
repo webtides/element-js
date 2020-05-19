@@ -13,10 +13,35 @@ module.exports = (config) => {
 				{ pattern: config.grep ? config.grep : 'test/**/*.test.js', type: 'module' },
 			],
 
-			// see the karma-esm docs for all options
 			esm: {
-				// if you are using 'bare module imports' you will need this option
 				nodeResolve: true,
+				babel: true,
+				babelConfig: {
+					babelrc: false,
+					presets: [
+						[
+							'@babel/preset-env',
+							{
+								modules: false,
+								targets: {
+									browsers: [
+										'Chrome >= 76',
+										'Safari >= 12',
+										'iOS >= 12',
+										'Firefox >= 68',
+										'Edge >= 17',
+									],
+								},
+							},
+						],
+					],
+					plugins: [
+						['@babel/plugin-proposal-class-properties', { loose: true }],
+						'@babel/plugin-proposal-nullish-coalescing-operator',
+						'@babel/plugin-proposal-optional-chaining',
+						['module-resolver', { root: ['./'] }],
+					],
+				},
 			},
 
 			coverageIstanbulReporter: {

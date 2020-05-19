@@ -1,10 +1,10 @@
 /* eslint-disable no-unused-expressions */
 import { fixture, defineCE, assert } from '@open-wc/testing';
-import { BaseElement } from '../../../src/BaseElement';
+import { BaseElement } from 'src/BaseElement';
 
 const tag = defineCE(class extends BaseElement {});
 
-describe('AttributeTypes', () => {
+describe('attribute-types', () => {
     it('can have strings as attributes', async () => {
         const el = await fixture(`<${tag} string-value="Hello"></${tag}>`);
         assert.equal(el.getAttribute('string-value'), 'Hello');

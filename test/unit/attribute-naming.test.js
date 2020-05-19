@@ -1,10 +1,10 @@
 /* eslint-disable no-unused-expressions */
 import { fixture, defineCE, assert } from '@open-wc/testing';
-import { BaseElement } from '../../../src/BaseElement';
+import { BaseElement } from 'src/BaseElement';
 
 const tag = defineCE(class extends BaseElement {});
 
-describe('AttributeNaming', () => {
+describe('attribute-naming', () => {
     it('can have lowercase attributes', async () => {
         const el = await fixture(`<${tag} lowercase="1"></${tag}>`);
         assert.equal(el.getAttribute('lowercase'), '1');

@@ -7,7 +7,7 @@ class TemplateElement extends StyledElement {
 	constructor(options) {
 		super({
 			deferUpdate: false,
-			shadowRender: true,
+			shadowRender: false,
 			styles: [],
 			adoptGlobalStyles: true,
 			childListUpdate: false,

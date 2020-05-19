@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-expressions */
 import { fixture, defineCE, assert, oneEvent } from '@open-wc/testing';
-import { BaseElement } from '../../../src/BaseElement';
+import { BaseElement } from 'src/BaseElement';
 
 const tag = defineCE(
     class extends BaseElement {
@@ -10,7 +10,7 @@ const tag = defineCE(
     },
 );
 
-describe('EventsDispatcher', () => {
+describe('events-dispatcher', () => {
     it('can dispatch custom events', async () => {
         const el = await fixture(`<${tag}></${tag}>`);
         setTimeout(() => el.fireEvent());

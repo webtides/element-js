@@ -1,13 +1,9 @@
 /* eslint-disable no-unused-expressions */
-import { fixture, defineCE, assert, oneEvent } from '@open-wc/testing';
-import { TemplateElement, html } from '../../../src/TemplateElement';
+import { fixture, defineCE, assert, oneEvent, html, nextFrame } from '@open-wc/testing';
+import { TemplateElement } from 'src/TemplateElement';
 
 const lightTag = defineCE(
     class extends TemplateElement {
-        constructor() {
-            super({ shadowRender: false });
-        }
-
         template() {
             return html`
                 <button ref="lightRef">Click me</button>
@@ -26,10 +22,8 @@ const lightTag = defineCE(
 
 const shadowTag = defineCE(
     class extends TemplateElement {
-        template() {
-            return html`
-                <button ref="shadowRef"></button>
-            `;
+        constructor() {
+            super({ shadowRender: true });
         }
 
         properties() {
@@ -40,7 +34,7 @@ const shadowTag = defineCE(
 
         events() {
             return {
-                'button[ref=shadowRef]': {
+                '[ref=shadowRef]': {
                     click: () => {
                         this.count++;
                         this.dispatch('shadow-event');
@@ -48,10 +42,16 @@ const shadowTag = defineCE(
                 },
             };
         }
+
+        template() {
+            return html`
+                <button ref="shadowRef">Click me</button>
+            `;
+        }
     },
 );
 
-describe('RootElement', () => {
+describe('root-element', () => {
     it('binds event listeners for light dom', async () => {
         const el = await fixture(`<${lightTag}></${lightTag}>`);
         setTimeout(() => el.$refs.lightRef.click());
@@ -68,6 +68,7 @@ describe('RootElement', () => {
         const el = await fixture(`<${shadowTag}></${shadowTag}>`);
         assert.equal(el.count, 0);
         el.$refs.shadowRef.click();
+        await nextFrame();
         assert.equal(el.count, 1);
     });
 });

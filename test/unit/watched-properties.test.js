@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-expressions */
 import { fixture, defineCE, assert, oneEvent } from '@open-wc/testing';
-import { BaseElement } from '../../../src/BaseElement';
+import { BaseElement } from 'src/BaseElement';
 
 const tag = defineCE(
     class extends BaseElement {
@@ -20,7 +20,7 @@ const tag = defineCE(
     },
 );
 
-describe('WatchedProperties', () => {
+describe('watched-properties', () => {
     it('watches property changes and invokes callback registered in watch map', async () => {
         const el = await fixture(`<${tag}></${tag}>`);
         setTimeout(() => (el.count = 1));

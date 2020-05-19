@@ -1,10 +1,10 @@
 /* eslint-disable no-unused-expressions */
 import { fixture, defineCE, assert } from '@open-wc/testing';
-import { BaseElement } from '../../../src/BaseElement';
+import { BaseElement } from 'src/BaseElement';
 
 const tag = defineCE(class extends BaseElement {});
 
-describe('AttributesAsProperties', () => {
+describe('attributes-to-properties', () => {
     it('reflects lowercase attributes as lowercase properties', async () => {
         const el = await fixture(`<${tag} lowercase="Hello"></${tag}>`);
         assert.isTrue(el.hasOwnProperty('lowercase'));

@@ -1,20 +1,20 @@
 /* eslint-disable no-unused-expressions */
-import { fixture, defineCE, assert } from '@open-wc/testing';
-import { TemplateElement, html } from '../../../src/TemplateElement';
+import { fixture, defineCE, assert, html, nextFrame } from '@open-wc/testing';
+import { BaseElement } from 'src/BaseElement';
 
 const outerTag = defineCE(
-    class extends TemplateElement {
-        hooks() {
-            return {
-                connected: () => {
-                    this.connected = true;
-                },
-            };
+    class extends BaseElement {
+        constructor() {
+            super({ shadowRender: true });
+        }
+
+        connected() {
+            this.connectedCalled = true;
         }
 
         properties() {
             return {
-                connected: false,
+                connectedCalled: false,
             };
         }
 
@@ -28,18 +28,14 @@ const outerTag = defineCE(
 );
 
 const innerTag = defineCE(
-    class extends TemplateElement {
-        hooks() {
-            return {
-                connected: () => {
-                    this.connected = true;
-                },
-            };
+    class extends BaseElement {
+        connected() {
+            this.connectedCalled = true;
         }
 
         properties() {
             return {
-                connected: false,
+                connectedCalled: false,
             };
         }
 
@@ -51,7 +47,7 @@ const innerTag = defineCE(
     },
 );
 
-describe('NestingElements', () => {
+describe('nesting-elements', () => {
     it('nested elements will get connected along side outer elements', async () => {
         const el = await fixture(`
             <${outerTag}>
@@ -59,9 +55,13 @@ describe('NestingElements', () => {
             </${outerTag}>
         `);
 
-        assert.isTrue(el.connected);
+        await nextFrame();
+
+        assert.isTrue(el.connectedCalled);
 
         const innerElement = el.querySelector(`${innerTag}`);
-        assert.isTrue(innerElement.connected);
+
+        await nextFrame();
+        assert.isTrue(innerElement.connectedCalled);
     });
 });

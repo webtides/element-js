@@ -1,9 +1,12 @@
 /* eslint-disable no-unused-expressions */
-import { fixture, defineCE, assert, oneEvent } from '@open-wc/testing';
-import { BaseElement } from '../../../src/BaseElement';
+import { fixture, defineCE, assert, oneEvent, nextFrame } from '@open-wc/testing';
+import { BaseElement } from 'src/BaseElement';
 
 const tag = defineCE(
     class extends BaseElement {
+        nameChanged = false;
+        lastNameChanged = false;
+
         constructor() {
             super({
                 propertyOptions: {
@@ -16,8 +19,6 @@ const tag = defineCE(
             return {
                 name: 'John',
                 lastName: 'Doe',
-                nameChanged: false,
-                lastNameChanged: false,
             };
         }
 
@@ -36,27 +37,25 @@ const tag = defineCE(
     },
 );
 
-describe('PropertyChangeEvents', () => {
+describe('property-change-events', () => {
     it('does not notify property changes by default', async () => {
         const el = await fixture(`<${tag}></${tag}>`);
         el.name = 'Jane';
+        await nextFrame();
         assert.isFalse(el.nameChanged);
-    });
-
-    it('maps the camel case property name to dash case and adds -changed as the event name', async () => {
-        const el = await fixture(`<${tag}></${tag}>`);
-
-        setTimeout(() => (el.lastName = 'Smith'));
-        await oneEvent(el, 'last-name-changed');
     });
 
     it('notifies property changes when configured via constructor options', async () => {
         const el = await fixture(`<${tag}></${tag}>`);
         el.lastName = 'Smith';
-
-        await oneEvent(el, 'last-name-changed');
-
+        await nextFrame();
         assert.isTrue(el.lastNameChanged);
+    });
+
+    it('maps the camel case property name to dash case and adds -changed as the event name', async () => {
+        const el = await fixture(`<${tag}></${tag}>`);
+        setTimeout(() => (el.lastName = 'Smith'));
+        await oneEvent(el, 'last-name-changed');
     });
 
     it('sends the new property value via event.detail', async () => {

@@ -36,7 +36,7 @@ class BaseElement extends HTMLElement {
 		// define everything that should be observed
 		this.defineObserver();
 
-		if (this.hasAttribute('deferUpdate') || this._options.deferUpdate) {
+		if (this.hasAttribute('defer-update') || this._options.deferUpdate) {
 			// don't updates/render, but register refs and events
 			this.registerEventsAndRefs();
 
