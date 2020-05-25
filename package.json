@@ -1,6 +1,6 @@
 {
 	"name": "@currentjs/element",
-	"version": "0.1.0-2",
+	"version": "0.1.0-3",
 	"module": "index.js",
 	"repository": "https://github.com/currentjs/element.git",
 	"publishConfig": {
