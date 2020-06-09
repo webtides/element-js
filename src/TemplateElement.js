@@ -40,10 +40,7 @@ class TemplateElement extends StyledElement {
 	}
 
 	getRoot() {
-		if (this._options.shadowRender && !this.shadowRoot) {
-			this.attachShadow({ mode: 'open' });
-		}
-		return this.shadowRoot ?? this;
+		return this.shadowRoot !== null ? this.shadowRoot : this;
 	}
 }
 

@@ -23,6 +23,8 @@ class StyledElement extends BaseElement {
 
 		this._hasGlobalStyles = this._options.adoptGlobalStyles && globalStyles !== null;
 
+		if (this._options.shadowRender) this.attachShadow({ mode: 'open' });
+
 		if (this._options.shadowRender && supportsAdoptingStyleSheets) {
 			this.prepareAndAdoptStyleSheets();
 		}
