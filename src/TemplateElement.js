@@ -13,7 +13,6 @@ class TemplateElement extends StyledElement {
 			childListUpdate: false,
 			...options,
 		});
-		if (this._options.shadowRender) this._shadowRoot = this.attachShadow({ mode: 'open' });
 		this._template = this._options.template;
 	}
 
@@ -33,21 +32,18 @@ class TemplateElement extends StyledElement {
 			this.getRoot().innerHTML = `${template}`;
 		} else {
 			// render via lit-html
-			render(
-				html`
-					${template}
-				`,
-				this.getRoot(),
-				{
-					scopeName: this.localName,
-					eventContext: this,
-				},
-			);
+			render(html` ${template} `, this.getRoot(), {
+				scopeName: this.localName,
+				eventContext: this,
+			});
 		}
 	}
 
 	getRoot() {
-		return this.shadowRoot !== null ? this.shadowRoot : this;
+		if (this._options.shadowRender && !this.shadowRoot) {
+			this.attachShadow({ mode: 'open' });
+		}
+		return this.shadowRoot ?? this;
 	}
 }
 
