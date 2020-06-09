@@ -13,7 +13,7 @@ class StyledElement extends BaseElement {
 	constructor(options) {
 		super({
 			deferUpdate: false,
-			shadowRender: true,
+			shadowRender: false,
 			styles: [],
 			adoptGlobalStyles: true,
 			childListUpdate: false,
