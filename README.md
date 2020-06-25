@@ -1,17 +1,17 @@
-# element
+# element-js
 
 Simple and lightweight base classes for web components with a beautiful API
 
 ## Introduction
 
-`element` lets you write simple, declarative and beautiful web components without the boilerplate. It uses `lit-html` for rendering.
+`element-js` lets you write simple, declarative and beautiful web components without the boilerplate. It uses `lit-html` for rendering.
 
 ## How to use
 
 #### Installation
 
 ```sh
-npm install --save @currentjs/element
+npm install --save @webtides/element-js
 ```
 
 #### Use / Example Element
@@ -19,7 +19,7 @@ npm install --save @currentjs/element
 CurrentJS elements are plain ES6 classes with some nice mappings (eg. properties, watch, etc.).
 
 ```javascript
-import { BaseElement, defineElement } from '@currentjs/element';
+import { BaseElement, defineElement } from '@webtides/element-js';
 
 class ExampleElement extends BaseElement {
     // normal public property

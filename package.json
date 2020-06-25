@@ -1,12 +1,12 @@
 {
-	"name": "@currentjs/element",
-	"version": "0.1.0-6",
+	"name": "@webtides/element-js",
+	"version": "0.1.0-7",
 	"module": "index.js",
-	"repository": "https://github.com/currentjs/element.git",
+	"repository": "https://github.com/webtides/element.git",
 	"publishConfig": {
 		"registry": "https://npm.pkg.github.com/"
 	},
-	"author": "@currentjs",
+	"author": "@webtides",
 	"dependencies": {
 		"lit-html": "^1.2.1"
 	},
