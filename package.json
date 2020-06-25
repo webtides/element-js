@@ -2,7 +2,7 @@
 	"name": "@webtides/element-js",
 	"version": "0.1.0-7",
 	"module": "index.js",
-	"repository": "https://github.com/webtides/element.git",
+	"repository": "https://github.com/webtides/element-js.git",
 	"publishConfig": {
 		"registry": "https://npm.pkg.github.com/"
 	},
