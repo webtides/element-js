@@ -1,7 +1,7 @@
 import { StyledElement } from './StyledElement';
-import { html, render } from 'lit-html';
+import { html } from 'lit-html';
+import { render } from 'lit-html/lib/shady-render.js';
 export { i18n } from './util/i18n';
-export { html, render } from 'lit-html';
 
 class TemplateElement extends StyledElement {
 	constructor(options) {
@@ -14,6 +14,8 @@ class TemplateElement extends StyledElement {
 			...options,
 		});
 		this._template = this._options.template;
+
+		if (this._options.shadowRender) this.attachShadow({ mode: 'open' });
 	}
 
 	template() {
@@ -44,4 +46,4 @@ class TemplateElement extends StyledElement {
 	}
 }
 
-export { TemplateElement };
+export { TemplateElement, html, render };
