@@ -6,8 +6,8 @@ export { i18n } from './util/i18n';
 // alternatively we could load ../../css/inline.css here via import and parse it through rollup
 // that would change it to a compile time dependency but would also load the css twice
 // because it is already injected into the <head>
-const globalStyles = document.getElementById('globalStyles');
-const globalStylesTextContent = globalStyles !== null ? globalStyles.textContent : '';
+let globalStyles = document.getElementById('globalStyles');
+let globalStylesTextContent = globalStyles !== null ? globalStyles.textContent : '';
 
 class StyledElement extends BaseElement {
 	constructor(options) {
@@ -22,20 +22,26 @@ class StyledElement extends BaseElement {
 		this._styles = [...this._options.styles, ...this.styles()];
 
 		this._hasGlobalStyles = this._options.adoptGlobalStyles && globalStyles !== null;
-
-		if (this._options.shadowRender) this.attachShadow({ mode: 'open' });
-
-		if (this._options.shadowRender && supportsAdoptingStyleSheets) {
-			this.prepareAndAdoptStyleSheets();
-		}
 	}
 
 	connectedCallback() {
 		super.connectedCallback();
 
+		if (this._options.shadowRender && supportsAdoptingStyleSheets) {
+			this.prepareAndAdoptStyleSheets();
+		} else if (this._options.shadowRender && window.ShadyCSS !== undefined) {
+			// if shadowRoot is polyfilled we use ShadyCSS to copy scoped styles to <head>
+			window.ShadyCSS.ScopingShim.prepareAdoptedCssText(this._styles, this.localName);
+		}
+
 		if (!this.constructor['_hasAdoptedStylesheets']) {
 			// Only actually parse the stylesheet when the first instance is connected.
 			this.parseStyleSheets();
+		}
+
+		// if shadowRoot is polyfilled - scope element template
+		if (window.ShadyCSS !== undefined) {
+			window.ShadyCSS.styleElement(this);
 		}
 	}
 
@@ -68,6 +74,11 @@ class StyledElement extends BaseElement {
 		// uses proposed solution for constructable stylesheets
 		// see: https://wicg.github.io/construct-stylesheets/#proposed-solution
 		this.getRoot().adoptedStyleSheets = this.collectStyleSheets();
+	}
+
+	updateGlobalStyles() {
+		globalStyles = document.getElementById('globalStyles');
+		globalStylesTextContent = globalStyles !== null ? globalStyles.textContent : '';
 	}
 
 	parseStyleSheets() {
