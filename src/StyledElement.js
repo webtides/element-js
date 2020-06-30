@@ -2,14 +2,22 @@ import { BaseElement } from './BaseElement';
 import { supportsAdoptingStyleSheets, getShadowParentOrBody } from './util/DOMHelper';
 export { i18n } from './util/i18n';
 
-// this is a runtime dependency so that every shadow dom can use utility css classes
-// alternatively we could load ../../css/inline.css here via import and parse it through rollup
-// that would change it to a compile time dependency but would also load the css twice
-// because it is already injected into the <head>
-let globalStyles = document.getElementById('globalStyles');
-let globalStylesTextContent = globalStyles !== null ? globalStyles.textContent : '';
-
 class StyledElement extends BaseElement {
+	static globalStyles = null;
+
+	static updateGlobalStyles() {
+		// this is a runtime dependency so that every shadow dom can use utility css classes
+		// alternatively we could load ../../css/inline.css here via import and parse it through rollup
+		// that would change it to a compile time dependency but would also load the css twice
+		// because it is already injected into the <head>
+		StyledElement.globalStyles = document.getElementById('globalStyles');
+
+		if (StyledElement.globalStyles && StyledElement['globalStyleSheet']) {
+			//updates already adopted global styles
+			StyledElement['globalStyleSheet'].replaceSync(StyledElement.globalStyles.textContent);
+		}
+	}
+
 	constructor(options) {
 		super({
 			deferUpdate: false,
@@ -20,23 +28,17 @@ class StyledElement extends BaseElement {
 			...options,
 		});
 		this._styles = [...this._options.styles, ...this.styles()];
-
-		this._hasGlobalStyles = this._options.adoptGlobalStyles && globalStyles !== null;
 	}
 
 	connectedCallback() {
 		super.connectedCallback();
 
-		if (this._options.shadowRender && supportsAdoptingStyleSheets) {
-			this.prepareAndAdoptStyleSheets();
+		if (supportsAdoptingStyleSheets && this._options.shadowRender) {
+			// adopting does only make sense in shadow dom. Fall back to append for light elements
+			this.adoptStyleSheets();
 		} else if (this._options.shadowRender && window.ShadyCSS !== undefined) {
 			// if shadowRoot is polyfilled we use ShadyCSS to copy scoped styles to <head>
 			window.ShadyCSS.ScopingShim.prepareAdoptedCssText(this._styles, this.localName);
-		}
-
-		if (!this.constructor['_hasAdoptedStylesheets']) {
-			// Only actually parse the stylesheet when the first instance is connected.
-			this.parseStyleSheets();
 		}
 
 		// if shadowRoot is polyfilled - scope element template
@@ -49,70 +51,43 @@ class StyledElement extends BaseElement {
 		return [];
 	}
 
-	update() {
-		// append styles if not already adopted
-		if (this._options.shadowRender && !supportsAdoptingStyleSheets) {
-			this.appendStyleSheets(this.collectStyles());
-		} else if (this._options.shadowRender === false) {
-			// in light dom we don't need to append the global stylesheets since they are already there
-			this.appendStyleSheets(this.collectStyles(false));
+	update(options) {
+		if (!supportsAdoptingStyleSheets || this._options.shadowRender === false) {
+			// append stylesheets to template if not already adopted
+			const appendableStyles = [...this._styles];
+			if (this._options.shadowRender && this._options.adoptGlobalStyles && !window.ShadyCSS) {
+				appendableStyles.unshift(StyledElement.globalStyles.textContent || '');
+			}
+			this.appendStyleSheets(appendableStyles);
 		}
-
-		super.update();
+		super.update(options);
 	}
 
-	prepareAndAdoptStyleSheets() {
-		if (this._hasGlobalStyles && !StyledElement['globalCssStyleSheets']) {
-			StyledElement['globalCssStyleSheets'] = new CSSStyleSheet();
+	adoptStyleSheets() {
+		if (!this.constructor['cssStyleSheets']) {
+			this.constructor['cssStyleSheets'] = this._styles.map((style, index) => {
+				const sheet = new CSSStyleSheet();
+				if (sheet && sheet.cssRules.length === 0) {
+					sheet.replaceSync(style);
+				}
+				return sheet;
+			});
 		}
 
-		if (!this.constructor['cssStyleSheets']) {
-			this.constructor['cssStyleSheets'] = this._styles.map(() => new CSSStyleSheet());
+		if (StyledElement.globalStyles && !StyledElement['globalStyleSheet']) {
+			StyledElement['globalStyleSheet'] = new CSSStyleSheet();
+			StyledElement['globalStyleSheet'].replaceSync(StyledElement.globalStyles.textContent);
 		}
 
 		// adopt styles
 		// uses proposed solution for constructable stylesheets
 		// see: https://wicg.github.io/construct-stylesheets/#proposed-solution
-		this.getRoot().adoptedStyleSheets = this.collectStyleSheets();
-	}
-
-	updateGlobalStyles() {
-		globalStyles = document.getElementById('globalStyles');
-		globalStylesTextContent = globalStyles !== null ? globalStyles.textContent : '';
-	}
-
-	parseStyleSheets() {
-		if (this._hasGlobalStyles) {
-			const sheet = StyledElement['globalCssStyleSheets'];
-			if (sheet && sheet.cssRules.length === 0) {
-				sheet.replaceSync(globalStylesTextContent);
-			}
-		}
-
-		this._styles.forEach((style, index) => {
-			const sheet = this.constructor['cssStyleSheets'] ? this.constructor['cssStyleSheets'][index] : null;
-			if (sheet && sheet.cssRules.length === 0) {
-				sheet.replaceSync(style);
-			}
-		});
-
-		this.constructor['_hasAdoptedStylesheets'] = true;
-	}
-
-	collectStyleSheets() {
-		const styleSheets = [];
-
-		if (this._hasGlobalStyles) styleSheets.push(StyledElement['globalCssStyleSheets']);
-
-		return [...styleSheets, ...this.constructor['cssStyleSheets']];
-	}
-
-	collectStyles(hasGlobalStyles = this._hasGlobalStyles) {
-		const styles = [];
-
-		if (hasGlobalStyles) styles.push(globalStylesTextContent);
-
-		return [...styles, ...this._styles];
+		this.getRoot().adoptedStyleSheets = [
+			...(this._options.shadowRender && this._options.adoptGlobalStyles && StyledElement['globalStyleSheet']
+				? [StyledElement['globalStyleSheet']]
+				: []),
+			...this.constructor['cssStyleSheets'],
+		];
 	}
 
 	// custom polyfill for constructable stylesheets by appending styles to the end of an element
@@ -132,5 +107,7 @@ class StyledElement extends BaseElement {
 		});
 	}
 }
+
+StyledElement.updateGlobalStyles();
 
 export { StyledElement };
