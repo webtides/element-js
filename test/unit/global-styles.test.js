@@ -68,7 +68,7 @@ const lightTag = defineCE(
 	},
 );
 
-describe.only('global-styles', () => {
+describe('global-styles', () => {
 	const style = document.createElement('STYLE');
 	style.type = 'text/css';
 	style.id = 'globalStyles';
