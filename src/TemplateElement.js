@@ -22,9 +22,9 @@ class TemplateElement extends StyledElement {
 		return html``;
 	}
 
-	update() {
+	update(options) {
 		this.renderTemplate();
-		super.update();
+		super.update(options);
 	}
 
 	renderTemplate() {
