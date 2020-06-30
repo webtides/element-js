@@ -33,7 +33,7 @@ class StyledElement extends BaseElement {
 	connectedCallback() {
 		super.connectedCallback();
 
-		if (supportsAdoptingStyleSheets && this._options.shadowRender) {
+		if (supportsAdoptingStyleSheets() && this._options.shadowRender) {
 			// adopting does only make sense in shadow dom. Fall back to append for light elements
 			this.adoptStyleSheets();
 		} else if (this._options.shadowRender && window.ShadyCSS !== undefined) {
@@ -52,7 +52,7 @@ class StyledElement extends BaseElement {
 	}
 
 	update(options) {
-		if (!supportsAdoptingStyleSheets || this._options.shadowRender === false) {
+		if (!supportsAdoptingStyleSheets() || this._options.shadowRender === false) {
 			// append stylesheets to template if not already adopted
 			const appendableStyles = [...this._styles];
 			if (this._options.shadowRender && this._options.adoptGlobalStyles && !window.ShadyCSS) {
