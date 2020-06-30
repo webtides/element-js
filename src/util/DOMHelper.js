@@ -39,7 +39,7 @@ export function isOfSameNodeType(nodeA, nodeB) {
 	return nodeA.localName === nodeB.localName;
 }
 
-export const supportsAdoptingStyleSheets =
+export const supportsAdoptingStyleSheets = () =>
 	'adoptedStyleSheets' in Document.prototype && 'replace' in CSSStyleSheet.prototype;
 
 // for IE11 we are using the ShadyDOM Polyfill. With the polyfill we cannot append stylesheets to the shadowRoot
