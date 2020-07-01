@@ -54,7 +54,7 @@ class StyledElement extends BaseElement {
 			// append stylesheets to template if not already adopted
 			const appendableStyles = [...this._styles];
 			if (this._options.shadowRender && this._options.adoptGlobalStyles && !window.ShadyCSS) {
-				appendableStyles.unshift(StyledElement.globalStyles.textContent || '');
+				appendableStyles.unshift(StyledElement.globalStyles?.textContent ?? '');
 			}
 			this.appendStyleSheets(appendableStyles);
 		}

@@ -69,12 +69,14 @@ const lightTag = defineCE(
 );
 
 describe('global-styles', () => {
-	const style = document.createElement('STYLE');
-	style.type = 'text/css';
-	style.id = 'globalStyles';
-	style.appendChild(document.createTextNode(`p{color: ${color}}`));
-	document.head.appendChild(style);
-	StyledElement.updateGlobalStyles();
+	before(() => {
+		const style = document.createElement('STYLE');
+		style.type = 'text/css';
+		style.id = 'globalStyles';
+		style.appendChild(document.createTextNode(`p{color: ${color}}`));
+		document.head.appendChild(style);
+		StyledElement.updateGlobalStyles();
+	});
 
 	it('adopts globalStyles in lightDom', async () => {
 		const el = await fixture(`<${lightTag}></${lightTag}>`);
@@ -112,5 +114,9 @@ describe('global-styles', () => {
 		await nextFrame();
 		const computedColor = await window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
 		assert.equal(computedColor, color2);
+	});
+
+	after(() => {
+		document.getElementById('globalStyles').remove();
 	});
 });
