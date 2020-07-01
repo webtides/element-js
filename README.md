@@ -16,7 +16,7 @@ npm install --save @webtides/element-js
 
 #### Use / Example Element
 
-CurrentJS elements are plain ES6 classes with some nice mappings (eg. properties, watch, etc.).
+`element-js` elements are plain ES6 classes with some nice mappings (eg. properties, watch, etc.).
 
 ```javascript
 import { BaseElement, defineElement } from '@webtides/element-js';
@@ -75,4 +75,4 @@ For detailed documentation see the [Docs](docs/README.md).
 
 ## License
 
-`element` is open-sourced software licensed under the MIT [license](LICENSE).
+`element-js` is open-sourced software licensed under the MIT [license](LICENSE).
