@@ -73,6 +73,31 @@ To use this element, just import it and use it like any other HTML element
 
 For detailed documentation see the [Docs](docs/README.md).
 
+## Development
+
+### We use eslint and prettier to ensure good code quality
+
+Prettier will run automatically when staging files via `git`.
+To run the linter manually - simply run `npm run lint`.
+
+### Git Branching
+
+We use a trunk-based development workflow.
+
+> In the trunk-based development model, all developers work on a single branch with open access to it. Often it’s simply the master branch. They commit code to it and run it. It’s super simple.
+> In some cases, they create short-lived feature branches. Once code on their branch compiles and passes all tests, they merge it straight to master. It ensures that development is truly continuous and prevents developers from creating merge conflicts that are difficult to resolve.
+
+As a Release is complete the master branch will be tagged with the new release version.
+
+### Pull Requests 
+
+Pull requests should take place whenever a: 
+
+- FEATURE is about to be finished
+- RELEASE is about to be finished   
+
+When all Reviewers approved a PR the feature/release may be finished locally and pushed to the remote
+
 ## License
 
 `element-js` is open-sourced software licensed under the MIT [license](LICENSE).
