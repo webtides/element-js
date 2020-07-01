@@ -239,11 +239,8 @@ In the example below we have a simple hierarchy of elements.
 The full lifecycle would be as follows:
 
 1. a-element -> connected()
-2. a-element -> afterUpdate()
-3. b-element -> connected()
-4. b-element -> afterUpdate()
-5. c-element -> connected()
-6. c-element -> afterUpdate()
+2. b-element -> connected()
+3. c-element -> connected()
 
 This loading/connecting behaviour is compliant with how other (normal) DOM elements are loaded and connected.
 
