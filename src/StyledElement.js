@@ -63,7 +63,7 @@ class StyledElement extends BaseElement {
 
 	adoptStyleSheets() {
 		if (!this.constructor['cssStyleSheets']) {
-			this.constructor['cssStyleSheets'] = this._styles.map((style, index) => {
+			this.constructor['cssStyleSheets'] = this._styles.map((style) => {
 				const sheet = new CSSStyleSheet();
 				if (sheet && sheet.cssRules.length === 0) {
 					sheet.replaceSync(style);
