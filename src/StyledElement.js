@@ -6,10 +6,8 @@ class StyledElement extends BaseElement {
 	static globalStyles = null;
 
 	static updateGlobalStyles() {
-		// this is a runtime dependency so that every shadow dom can use utility css classes
-		// alternatively we could load ../../css/inline.css here via import and parse it through rollup
-		// that would change it to a compile time dependency but would also load the css twice
-		// because it is already injected into the <head>
+		// this is a runtime dependency so that every shadow dom can make use of global css
+		// we assume these styles to be inlined into the document
 		StyledElement.globalStyles = document.getElementById('globalStyles');
 
 		if (StyledElement.globalStyles && StyledElement['globalStyleSheet']) {
