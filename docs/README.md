@@ -414,7 +414,7 @@ An update lifecycle roughly looks like this:
 
 ### Templates
 
-*element-js*s TemplateElement can render templates using `lit-html`.
+The TemplateElement from *element-js* can render templates using `lit-html`.
 
 For detailed information see the documentation on [lit-html.polymer-project-org](https://lit-html.polymer-project.org)
 
