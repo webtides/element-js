@@ -982,7 +982,7 @@ Another good use case for renderless elements is when you need to change some cl
 ```javascript
 import { BaseElement, defineElement } from '@webtides/element-js';
 
-class DropdownElement extends MayaElement {
+class DropdownElement extends BaseElement {
 	events() {
 		return {
 			button: {
