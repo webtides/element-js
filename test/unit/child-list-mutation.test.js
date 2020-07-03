@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-expressions */
-import { fixture, defineCE, assert, nextFrame, oneEvent } from '@open-wc/testing';
+import { fixture, defineCE, assert, oneEvent } from '@open-wc/testing';
 import { BaseElement } from 'src/BaseElement';
 
 const tag = defineCE(
