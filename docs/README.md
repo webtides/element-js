@@ -2,7 +2,7 @@
 
 ## Introduction
 
-_element-js_ is a collection of base classes for Custom Elements with a beautiful API for building fast and lightweight Web Components that work with any framework or without a framework at all - because they are just html.
+_element-js_ is a collection of base classes for Custom Elements with a beautiful API for building fast and lightweight Web Components that work with any framework or without a framework at all - because they are just html and vanilla javascript.
 
 _element-js_ aims to combine the best concepts of current and popular frontend frameworks and web-standard into a single toolset that will never be outdated because it is just html and javascript.
 
