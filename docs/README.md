@@ -16,7 +16,7 @@ Custom elements provide a component model for the web and enable developers to d
 
 ### Why element-js
 
-Using custom elements directly can be quite cumbersome because the underlying API is very low level. To prevent writing a lot of boilerplate _element-js_ provides extra APIs that enable writing components fast with very little code.
+Using Custom Clements directly can be quite cumbersome because the underlying API is very low level. To prevent writing a lot of boilerplate _element-js_ provides extra APIs that enable writing components fast with very little code.
 
 On top of that it also brings some nice features like
 
@@ -26,6 +26,7 @@ On top of that it also brings some nice features like
 -   reflecting properties to attributes
 -   abstraction for writing templates
 -   mechanism for loading styles per element
+-   loading global styles into Shadow Dom
 
 And the best thing? There is no magic! No Framework. No compiler. You only need to extend from an _element-js_ element instead of the standard `HTMLElement`.
 
@@ -139,14 +140,14 @@ For the most part you won’t probably need a constructor when extending your el
 
 Optionally you can overwrite the constructor and pass an object to the super call with various element-level options.
 
-```javascript
+```json
 {
-	autoUpdate: true,
-	deferUpdate: false,
-	childListUpdate: false,
-	propertyOptions: {},
-	shadowRender: false,
-	styles: [],
+    "autoUpdate": true,
+    "deferUpdate": false,
+    "childListUpdate": false,
+    "propertyOptions": {},
+    "shadowRender": false,
+    "styles": []
 }
 ```
 
@@ -427,7 +428,7 @@ An update lifecycle roughly looks like this:
 
 ### Templates
 
-The TemplateElement from *element-js* can render templates using `lit-html`.
+The TemplateElement from _element-js_ can render templates using `lit-html`.
 
 For detailed information see the documentation on [lit-html.polymer-project-org](https://lit-html.polymer-project.org)
 
@@ -451,7 +452,7 @@ export class MyElement extends TemplateElement {
 
 #### Shadow DOM vs. Light DOM
 
-By default _element-js_ will render templates in light DOM. When rendering in light DOM all global styles will be applied to your element as well.
+By default, _element-js_ will render templates in light DOM. When rendering in light DOM all global styles will be applied to your element as well.
 
 As mentioned before in the constructor options you can set `shadowRender` to `true` . The element will render templates then in the shadow DOM and encapsulate the element from the rest of the document.
 
@@ -596,57 +597,81 @@ export class FormControl extends TemplateElement {
 }
 ```
 
+#### Global Styles
+
+More often than not you will be building elements for a specific design/layout rather than encapsulated and abstract elements. It is therefore common to style things globally - especially since the rise of utility based CSS frameworks. When elements render in shadow DOM - they will be encapsulated and won't get any styles applied to them like the rest of the document.
+
+There is no official and preferred way of sharing styles between documents today. _element-js_ therefore has a custom solution to this problem. The `TemplateElement` from _element-js_ has another constructor option named: `adoptGlobalStyles` which is `true` by default. When set to `true` _element-js_ will look for a style element in the global document with an `id` of "globalStyles" and apply it before any custom/element styles inside the shadow DOM.
+
+Example:
+
+```html
+<style id="globalStyles">
+    p {
+        color: red;
+    }
+</style>
+```
+
+```javascript
+export class ShadowElement extends TemplateElement {
+    constructor() {
+        super({ shadowRender: true, adoptGlobalStyles: true });
+    }
+
+    template() {
+        return html`<p>I will be red although I am in shadow DOM and my element did not provide any CSS itself :)</p>`;
+    }
+}
+```
+
 ### Styles
 
 Every _element-js_ element has the ability to load one or more style sheets. Either by adding them to the `styles` option in the `propertyOptions` via the constructor or by implementing a `styles()` method and returning a list of `string` values.
 
-The value of these "style sheets” must always be a `string` .
+The value of these "style sheets” must always be a `string`.
 
 ```javascript
 import { TemplateElement, defineElement, html } from '@webtides/element-js';
-const style = ‘my-element .element { background: blue; }’,
+const style = 'my-element .element { background: blue; }';
 
 export class StyledElement extends TemplateElement {
-	constructor() {
-		super({ styles: [style] })
-	}
+    constructor() {
+        super({ styles: [style] });
+    }
 
-	styles() {
-		return [
-			‘my-element .element { color: red; }’,
-		];
-	}
+    styles() {
+        return ['my-element .element { color: red; }'];
+    }
 
-  template() {
-    return html`
-		<span class=“element”>I’m styled!</span>
-	  `;
-  }
+    template() {
+        return html` <span class="element">I’m styled!</span> `;
+    }
 }
 
-defineElement(‘styled-element', StyledElement);
+defineElement('styled-element', StyledElement);
 ```
 
 For a better developer experience it is also possible to import real `CSS` files and load them from a separate file instead of cluttering the element with style text.
 
 ```javascript
 import { StyleElement, defineElement } from '@webtides/element-js';
-import style from './styled-element.css’;
+import style from './styled-element.css';
 
 export class StyledElement extends StyleElement {
-	constructor() {
-		super({ styles: [style] })
-	}
+    constructor() {
+        super({ styles: [style] });
+    }
 }
 
-defineElement(‘styled-element', StyledElement);
+defineElement('styled-element', StyledElement);
 ```
 
-> Importing `CSS` files or rather `modules` is not currently supported by browsers. It is being worked on - but for now we have to rely on build tools to handle these kind of imports. For a detailed guide on how to build/bundle your elements nicely see [Bundling/Publishing](#bundlingpublishing).
+> Importing `CSS` files or rather `modules` is not currently supported by browsers. It is being worked on - but for now we have to rely on build tools to handle this kind of imports. For a detailed guide on how to build/bundle your elements nicely see [Bundling/Publishing](#bundlingpublishing).
 
 #### Shadow DOM vs. Light DOM
 
-By default _element-js_ will render in light DOM. In this case the styling will not be encapsulated and your element styles could potentially leak out and style any global selectors.
+By default, _element-js_ will render in light DOM. In this case the styling will not be encapsulated, and your element styles could potentially leak out and style any global selectors.
 
 To avoid these problems we highly encourage you to always start your selectors with the element tag name.
 
@@ -654,6 +679,7 @@ To avoid these problems we highly encourage you to always start your selectors w
 my-element {
     border: 1px solid blue;
 }
+
 my-element .element {
     color: red;
 }
