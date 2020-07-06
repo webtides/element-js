@@ -16,7 +16,7 @@ npm install --save @webtides/element-js
 
 #### Use / Example Element
 
-`element-js` elements are plain ES6 classes with some nice mappings (eg. properties, watch, etc.).
+`element-js` elements are plain ES6 classes (vanilla JS) with some nice mappings (eg. properties, watch, etc.).
 
 ```javascript
 import { BaseElement, defineElement } from '@webtides/element-js';
