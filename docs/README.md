@@ -29,6 +29,19 @@ On top of that it also brings some nice features like
 
 And the best thing? There is no magic! No Framework. No compiler. You only need to extend from an _element-js_ element instead of the standard `HTMLElement`.
 
+### Browser Support
+
+_element-js_ Elements are natively supported in all modern Browsers including Chrome, Edge, Firefox, and Safari.
+
+| Chrome | Edge   | Firefox | Safari   |
+| ------ | ------ | ------- | -------- |
+| ✓      | ✓      | ✓       | ✓        |
+| v. 60+ | v. 79+ | v. 63+  | v. 10.1+ |
+
+If you need to support older Browsers like IE 11 or Edge 16-18 you will have to load one or two polyfills for Custom Elements to work seamlessly. _element-js_ does not bring or load any polyfills on its own. You will have to bundle or load them yourself. For more information see [Bundling/Publishing](#bundlingpublishing).
+
+> _element-js_ comes unbundled, unminified and uses a few `Babel` plugins. Browser support can also be limited for any of the `Babel` plugin features, you will probably have to use a build step and run your code through something like `Babel`. For a list of `Babel` plugins that are used, see [ES6 Classes](#es6-classes). For more information on bundling and publishing your elements see [Bundling/Publishing](#bundlingpublishing).
+
 ### Getting started
 
 `npm install @webtides/element-js`
@@ -1011,9 +1024,9 @@ This is an element style guide created and enforced for the purpose of standardi
 
 #### File structure
 
-- One element per file.
-- One element per directory. Though it may make sense to group similar elements into the same directory, we've found it's easier to consume and document elements when each one has its own directory.
-- Implementation (.js) and styles (.css) of an element should live in the same directory.
+-   One element per file.
+-   One element per directory. Though it may make sense to group similar elements into the same directory, we've found it's easier to consume and document elements when each one has its own directory.
+-   Implementation (.js) and styles (.css) of an element should live in the same directory.
 
 Example:
 
@@ -1036,16 +1049,12 @@ Example:
 
 ##### Name
 
-Elements are not actions, they are conceptually "things".
-It is better to use nouns, instead of verbs, such us: "animation" instead of "animating".
-"input", "tab", "nav", "menu" are some examples.
+Elements are not actions, they are conceptually "things". It is better to use nouns, instead of verbs, such us: "animation" instead of "animating". "input", "tab", "nav", "menu" are some examples.
 
 ##### -element postfix
 
-The naming has a major role when you are creating a collection of elements intended to be used across different projects.
-Web Components are not scoped because they are globally declared within the page, which means a "unique" name is needed to prevent collisions.  
-Additionally, web components are required to contain a "-" dash within the tag name.
-When using the first section to namespace your components - everything will look the same, and it will be hard to distinguish elements.
+The naming has a major role when you are creating a collection of elements intended to be used across different projects. Web Components are not scoped because they are globally declared within the page, which means a "unique" name is needed to prevent collisions.  
+Additionally, web components are required to contain a "-" dash within the tag name. When using the first section to namespace your components - everything will look the same, and it will be hard to distinguish elements.
 
 DO NOT do this:
 
@@ -1099,7 +1108,6 @@ customElements.define('menu-element', MenuElement);
 ##### Newspaper Metaphor from The Robert C. Martin's _Clean Code_
 
 > The source file should be organized like a newspaper article, with the highest level summary at the top, and more and more details further down. Functions called from the top function come directly below it, and so on down to the lowest level, and most detailed functions at the bottom. This is a good way to organize the source code, even though IDE:s make the location of functions less important, since it is so easy to navigate in and out of them.
-
 
 ## Testing
 
