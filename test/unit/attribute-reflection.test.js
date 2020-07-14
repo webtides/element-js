@@ -83,18 +83,17 @@ describe('attribute-reflection', () => {
 		assert.equal(el.getAttribute('nan-value'), '');
 	});
 
-	// it('reflects properties as attributes when configured via propertyOptions', async () => {
-	// 	const el = await fixture(`<${propertyOptionsTag}></${propertyOptionsTag}>`);
-	// 	await nextFrame();
-	// 	assert.equal(el.hasAttribute('loaded'), true);
-	// 	assert.equal(el.getAttribute('loaded'), 'false');
-	// });
-	//
-	// it('removes attributes when configured to not reflect via propertyOptions', async () => {
-	// 	const el = await fixture(`<${propertyOptionsTag} unimportant="true"></${propertyOptionsTag}>`);
-	// 	assert.equal(el.getAttribute('unimportant'), 'true');
-	// 	await nextFrame();
-	// 	assert.equal(el.unimportant, true);
-	// 	assert.equal(el.hasAttribute('unimportant'), false);
-	// });
+	it('reflects properties as attributes when configured via propertyOptions', async () => {
+		const el = await fixture(`<${propertyOptionsTag}></${propertyOptionsTag}>`);
+		await nextFrame();
+		assert.equal(el.hasAttribute('loaded'), true);
+		assert.equal(el.getAttribute('loaded'), 'false');
+	});
+
+	it('removes attributes when configured to not reflect via propertyOptions', async () => {
+		const el = await fixture(`<${propertyOptionsTag} unimportant="true"></${propertyOptionsTag}>`);
+		await nextFrame();
+		assert.equal(el.unimportant, true);
+		assert.equal(el.hasAttribute('unimportant'), false);
+	});
 });
