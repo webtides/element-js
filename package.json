@@ -17,6 +17,7 @@
 		"@open-wc/semantic-dom-diff": "^0.17.9",
 		"@open-wc/testing": "^2.5.16",
 		"@open-wc/testing-karma": "^3.3.19",
+		"babel-eslint": "^10.1.0",
 		"babel-plugin-module-resolver": "^4.0.0",
 		"deepmerge": "^4.2.2",
 		"eslint": "^7.0.0",
