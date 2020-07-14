@@ -180,6 +180,16 @@ class BaseElement extends HTMLElement {
 			return;
 		}
 
+		// if property did not come from an attribute but has the option to reflect
+		if (!reflectAttribute && this._options.propertyOptions[property]?.reflect === true) {
+			this.reflectProperty({ property: property, newValue: value });
+		}
+
+		// remove attribute if reflect is set to false explicitly in options
+		if (this._options.propertyOptions[property]?.reflect === false) {
+			this.removeAttribute(camelToDash(property));
+		}
+
 		this._state[property] = value;
 
 		Object.defineProperty(this, property, {
@@ -193,15 +203,8 @@ class BaseElement extends HTMLElement {
 				if (JSON.stringify(oldValue) !== newValueString) {
 					this._state[property] = newValue;
 
-					if (reflectAttribute) {
-						if (newValue === undefined || newValue === null || isNaN(newValue)) {
-							// these would be reflected as strings: "undefined" || "null" || "NaN"
-							// which is not the desired behaviour. Therefore we reflect them as empty strings
-							this.setAttribute(camelToDash(property), '');
-						} else {
-							const attributeValue = isObjectLike(newValue) ? newValueString : newValue;
-							this.setAttribute(camelToDash(property), attributeValue);
-						}
+					if (reflectAttribute || this._options.propertyOptions[property]?.reflect === true) {
+						this.reflectProperty({ property, newValue, newValueString });
 					}
 
 					const informWatchedPropertiesAndDispatchChangeEvent = () => {
@@ -237,6 +240,20 @@ class BaseElement extends HTMLElement {
 				return this;
 			},
 		});
+	}
+
+	reflectProperty(options) {
+		const { property, newValue } = options;
+		const newValueString = options.newValueString || JSON.stringify(newValue);
+
+		if (newValue === undefined || newValue === null || isNaN(newValue)) {
+			// these would be reflected as strings: "undefined" || "null" || "NaN"
+			// which is not the desired behaviour. Therefore we reflect them as empty strings
+			this.setAttribute(camelToDash(property), '');
+		} else {
+			const attributeValue = isObjectLike(newValue) ? newValueString : newValue;
+			this.setAttribute(camelToDash(property), attributeValue);
+		}
 	}
 
 	// Deprecated
