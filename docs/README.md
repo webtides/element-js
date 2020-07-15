@@ -143,7 +143,11 @@ Optionally you can overwrite the constructor and pass an object to the super cal
 {
     "autoUpdate": true,
     "deferUpdate": false,
-    "childListUpdate": false,
+    "mutationObserverOptions": {
+        "attributes": true,
+        "childList": true,
+        "subtree": false
+    },
     "propertyOptions": {},
     "shadowRender": false,
     "styles": []
@@ -162,11 +166,15 @@ Type: `boolean` Default: `false`
 
 When set to `true` the element will not call the `requestUpdate()` method upon connecting and therefore will not render (if template was provided) initially. This might be necessary in some cases where you have to prepare and setup your element before actually rendering for the first time. You will have to call the `requestUpdate` method manually at the right lifecycle hook.
 
-#### childListUpdate
+#### mutationObserverOptions
 
-Type: `boolean` Default: `false`
+Type: `object` Default: `{ "attributes": true, "childList": true, "subtree": false }`
 
-By default the element will register a _Mutation Observer_, listen for attribute changes and call the `requestUpdate` method if `autoUpdate` is enabled. When set to `true` the element will also call the `requestUpdate` method for childList modifications (eg. Adding or removing child elements).
+By default, the element will register a _Mutation Observer_, listen for attribute changes and call the `requestUpdate` method if `autoUpdate` is enabled. When `childList` is set to `true` the element will also call the `requestUpdate` method for childList modifications (eg. Adding or removing child elements).
+The `mutationObserverOptions` takes a dictionary in the exact same form as the [MutationObserverInit options](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserverInit).
+By setting the `subtree` option to `true` the element will also call the `requestUpdate` method for attribute changes and childList modifications on nested child elements.
+
+> Please note that observing `subtree` mutations might have performance implications and use it only if necessary.
 
 #### propertyOptions
 
