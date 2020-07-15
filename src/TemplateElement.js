@@ -10,7 +10,9 @@ class TemplateElement extends StyledElement {
 			shadowRender: false,
 			styles: [],
 			adoptGlobalStyles: true,
-			childListUpdate: false,
+			mutationObserverOptions: {
+				childList: false,
+			},
 			...options,
 		});
 		this._template = this._options.template;

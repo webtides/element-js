@@ -22,7 +22,6 @@ class StyledElement extends BaseElement {
 			shadowRender: false,
 			styles: [],
 			adoptGlobalStyles: true,
-			childListUpdate: false,
 			...options,
 		});
 		this._styles = [...this._options.styles, ...this.styles()];

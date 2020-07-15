@@ -14,13 +14,24 @@ class BaseElement extends HTMLElement {
 			{
 				autoUpdate: true,
 				deferUpdate: true,
-				childListUpdate: true,
+				mutationObserverOptions: {
+					attributes: true,
+					childList: true,
+					subtree: false,
+				},
 				propertyOptions: {},
 			},
 			options,
 		);
 		this._batchUpdate = null;
 		this._requestedUpdates = [];
+
+		if (this._options.childListUpdate) {
+			this._options.mutationObserverOptions.childList = this._options.childListUpdate;
+			console.warn(
+				`[${this.localName}] Using the "childListUpdate" option is deprecated and will be removed before 1.0! Please use the "mutationObserverOptions" dictionary instead. See the docs for more info`,
+			);
+		}
 	}
 
 	connectedCallback() {
@@ -52,11 +63,18 @@ class BaseElement extends HTMLElement {
 		// see: https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver#Example_usage
 		this._mutationObserver = new MutationObserver((mutations) => {
 			mutations.forEach((mutation) => {
-				if (mutation.type === 'attributes' && this._state.hasOwnProperty(dashToCamel(mutation.attributeName))) {
+				if (
+					mutation.type === 'attributes' &&
+					mutation.target === this &&
+					this._state.hasOwnProperty(dashToCamel(mutation.attributeName))
+				) {
 					// update property by invoking the setter
 					this[dashToCamel(mutation.attributeName)] = parseAttribute(
 						this.getAttribute(mutation.attributeName),
 					);
+				}
+				if (mutation.type === 'attributes' && mutation.target !== this) {
+					this.requestUpdate();
 				}
 				if (mutation.type === 'childList') {
 					this.requestUpdate();
@@ -66,7 +84,9 @@ class BaseElement extends HTMLElement {
 
 		this._mutationObserver.observe(this, {
 			attributes: true,
-			childList: this._options.childListUpdate,
+			childList: true,
+			subtree: false,
+			...this._options.mutationObserverOptions,
 		});
 	}
 
