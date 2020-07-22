@@ -10,24 +10,23 @@ class BaseElement extends HTMLElement {
 		this._state = {};
 		this._mutationObserver = null;
 		this._registeredEvents = [];
-		this._options = Object.assign(
-			{
-				autoUpdate: true,
-				deferUpdate: true,
-				mutationObserverOptions: {
-					attributes: true,
-					childList: true,
-					subtree: false,
-				},
-				propertyOptions: {},
-			},
-			options,
-		);
 		this._batchUpdate = null;
 		this._requestedUpdates = [];
+		this._options = {
+			autoUpdate: true,
+			deferUpdate: true,
+			mutationObserverOptions: {
+				attributes: true,
+				childList: true,
+				subtree: false,
+				...options.mutationObserverOptions,
+			},
+			propertyOptions: {},
+			...options,
+		};
 
-		if (this._options.childListUpdate) {
-			this._options.mutationObserverOptions.childList = this._options.childListUpdate;
+		if (options.childListUpdate !== undefined && options.childListUpdate !== null) {
+			this._options.mutationObserverOptions.childList = options.childListUpdate;
 			console.warn(
 				`[${this.localName}] Using the "childListUpdate" option is deprecated and will be removed before 1.0! Please use the "mutationObserverOptions" dictionary instead. See the docs for more info`,
 			);

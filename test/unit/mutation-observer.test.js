@@ -2,30 +2,32 @@
 import { fixture, defineCE, assert, oneEvent, nextFrame } from '@open-wc/testing';
 import { BaseElement } from 'src/BaseElement';
 
-const tag = defineCE(
-	class extends BaseElement {
-		constructor() {
-			super({ deferUpdate: false });
-			this.updateCount = 0;
-		}
+class UpdateCountElement extends BaseElement {
+	constructor(options) {
+		super({ deferUpdate: false, ...options });
+		this.updateCount = 0;
+	}
 
-		afterUpdate() {
-			this.updateCount++;
-			this.dispatch('afterUpdate', null, true);
+	afterUpdate() {
+		this.updateCount++;
+		this.dispatch('afterUpdate', null, true);
+	}
+}
+
+const tag = defineCE(class extends UpdateCountElement {});
+
+const subtreeObserverTag = defineCE(
+	class extends UpdateCountElement {
+		constructor() {
+			super({ mutationObserverOptions: { subtree: true } });
 		}
 	},
 );
 
-const subtreeObserverTag = defineCE(
-	class extends BaseElement {
+const deprecatedChildListUpdateTag = defineCE(
+	class extends UpdateCountElement {
 		constructor() {
-			super({ deferUpdate: false, mutationObserverOptions: { subtree: true } });
-			this.updateCount = 0;
-		}
-
-		afterUpdate() {
-			this.updateCount++;
-			this.dispatch('afterUpdate', null, true);
+			super({ childListUpdate: false });
 		}
 	},
 );
@@ -83,5 +85,17 @@ describe('mutation-observer', () => {
 		el.removeChild(el.querySelector('#remove'));
 		await oneEvent(el, 'afterUpdate');
 		assert.equal(el.updateCount, 1);
+	});
+
+	// TODO: remove test once "childListUpdate" has been removed from options completely
+	it('can disable requesting updates when a child node has been added via deprecated "childListUpdate" option', async () => {
+		const el = await fixture(`<${deprecatedChildListUpdateTag}></${deprecatedChildListUpdateTag}>`);
+		el.innerHTML = `<span>i am nested</span>`;
+		// TODO: is it correct or even right that the "requestUpdate" in combination with mutation observer will take two animation frames ?!
+		// from my research the mutation observer should call the callback within the same frame
+		// to test this behaviour remove one call to "nextFrame" and comment out the workaround in BaseElement.js:28
+		await nextFrame();
+		await nextFrame();
+		assert.equal(el.updateCount, 0);
 	});
 });
