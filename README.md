@@ -84,10 +84,10 @@ To run the linter manually - simply run `npm run lint`.
 
 We use a trunk-based development workflow.
 
-> In the trunk-based development model, all developers work on a single branch with open access to it. Often it’s simply the master branch. They commit code to it and run it. It’s super simple.
-> In some cases, they create short-lived feature branches. Once code on their branch compiles and passes all tests, they merge it straight to master. It ensures that development is truly continuous and prevents developers from creating merge conflicts that are difficult to resolve.
+> In the trunk-based development model, all developers work on a single branch with open access to it. Often it’s simply the main branch. They commit code to it and run it. It’s super simple.
+> In some cases, they create short-lived feature branches. Once code on their branch compiles and passes all tests, they merge it straight to main. It ensures that development is truly continuous and prevents developers from creating merge conflicts that are difficult to resolve.
 
-As a Release is complete the master branch will be tagged with the new release version.
+As a Release is complete the main branch will be tagged with the new release version.
 
 ### Pull Requests 
 
