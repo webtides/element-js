@@ -10,6 +10,13 @@ Simple and lightweight base classes for web components with a beautiful API
 
 #### Installation
 
+create a `.npmrc` file in your project root and add the following line to set the registry for packages in `@webtides` scope. 
+```sh
+@webtides:registry=https://npm.pkg.github.com/
+```                                                                  
+
+install `element-js`
+
 ```sh
 npm install --save @webtides/element-js
 ```
