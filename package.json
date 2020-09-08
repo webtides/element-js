@@ -11,7 +11,12 @@
 		"lit-html": "^1.2.1"
 	},
 	"devDependencies": {
-		"@babel/plugin-proposal-class-properties": "^7.8.3",
+		"@babel/core": "^7.11.5",
+		"@babel/preset-env": "^7.11.5",
+		"@rollup/plugin-node-resolve": "^9.0.0",
+		"rollup": "^2.26.9",
+		"rollup-plugin-babel": "^4.4.0",
+		"@babel/plugin-proposal-class-properties": "^7.10.4",
 		"@babel/plugin-proposal-nullish-coalescing-operator": "^7.8.3",
 		"@babel/plugin-proposal-optional-chaining": "^7.9.0",
 		"@open-wc/semantic-dom-diff": "^0.17.9",
