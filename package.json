@@ -7,6 +7,10 @@
 		"registry": "https://npm.pkg.github.com/"
 	},
 	"author": "@webtides",
+	"files": [
+		"/dist/",
+		"/src/"
+	],
 	"dependencies": {
 		"lit-html": "^1.2.1"
 	},
