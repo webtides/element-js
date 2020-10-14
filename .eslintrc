@@ -1,0 +1,23 @@
+{
+	"root": true,
+	"extends": ["plugin:prettier/recommended"],
+	"parser": "babel-eslint",
+	"rules": {
+		"prettier/prettier": ["error", { "semi": true }]
+	},
+	"globals": {
+		"document": true,
+		"window": true,
+		"customElements": true,
+		"HTMLElement": true,
+		"requestAnimationFrame": true
+	},
+	"parserOptions": {
+		"ecmaVersion": 2018,
+		"sourceType": "module"
+	},
+	"env": {
+		"es6": true,
+		"browser": true
+	}
+}
