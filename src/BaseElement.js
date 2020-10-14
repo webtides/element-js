@@ -28,7 +28,7 @@ class BaseElement extends HTMLElement {
 		if (options.childListUpdate !== undefined && options.childListUpdate !== null) {
 			this._options.mutationObserverOptions.childList = options.childListUpdate;
 			console.warn(
-				`[${this.localName}] Using the "childListUpdate" option is deprecated and will be removed before 1.0! Please use the "mutationObserverOptions" dictionary instead. See the docs for more info`,
+				`[${this.localName}] Using the "childListUpdate" option is deprecated and will be removed before 1.0! Please use the "mutationObserverOptions" dictionary instead. See the docs for more info `,
 			);
 		}
 	}
