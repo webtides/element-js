@@ -8,8 +8,11 @@
 export function i18n(key, fallback) {
 	try {
 		const translations = window.elementjs.i18n();
+		if (translations[key] === undefined) {
+			throw 'Translation Missing';
+		}
 
-		return translations && translations[key];
+		return translations[key];
 	} catch (err) {
 		if (fallback) return fallback;
 		else return key;
