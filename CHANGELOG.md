@@ -15,6 +15,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [0.3.1] - 2020-12-08
+
+### Fixed 
+* i18n fallback values
+
+### Added
+* i18n tests
+
 ## [0.3.0] - 2020-07-27
 
 ### Added
