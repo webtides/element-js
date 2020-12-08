@@ -34,6 +34,7 @@ describe('util/i18n', () => {
 		const translation = i18n('key');
 		assert.equal(translation, 'key');
 	});
+	
 	it('will fallback to fallback if global i18n config is missing and fallback is passed', async () => {
 		window.elementjs = null;
 		const translation = i18n('key', 'fallback');
