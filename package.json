@@ -3,9 +3,6 @@
 	"version": "0.3.1",
 	"module": "index.js",
 	"repository": "https://github.com/webtides/element-js.git",
-	"publishConfig": {
-		"registry": "https://npm.pkg.github.com/"
-	},
 	"author": "@webtides",
 	"dependencies": {
 		"lit-html": "^1.2.1"
