@@ -1,6 +1,6 @@
 {
 	"name": "@webtides/element-js",
-	"version": "0.3.1-publish.01",
+	"version": "0.3.1-publish.0.1",
 	"module": "index.js",
 	"repository": "https://github.com/webtides/element-js.git",
 	"author": "@webtides",
