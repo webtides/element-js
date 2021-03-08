@@ -35,12 +35,7 @@ module.exports = (config) => {
 							},
 						],
 					],
-					plugins: [
-						['@babel/plugin-proposal-class-properties', { loose: true }],
-						'@babel/plugin-proposal-nullish-coalescing-operator',
-						'@babel/plugin-proposal-optional-chaining',
-						['module-resolver', { root: ['./'] }],
-					],
+					plugins: [['module-resolver', { root: ['./'] }]],
 				},
 			},
 
