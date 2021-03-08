@@ -1,10 +1,11 @@
 {
 	"name": "@webtides/element-js",
-	"version": "0.3.2-publish.1",
+	"version": "0.3.2-rc.2",
 	"type": "module",
 	"module": "index.js",
-	"main": "dist/index.js",
-	"exports": "index.js",
+	"exports": {
+		"import": "./index.js"
+	},
 	"repository": "https://github.com/webtides/element-js.git",
 	"author": "@webtides",
 	"license": "MIT",
