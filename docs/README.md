@@ -61,11 +61,9 @@ Here is an example of what a _element-js_ element looks like:
 import { BaseElement, defineElement } from '@webtides/element-js';
 
 class ExampleElement extends BaseElement {
-    // normal public property
+    // normal public properties
     greeting = 'Hello';
-
-    // private property
-    #name = 'John';
+    name = 'John';
 
     // lifecycle hook
     connected() {
@@ -90,7 +88,7 @@ class ExampleElement extends BaseElement {
 
     // computed property
     get computedMsg() {
-        return `${this.greeting} ${this.#name} ${this.familyName}`;
+        return `${this.greeting} ${this.name} ${this.familyName}`;
     }
 
     // method
@@ -123,15 +121,6 @@ Most of the element API ist standard ES6 class Syntax with a few ES next proposa
 An _element-js_ element is nothing more than a regular JS class that extends from `HTMLElement`.
 
 > For more information on JavaScript classes see: [Classes on MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes)
-
-On top of the seasoned feature set, _element-js_ also uses a number of experimental and proposed features from the JavaScript standard committee.
-
--   [Proposal: Public and private instance fields](https://github.com/tc39/proposal-class-fields)
--   [Proposal: Static class features](https://github.com/tc39/proposal-static-class-features)
--   [Proposal: Optional Chaining](https://github.com/tc39/proposal-optional-chaining)
--   [Proposal: Nullish Coalescing](https://github.com/tc39-transfer/proposal-nullish-coalescing)
-
-> Since browser support can be limited for any of these features, you will probably have to use a build step and run your code through something like `Babel`. For more information on bundling and publishing your elements see [Bundling/Publishing](#bundlingpublishing).
 
 ### Constructor & Options
 
@@ -223,7 +212,7 @@ Called when the element is connected to the DOM and _element-js_ is done initial
 
 > Please note that the `connected` hook however /can/ be called more than once after the first time. It will also be invoked when the element is _attached_ or _moved_ in the DOM or to another DOM.
 
-Use it to initialise the element and set public or private properties, query for other DOM elements, etc.
+Use it to initialise the element and set public or "private" properties, query for other DOM elements, etc.
 
 #### beforeUpdate
 
@@ -310,7 +299,7 @@ With attributes and properties you can build out and define the public API of an
 
 ```javascript
 export class MyElement extends BaseElement {
-    #privatePropery = 'I am private';
+    _privatePropery = 'I am private (by convention)';
     publicProperty = 'I am public';
 
     properties() {
@@ -320,7 +309,7 @@ export class MyElement extends BaseElement {
     }
 
     log() {
-        console.log(this.#privatePropery);
+        console.log(this._privatePropery);
         console.log(this.publicProperty);
         console.log(this.reactivePublicProperty);
     }
@@ -330,7 +319,7 @@ defineElement('my-element', MyElement);
 
 #### Defining properties in JavaScript
 
-Private and public properties for JavaScript classes where recently proposed from the JavaScript standard committee and are being currently implemented by browser vendors. For more information see the [Class fields documentation on MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Class_fields).
+Public properties for JavaScript classes where recently added by the JavaScript standard committee. For more information see the [Class fields documentation on MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Class_fields).
 
 On top of these fields _element-js_ adds another form of properties - reactive properties. By overwriting the `properties()` method on your element and returning an object of key/value pairs you can define a list of reactive public properties. Behind the scenes _element-js_ will automatically generate getters and setters for each property and trigger an update/render for the element when these properties change.
 
