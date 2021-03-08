@@ -21,6 +21,10 @@ npm install --save @webtides/element-js
 `element-js` elements are plain ES6 classes (vanilla JS) with some nice mappings (eg. properties, watch, etc.).
 
 ```javascript
+// Import from a CDN
+// import { BaseElement, defineElement } from 'https://unpkg.com/@webtides/element-js';
+// import { BaseElement, defineElement } from 'https://cdn.skypack.dev/@webtides/element-js';
+// or when installed via npm
 import { BaseElement, defineElement } from '@webtides/element-js';
 
 class ExampleElement extends BaseElement {
