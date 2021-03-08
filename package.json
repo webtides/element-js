@@ -5,6 +5,17 @@
 	"repository": "https://github.com/webtides/element-js.git",
 	"author": "@webtides",
 	"license": "MIT",
+	"keywords": [
+		"web components",
+		"web component",
+		"components",
+		"component",
+		"custom elements",
+		"elements",
+		"element",
+		"element-js",
+		"shadow-dom"
+	],
 	"dependencies": {
 		"lit-html": "^1.2.1"
 	},
