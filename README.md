@@ -24,11 +24,9 @@ npm install --save @webtides/element-js
 import { BaseElement, defineElement } from '@webtides/element-js';
 
 class ExampleElement extends BaseElement {
-    // normal public property
+    // normal public properties
     greeting = 'Hello';
-
-    // private property
-    #name = 'John';
+    name = 'John';
 
     // lifecycle hook
     connected() {
@@ -53,7 +51,7 @@ class ExampleElement extends BaseElement {
 
     // computed property
     get computedMsg() {
-        return `${this.greeting} ${this.#name} ${this.familyName}`;
+        return `${this.greeting} ${this.name} ${this.familyName}`;
     }
 
     // method
