@@ -4,6 +4,7 @@
 	"module": "index.js",
 	"repository": "https://github.com/webtides/element-js.git",
 	"author": "@webtides",
+	"license": "MIT",
 	"dependencies": {
 		"lit-html": "^1.2.1"
 	},
