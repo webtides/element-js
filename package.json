@@ -26,18 +26,17 @@
 		"@open-wc/semantic-dom-diff": "^0.17.9",
 		"@open-wc/testing": "^2.5.16",
 		"@open-wc/testing-karma": "^3.3.19",
-		"@rollup/plugin-node-resolve": "^7.1.3",
 		"babel-eslint": "^10.1.0",
 		"babel-plugin-module-resolver": "^4.0.0",
 		"deepmerge": "^4.2.2",
+		"esbuild": "^0.8.57",
 		"eslint": "^7.0.0",
 		"eslint-config-prettier": "^6.11.0",
 		"eslint-plugin-prettier": "^3.1.3",
 		"husky": "^4.2.5",
 		"karma": "^5.0.5",
 		"lint-staged": "^10.2.2",
-		"prettier": "^2.0.5",
-		"rollup": "^2.40.0"
+		"prettier": "^2.0.5"
 	},
 	"husky": {
 		"hooks": {
@@ -52,8 +51,7 @@
 	},
 	"scripts": {
 		"lint": "eslint src/**/*.js",
-		"build": "rollup -c",
-		"prepare": "rollup -c",
+		"prepare": "esbuild index.js --outfile=dist/index.js --bundle --format=esm --sourcemap --target=chrome79,firefox68,safari12,edge79",
 		"test": "karma start",
 		"test:coverage": "karma start --coverage",
 		"test:watch": "karma start --auto-watch=true --single-run=false"
