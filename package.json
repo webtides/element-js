@@ -1,6 +1,6 @@
 {
 	"name": "@webtides/element-js",
-	"version": "0.3.2-rc.4",
+	"version": "0.3.2-rc.5",
 	"module": "index.js",
 	"unpkg": "dist/index.js",
 	"exports": {
@@ -10,7 +10,8 @@
 	},
 	"files": [
 		"/dist",
-		"/src"
+		"/src",
+		"index.js"
 	],
 	"repository": "https://github.com/webtides/element-js.git",
 	"author": "@webtides",
