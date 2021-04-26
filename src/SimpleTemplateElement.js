@@ -30,12 +30,7 @@ class SimpleTemplateElement extends StyledElement {
 
 	renderTemplate() {
 		const template = this._template || this.template();
-		if (typeof template === 'string') {
-			// just a plain string literal.
-			this.getRoot().innerHTML = `${template}`;
-		} else {
-			render(html` ${template} `, this.getRoot());
-		}
+		render(html`${template}`, this.getRoot());
 	}
 
 	getRoot() {
