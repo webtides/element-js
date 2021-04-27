@@ -1,9 +1,9 @@
 import { StyledElement } from './StyledElement.js';
-import { html } from 'lit-html';
-import { render } from 'lit-html/lib/shady-render.js';
+import { html } from './util/html.js';
+import { render } from './util/render.js';
 export { i18n } from './util/i18n.js';
 
-class TemplateElement extends StyledElement {
+class SimpleTemplateElement extends StyledElement {
 	constructor(options) {
 		super({
 			deferUpdate: false,
@@ -31,16 +31,7 @@ class TemplateElement extends StyledElement {
 
 	renderTemplate() {
 		const template = this._template || this.template();
-		if (typeof template === 'string') {
-			// just a plain string literal. no lit-html required
-			this.getRoot().innerHTML = `${template}`;
-		} else {
-			// render via lit-html
-			render(html` ${template} `, this.getRoot(), {
-				scopeName: this.localName,
-				eventContext: this,
-			});
-		}
+		render(template, this.getRoot());
 	}
 
 	getRoot() {
@@ -48,4 +39,4 @@ class TemplateElement extends StyledElement {
 	}
 }
 
-export { TemplateElement, html, render };
+export { SimpleTemplateElement, html, render };
