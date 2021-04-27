@@ -1,5 +1,6 @@
 import { StyledElement } from './StyledElement.js';
-import { html, render } from './util/render.js';
+import { html } from './util/html.js';
+import { render } from './util/render.js';
 export { i18n } from './util/i18n.js';
 
 class SimpleTemplateElement extends StyledElement {
@@ -30,7 +31,7 @@ class SimpleTemplateElement extends StyledElement {
 
 	renderTemplate() {
 		const template = this._template || this.template();
-		render(html`${template}`, this.getRoot());
+		render(template, this.getRoot());
 	}
 
 	getRoot() {

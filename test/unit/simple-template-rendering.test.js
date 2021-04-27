@@ -1,7 +1,6 @@
 /* eslint-disable no-unused-expressions */
 import { fixture, defineCE, assert, nextFrame } from '@open-wc/testing';
-import { SimpleTemplateElement } from 'src/SimpleTemplateElement';
-import { html } from 'src/util/render';
+import { html, SimpleTemplateElement } from 'src/SimpleTemplateElement';
 
 const lightTag = defineCE(
 	class extends SimpleTemplateElement {
@@ -43,6 +42,14 @@ const noHtmlTag = defineCE(
 	},
 );
 
+const encodedHtmlTag = defineCE(
+	class extends SimpleTemplateElement {
+		template() {
+			return html`${'<div>dangerous html</div>'}`;
+		}
+	},
+);
+
 describe('simple template-rendering', () => {
 	it('renders template in light dom by default', async () => {
 		const el = await fixture(`<${lightTag}></${lightTag}>`);
@@ -67,5 +74,10 @@ describe('simple template-rendering', () => {
 	it('can render standard strings as template instead of html template results', async () => {
 		const el = await fixture(`<${noHtmlTag}></${noHtmlTag}>`);
 		assert.lightDom.equal(el, '<div>no html template result content</div>');
+	});
+
+	it('can encode potentially dangerous html', async () => {
+		const el = await fixture(`<${encodedHtmlTag}></${encodedHtmlTag}>`);
+		assert.lightDom.equal(el, `&lt;div&gt;dangerous html&lt;/div&gt;`);
 	});
 });
