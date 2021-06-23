@@ -923,8 +923,8 @@ To avoid constant lookups of (child) elements from your elements _element-js_ wi
 
 ```html
 <places-search>
-	<input type=“text" ref=“input”/>
-	<places-list ref="list”></places-list>
+	<input type="text" ref="input"/>
+	<places-list ref="list"></places-list>
 </places-search>
 ```
 
