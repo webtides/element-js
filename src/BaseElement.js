@@ -1,5 +1,6 @@
 import { parseAttribute, isNaN, dashToCamel, camelToDash, isObjectLike } from './util/AttributeParser.js';
 import { getClosestParentCustomElementNode, isOfSameNodeType } from './util/DOMHelper.js';
+
 export { defineElement } from './util/defineElement';
 export { toString } from './util/toString';
 
@@ -369,9 +370,16 @@ class BaseElement extends HTMLElement {
 
 			eventTargets.forEach((eventTarget) => {
 				Object.keys(events).forEach((eventName) => {
-					const callback = events[eventName].bind(this);
-					eventTarget.addEventListener(eventName, callback);
-					this._registeredEvents.push({ eventTarget, eventName, callback });
+					const notation = events[eventName];
+					if (typeof notation === 'function') {
+						const callback = notation.bind(this);
+						eventTarget.addEventListener(eventName, callback);
+						this._registeredEvents.push({ eventTarget, eventName, callback });
+					} else if (typeof notation === 'object' && typeof notation.listener === 'function') {
+						const callback = notation.listener.bind(this);
+						eventTarget.addEventListener(eventName, callback, notation.options ?? {});
+						this._registeredEvents.push({ eventTarget, eventName, callback });
+					}
 				});
 			});
 		});

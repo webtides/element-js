@@ -887,6 +887,33 @@ export class MyElement extends BaseElement {
 }
 ```
 
+For better control Events can be bound with listener options by using the "complex notation"
+The callback need to wrapped into an Object to pass the Options alongside.
+
+```js
+{	
+    listener: (e) => console.log('scroll', e),
+		options: { passive : true }
+}
+```
+Naming is heavily inspired by the addEventListener signature
+https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+
+```javascript
+export class MyElement extends BaseElement {
+    events() {
+        return {
+            window: {
+                scroll:{ 
+                    listener: (e) => console.log('scroll', e), 
+										options : { passive : true }
+								}
+            },
+        };
+    }
+}
+```
+
 > _element-js_ will smartly add and remove all the defined event listeners on every update/render cycle to ensure that events will always fire even though you might have changed the child DOM tree during render cycles.
 
 #### Dispatching events

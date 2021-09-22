@@ -15,6 +15,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [0.3.3] - 2021-09-22
+
+### Added
+* optional complex event callback notation to support addEventListener options (i.E. for passive Event Listeners )
+* Example:  {listener: () => {}, options: { passive: true } }
+* docs
+* tests
+
+
 ## [0.3.2] - 2021-03-09
 
 ### Added
