@@ -64,3 +64,11 @@ export function dashToCamel(string) {
 export function camelToDash(string) {
 	return string.replace(/([A-Z])/g, '-$1').toLowerCase();
 }
+
+export function decodeAttribute(attribute) {
+	return `${attribute}`
+		.replace(/&lt;/g, '<')
+		.replace(/&gt;/g, '>')
+		.replace(/&quot;/g, '"')
+		.replace(/&apos;/g, "'");
+}

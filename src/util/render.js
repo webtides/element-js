@@ -1,7 +1,11 @@
+const NODE_TYPE_COMMENT = 8;
+const NODE_TYPE_TEXT = 3;
+
 const convertStringToHTML = (templateString) => {
 	const parser = new DOMParser();
-	const document = parser.parseFromString(`${templateString}`, 'text/html');
-	return document.body;
+	const document = parser.parseFromString(`<main>${templateString}</main>`, 'text/html');
+
+	return document.querySelector('main');
 };
 
 /**
@@ -12,7 +16,7 @@ const convertStringToHTML = (templateString) => {
 const getAttributes = function (attributes) {
 	return Array.prototype.map.call(attributes, function (attribute) {
 		return {
-			att: attribute.name,
+			attributeName: attribute.name,
 			value: attribute.value,
 		};
 	});
@@ -20,22 +24,50 @@ const getAttributes = function (attributes) {
 
 /**
  * Create a DOM Tree Map for an element
- * @param  {Node}    element The element to map
+ *
+ * @param  {HTMLElement}    element The element to map
  * @param  {Boolean} isSVG   If true, node is within an SVG
- * @return {Array}           A DOM tree map
+ * @return {{ domMap: Array, plainlySetInnerHTML?: boolean, innerHTML?: string }} A DOM tree map
  */
-const createDOMMap = function (element, isSVG = false) {
-	return Array.prototype.map.call(element.childNodes, function (node) {
+const createDOMMap = function (element, isChild = false, isSVG = false, type = 'template') {
+	const children = [...element.childNodes];
+
+	// If the list contains a comment which says "$$plainly-set-inner-html" it means
+	// that the all children of the element will be set as unsafe `innerHTML´
+	// which means that there won't be any diffing or fancy things
+	// but we will just mark it as a pure component and leave it be.
+	for (const child of children) {
+		if (child?.nodeType === NODE_TYPE_COMMENT && child.textContent === '$$plainly-set-inner-html') {
+			return {
+				domMap: [],
+				plainlySetInnerHTML: true,
+				innerHTML: element.innerHTML,
+			};
+		}
+	}
+
+	const domMap = children.map((node, index) => {
 		const details = {
 			content: node.childNodes && node.childNodes.length > 0 ? null : node.textContent,
-			atts: node.nodeType !== 1 ? [] : getAttributes(node.attributes),
-			type: node.nodeType === 3 ? 'text' : node.nodeType === 8 ? 'comment' : node.tagName.toLowerCase(),
+			attributes: node.nodeType !== 1 ? [] : getAttributes(node.attributes),
+			type:
+				node.nodeType === NODE_TYPE_TEXT
+					? 'text'
+					: node.nodeType === NODE_TYPE_COMMENT
+					? 'comment'
+					: node.tagName.toLowerCase(),
 			node: node,
 		};
+
 		details.isSVG = isSVG || details.type === 'svg';
-		details.children = createDOMMap(node, details.isSVG);
+		details.children =
+			isChild && isCustomElement({ node }) ? { domMap: [] } : createDOMMap(node, true, details.isSVG);
 		return details;
 	});
+
+	return {
+		domMap,
+	};
 };
 
 const getStyleMap = function (styles) {
@@ -80,37 +112,47 @@ const diffStyles = function (elem, styles) {
 	changeStyles(elem, styleMap);
 };
 
-const removeAttributes = function (elem, atts) {
-	atts.forEach(function (attribute) {
+const removeAttributes = function (elem, attributes) {
+	attributes.forEach(function (attribute) {
 		// If the attribute is a class, use className
 		// Else if it's style, remove all styles
 		// Otherwise, use removeAttribute()
-		if (attribute.att === 'class') {
-			elem.className = '';
-		} else if (attribute.att === 'style') {
+		if (attribute.attributeName === 'class') {
+			try {
+				// The class name is read only (e.g. for svg)
+				elem.className = '';
+			} catch (error) {
+				elem.removeAttribute('class');
+			}
+		} else if (attribute.attributeName === 'style') {
 			removeStyles(elem, Array.prototype.slice.call(elem.style));
 		} else {
-			elem.removeAttribute(attribute.att);
+			elem.removeAttribute(attribute.attributeName);
 		}
 	});
 };
 
 /**
  * Add attributes to an element
- * @param {Node}  elem The element
- * @param {Array} atts The attributes to add
+ * @param {HTMLElement}  elem The element
+ * @param {Array} attributes The attributes to add
  */
-const addAttributes = function (elem, atts) {
-	atts.forEach(function (attribute) {
+const addAttributes = function (elem, attributes) {
+	attributes.forEach(function (attribute) {
 		// If the attribute is a class, use className
 		// Else if it's style, diff and update styles
 		// Otherwise, set the attribute
-		if (attribute.att === 'class') {
-			elem.className = attribute.value;
-		} else if (attribute.att === 'style') {
+		if (attribute.attributeName === 'class') {
+			try {
+				// The class name is read only (e.g. for svg)
+				elem.className = attribute.value;
+			} catch (error) {
+				elem.setAttribute('class', attribute.value || '');
+			}
+		} else if (attribute.attributeName === 'style') {
 			diffStyles(elem, attribute.value);
 		} else {
-			elem.setAttribute(attribute.att, attribute.value || true);
+			elem.setAttribute(attribute.attributeName, attribute.value || '');
 		}
 	});
 };
@@ -120,21 +162,21 @@ const addAttributes = function (elem, atts) {
  * @param  {Object} template The new template
  * @param  {Object} existing The existing DOM node
  */
-const diffAtts = function (template, existing) {
+const diffAttributes = function (template, existing) {
 	// Get attributes to remove
-	const remove = existing.atts.filter(function (att) {
-		const getAtt = template.atts.find(function (newAtt) {
-			return att.att === newAtt.att;
+	const remove = existing.attributes.filter(function (attribute) {
+		const getAtt = template.attributes.find(function (newAtt) {
+			return attribute.attributeName === newAtt.attributeName;
 		});
 		return getAtt === undefined;
 	});
 
 	// Get attributes to change
-	const change = template.atts.filter(function (att) {
-		const getAtt = find(existing.atts, function (existingAtt) {
-			return att.att === existingAtt.att;
+	const change = template.attributes.filter(function (attribute) {
+		const getAtt = find(existing.attributes, function (existingAtt) {
+			return attribute.attributeName === existingAtt.attributeName;
 		});
-		return getAtt === undefined || getAtt.value !== att.value;
+		return getAtt === undefined || getAtt.value !== attribute.value;
 	});
 
 	// Add/remove any required attributes
@@ -145,9 +187,10 @@ const diffAtts = function (template, existing) {
 /**
  * Make an HTML element
  * @param  {Object} elem The element details
- * @return {Node}        The HTML element
+ * @param  {Object} templateResult
+ * @return {HTMLElement|false}        The HTML element
  */
-const makeElem = function (elem) {
+const makeElem = function (elem, templateResult) {
 	// Create the element
 	let node;
 	if (elem.type === 'text') {
@@ -161,32 +204,41 @@ const makeElem = function (elem) {
 	}
 
 	// Add attributes
-	addAttributes(node, elem.atts);
+	addAttributes(node, elem.attributes);
 
 	// If the element has child nodes, create them
 	// Otherwise, add textContent
-	if (elem.children.length > 0) {
-		elem.children.forEach(function (childElem) {
-			node.appendChild(makeElem(childElem));
-		});
+
+	if (elem.children.domMap.length > 0) {
+		diff(elem.children, { domMap: [] }, node);
+	} else if (templateResult.plainlySetInnerHTML) {
+		node.innerHTML = templateResult.innerHTML;
 	} else if (elem.type !== 'text') {
 		node.textContent = elem.content;
 	}
-
 	return node;
 };
 
 const isCustomElement = (element) => {
-	return element.node?.$$element?.hasOwnUpdateFlow ?? false;
+	return element.node.tagName && element.node.tagName.includes('-');
 };
 
 /**
  * Diff the existing DOM node versus the template
- * @param  {Array} templateMap A DOM tree map of the template content
- * @param  {Array} domMap      A DOM tree map of the existing DOM node
- * @param  {Node}  elem        The element to render content into
+ * @param  {{ domMap: Array, plainlySetInnerHTML?: boolean, innerHTML?: string }} templateResult A DOM tree map of the template content
+ * @param  {{ domMap: array }} domResult      A DOM tree map of the existing DOM node
+ * @param  {HTMLElement}  elem        The element to render content into
  */
-const diff = function (templateMap, domMap, elem) {
+const diff = function (templateResult, domResult, elem) {
+	const templateMap = templateResult.domMap;
+
+	if (templateResult.plainlySetInnerHTML) {
+		elem.innerHTML = templateResult.innerHTML;
+		return;
+	}
+
+	const domMap = domResult.domMap;
+
 	// If extra elements in domMap, remove them
 	let count = domMap.length - templateMap.length;
 	if (count > 0) {
@@ -199,18 +251,24 @@ const diff = function (templateMap, domMap, elem) {
 	templateMap.forEach(function (node, index) {
 		// If element doesn't exist, create it
 		if (!domMap[index]) {
-			elem.appendChild(makeElem(templateMap[index]));
+			const newElement = makeElem(node, node.children);
+			elem.appendChild(newElement);
 			return;
 		}
 
 		// If element is not the same type, replace it with new element
 		if (templateMap[index].type !== domMap[index].type) {
-			domMap[index].node.parentNode.replaceChild(makeElem(templateMap[index]), domMap[index].node);
+			domMap[index].node.parentNode.replaceChild(makeElem(templateMap[index], node.children), domMap[index].node);
 			return;
 		}
 
 		// If attributes are different, update them
-		diffAtts(templateMap[index], domMap[index]);
+		diffAttributes(templateMap[index], domMap[index]);
+
+		if (node.children.plainlySetInnerHTML && domMap[index]) {
+			domMap[index].innerHTML = node.children.innerHTML;
+			return;
+		}
 
 		// If content is different, update it
 		if (templateMap[index].content !== domMap[index].content) {
@@ -221,7 +279,7 @@ const diff = function (templateMap, domMap, elem) {
 		}
 
 		// If target element should be empty, wipe it
-		if (domMap[index].children.length > 0 && node.children.length < 1) {
+		if (domMap[index].children.domMap.length > 0 && node.children.domMap.length < 1) {
 			if (!isCustomElement(domMap[index])) {
 				// ignore custom elements.
 				domMap[index].node.innerHTML = '';
@@ -231,7 +289,11 @@ const diff = function (templateMap, domMap, elem) {
 
 		// If element is empty and shouldn't be, build it up
 		// This uses a document fragment to minimize reflows
-		if (domMap[index].children.length < 1 && node.children.length > 0) {
+		if (domMap[index].children.domMap.length === 0 && node.children.domMap.length > 0) {
+			if (isCustomElement(domMap[index])) {
+				return;
+			}
+
 			const fragment = document.createDocumentFragment();
 			diff(node.children, domMap[index].children, fragment);
 			elem.appendChild(fragment);
@@ -239,18 +301,19 @@ const diff = function (templateMap, domMap, elem) {
 		}
 
 		// If there are existing child elements that need to be modified, diff them
-		if (node.children.length > 0) {
-			diff(node.children, domMap[index].children, domMap[index].node);
+		if (node.children.domMap.length > 0) {
+			if (!isCustomElement(node)) {
+				diff(node.children, domMap[index].children, domMap[index].node);
+			}
 		}
 	});
 };
 
 const render = (template, target) => {
-	diff(createDOMMap(convertStringToHTML(template)), createDOMMap(target), target);
+	const templateDOMMap = createDOMMap(convertStringToHTML(template), false, false, 'template');
+	const domMap = createDOMMap(target, false, false, 'dom');
 
-	target.$$element = {
-		hasOwnUpdateFlow: true,
-	};
+	diff(templateDOMMap, domMap, target);
 };
 
 export { render };

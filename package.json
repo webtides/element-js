@@ -3,11 +3,6 @@
 	"version": "0.3.3",
 	"module": "index.js",
 	"main": "dist/index.js",
-	"exports": {
-		"browser": "./dist/index.js",
-		"import": "./index.js",
-		"default": "./index.js"
-	},
 	"files": [
 		"/dist",
 		"/src",
