@@ -435,7 +435,7 @@ For detailed information see the documentation on [lit-html.polymer-project-org]
 To render a template from your element just define a `template()` method and return a `tagged template literal`.
 
 ```javascript
-export class MyElement extends TemplateElement {
+export class MyElement extends LitTemplateElement {
     properties() {
         return {
             name: 'John'
@@ -471,7 +471,7 @@ Slots are a very powerful feature when using shadow DOM. By providing slots your
 With this pattern you can build things like Modals, Dialogs, etc. where can encapsulate all the behaviour in the Shadow DOM and let the user pass any content inside the element.
 
 ```javascript
-export class ModalElement extends TemplateElement {
+export class ModalElement extends LitTemplateElement {
     template() {
         return html`
             <div class="backdrop">
@@ -516,7 +516,7 @@ In the examples above we have only seen very simple templates. In real elements 
 Lets look at a slightly more advanced element
 
 ```javascript
-export class FormControl extends TemplateElement {
+export class FormControl extends LitTemplateElement {
     properties() {
         return {
             label: '',
@@ -528,22 +528,22 @@ export class FormControl extends TemplateElement {
     template() {
         return html`
             ${this.label
-                ? html`
+            ? html`
                       <label for="input-${this.name}">
                           ${this.label}
                       </label>
                   `
-                : ''}
+            : ''}
             <div class="control">
                 <input id="input-${this.name}" name="${this.name}" aria-describedby="${this.name}-help" />
             </div>
             ${this.helpMessage
-                ? html`
+            ? html`
                       <span id="${this.name}-help">
                           ${this.helpMessage}
                       </span>
                   `
-                : ''}
+            : ''}
         `;
     }
 }
@@ -552,7 +552,7 @@ export class FormControl extends TemplateElement {
 Although we still left out some very important things the template starts to get complicated. To clean this up we can improve the readability by implementing parts of the template in dedicated template functions
 
 ```javascript
-export class FormControl extends TemplateElement {
+export class FormControl extends LitTemplateElement {
     properties() {
         return {
             label: '',
@@ -612,7 +612,7 @@ Example:
 ```
 
 ```javascript
-export class ShadowElement extends TemplateElement {
+export class ShadowElement extends LitTemplateElement {
     constructor() {
         super({ shadowRender: true, adoptGlobalStyles: true });
     }

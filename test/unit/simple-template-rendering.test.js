@@ -1,9 +1,9 @@
 /* eslint-disable no-unused-expressions */
 import { fixture, defineCE, assert, nextFrame } from '@open-wc/testing';
-import { html, SimpleTemplateElement } from 'src/SimpleTemplateElement';
+import { html, TemplateElement } from 'src/SimpleTemplateElement';
 
 const lightTag = defineCE(
-	class extends SimpleTemplateElement {
+	class extends TemplateElement {
 		template() {
 			return html` <div>light content</div> `;
 		}
@@ -11,7 +11,7 @@ const lightTag = defineCE(
 );
 
 const shadowTag = defineCE(
-	class extends SimpleTemplateElement {
+	class extends TemplateElement {
 		constructor() {
 			super({ shadowRender: true });
 		}
@@ -23,7 +23,7 @@ const shadowTag = defineCE(
 );
 
 const deferTag = defineCE(
-	class extends SimpleTemplateElement {
+	class extends TemplateElement {
 		constructor() {
 			super({ deferUpdate: true });
 		}
@@ -35,7 +35,7 @@ const deferTag = defineCE(
 );
 
 const noHtmlTag = defineCE(
-	class extends SimpleTemplateElement {
+	class extends TemplateElement {
 		template() {
 			return `<div>no html template result content</div>`;
 		}
@@ -43,7 +43,7 @@ const noHtmlTag = defineCE(
 );
 
 const encodedHtmlTag = defineCE(
-	class extends SimpleTemplateElement {
+	class extends TemplateElement {
 		template() {
 			return html`${'<div>dangerous html</div>'}`;
 		}
