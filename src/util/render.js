@@ -216,6 +216,7 @@ const makeElem = function (elem, templateResult) {
 	} else if (elem.type !== 'text') {
 		node.textContent = elem.content;
 	}
+
 	return node;
 };
 
@@ -295,7 +296,7 @@ const diff = function (templateResult, domResult, elem) {
 			}
 
 			const fragment = document.createDocumentFragment();
-			diff(node.children, domMap[index].children, fragment);
+			diff(node.children, domMap[index].children, domMap[index].node);
 			elem.appendChild(fragment);
 			return;
 		}
