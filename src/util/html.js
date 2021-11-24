@@ -34,23 +34,22 @@ class Part {
 class TemplatePart extends Part {
 	$$templatePart = true;
 
-	constructor(key) {
-		super(key);
-		this.key = key?.$$templatePart ? key.key : key;
+	constructor(value) {
+		super(value?.$$templatePart ? value.value : value);
 	}
 
 	toString() {
-		if (this.key === null || this.key === undefined) {
+		if (this.value === null || this.value === undefined) {
 			return '';
-		} else if (this.key === '') {
+		} else if (this.value === '') {
 			return '';
-		} else if (Array.isArray(this.key)) {
-			return this.key.map((row) => new TemplatePart(row).toString()).join('');
-		} else if (this.key?.$$templateLiteral) {
-			return this.key.toString();
-		} else if (typeof this.key === 'function') {
+		} else if (Array.isArray(this.value)) {
+			return this.value.map((row) => new TemplatePart(row).toString()).join('');
+		} else if (this.value?.$$templateLiteral) {
+			return this.value.toString();
+		} else if (typeof this.value === 'function') {
 			// A directive
-			return this.key(this);
+			return this.value(this);
 		}
 		return super.toString();
 	}
@@ -59,13 +58,13 @@ class TemplatePart extends Part {
 class TemplateLiteral {
 	$$templateLiteral = true;
 
-	constructor(strings, ...keys) {
+	constructor(strings, ...values) {
 		let result = [];
 		for (let i = 0; i < strings.length; i++) {
 			result.push(strings[i]);
 
-			if (i < keys.length) {
-				result.push(new TemplatePart(keys[i]));
+			if (i < values.length) {
+				result.push(new TemplatePart(values[i]));
 			}
 		}
 		this.result = result;
@@ -76,8 +75,8 @@ class TemplateLiteral {
 	}
 }
 
-const html = function (strings, ...keys) {
-	return new TemplateLiteral(strings, ...keys);
+const html = function (strings, ...values) {
+	return new TemplateLiteral(strings, ...values);
 };
 
 const unsafeHTML = (string) => {

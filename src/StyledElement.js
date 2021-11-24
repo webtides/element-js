@@ -1,6 +1,6 @@
-import { BaseElement } from './BaseElement.js';
-import { supportsAdoptingStyleSheets, getShadowParentOrBody } from './util/DOMHelper.js';
-export { i18n } from './util/i18n.js';
+import { BaseElement } from './BaseElement';
+import { supportsAdoptingStyleSheets, getShadowParentOrBody } from './util/DOMHelper';
+export { i18n } from './util/i18n';
 
 class StyledElement extends BaseElement {
 	static globalStyles = null;

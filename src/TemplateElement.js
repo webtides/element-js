@@ -1,12 +1,12 @@
-import { StyledElement } from './StyledElement.js';
-import { html, attr, unsafeHTML } from './util/html.js';
-import { render } from './util/render.js';
-export { i18n } from './util/i18n.js';
+import { StyledElement } from './StyledElement';
+import { html, attr, unsafeHTML } from './util/html';
+import { render } from './util/render';
+export { i18n } from './util/i18n';
 
 class TemplateElement extends StyledElement {
 	constructor(options) {
 		super({
-			deferUpdate: true,
+			deferUpdate: false,
 			shadowRender: false,
 			styles: [],
 			adoptGlobalStyles: true,
