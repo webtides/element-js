@@ -4,6 +4,8 @@ import { render } from './util/render';
 export { i18n } from './util/i18n';
 
 class TemplateElement extends StyledElement {
+	static _$templateElement$ = true;
+
 	constructor(options) {
 		super({
 			deferUpdate: false,

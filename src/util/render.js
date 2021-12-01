@@ -1,6 +1,8 @@
 const NODE_TYPE_COMMENT = 8;
 const NODE_TYPE_TEXT = 3;
 
+const _cachedTemplateElements = {};
+
 const convertStringToHTML = (templateString) => {
 	const parser = new DOMParser();
 	const document = parser.parseFromString(`<main>${templateString}</main>`, 'text/html');
@@ -61,7 +63,7 @@ const createDOMMap = function (element, isChild = false, isSVG = false, type = '
 
 		details.isSVG = isSVG || details.type === 'svg';
 		details.children =
-			isChild && isCustomElement({ node }) ? { domMap: [] } : createDOMMap(node, true, details.isSVG);
+			isChild && isTemplateElement({ node }) ? { domMap: [] } : createDOMMap(node, true, details.isSVG);
 		return details;
 	});
 
@@ -79,10 +81,17 @@ const removeAttributes = function (element, attributes) {
 /**
  * Add attributes to an element
  * @param {HTMLElement}  element The element
- * @param {Array} attributes The attributes to add
+ * @param {[{ attributeName: string, value: string}]} attributes The attributes to add
  */
 const addAttributes = function (element, attributes) {
 	attributes.forEach(function (attribute) {
+		if (attribute.attributeName.startsWith('.')) {
+			// Directly set the attribute on the element instance as property
+			// instead of setting the attribute.
+			element[attribute.attributeName.substring(1)] = attribute.value || '';
+			return;
+		}
+
 		element.setAttribute(attribute.attributeName, attribute.value || '');
 	});
 };
@@ -120,7 +129,7 @@ const diffAttributes = function (template, existing) {
  * @param  {Object} templateResult
  * @return {HTMLElement|false}        The HTML element
  */
-const makeElem = function (element, templateResult) {
+const makeElement = function (element, templateResult) {
 	// Create the element
 	let node;
 	if (element.type === 'text') {
@@ -150,8 +159,24 @@ const makeElem = function (element, templateResult) {
 	return node;
 };
 
-const isCustomElement = (element) => {
-	return element.node.tagName && element.node.tagName.includes('-');
+const isTemplateElement = (element) => {
+	const tagName = element.node?.tagName?.toLowerCase() ?? false;
+	if (!tagName || !tagName.includes('-')) {
+		return false;
+	}
+
+	if (_cachedTemplateElements[tagName]) {
+		return true;
+	}
+
+	const elementClass = customElements.get(tagName);
+	const isTemplateElement = elementClass && elementClass._$templateElement$ === true;
+
+	if (isTemplateElement) {
+		_cachedTemplateElements[tagName] = elementClass;
+	}
+
+	return isTemplateElement;
 };
 
 /**
@@ -182,14 +207,17 @@ const diff = function (templateResult, domResult, element) {
 	templateMap.forEach(function (node, index) {
 		// If element doesn't exist, create it
 		if (!domMap[index]) {
-			const newElement = makeElem(node, node.children);
+			const newElement = makeElement(node, node.children);
 			element.appendChild(newElement);
 			return;
 		}
 
 		// If element is not the same type, replace it with new element
 		if (templateMap[index].type !== domMap[index].type) {
-			domMap[index].node.parentNode.replaceChild(makeElem(templateMap[index], node.children), domMap[index].node);
+			domMap[index].node.parentNode.replaceChild(
+				makeElement(templateMap[index], node.children),
+				domMap[index].node,
+			);
 			return;
 		}
 
@@ -203,7 +231,7 @@ const diff = function (templateResult, domResult, element) {
 
 		// If content is different, update it
 		if (templateMap[index].content !== domMap[index].content) {
-			if (!isCustomElement(domMap[index])) {
+			if (!isTemplateElement(domMap[index])) {
 				// ignore custom elements.
 				domMap[index].node.textContent = templateMap[index].content;
 			}
@@ -211,7 +239,7 @@ const diff = function (templateResult, domResult, element) {
 
 		// If target element should be empty, wipe it
 		if (domMap[index].children.domMap.length > 0 && node.children.domMap.length < 1) {
-			if (!isCustomElement(domMap[index])) {
+			if (!isTemplateElement(domMap[index])) {
 				// ignore custom elements.
 				domMap[index].node.innerHTML = '';
 			}
@@ -221,7 +249,7 @@ const diff = function (templateResult, domResult, element) {
 		// If element is empty and shouldn't be, build it up
 		// This uses a document fragment to minimize reflows
 		if (domMap[index].children.domMap.length === 0 && node.children.domMap.length > 0) {
-			if (isCustomElement(domMap[index])) {
+			if (isTemplateElement(domMap[index])) {
 				return;
 			}
 
@@ -233,7 +261,7 @@ const diff = function (templateResult, domResult, element) {
 
 		// If there are existing child elements that need to be modified, diff them
 		if (node.children.domMap.length > 0) {
-			if (!isCustomElement(node)) {
+			if (!isTemplateElement(node)) {
 				diff(node.children, domMap[index].children, domMap[index].node);
 			}
 		}
