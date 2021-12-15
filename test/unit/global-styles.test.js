@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-expressions */
-import { fixture, defineCE, assert, expect, html, nextFrame, fixtureSync } from '@open-wc/testing';
-import { TemplateElement } from 'src/TemplateElement';
-import { StyledElement } from 'src/StyledElement';
+import { fixture, defineCE, assert, expect, nextFrame, fixtureSync } from '@open-wc/testing';
+import { TemplateElement, html } from '../../src/TemplateElement';
+import { StyledElement } from '../../src/StyledElement';
 
 const color = 'rgb(255, 240, 0)';
 const color2 = 'rgb(255, 0, 255)';

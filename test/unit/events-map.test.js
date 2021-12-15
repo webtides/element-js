@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-expressions */
 import { fixture, defineCE, assert, nextFrame } from '@open-wc/testing';
-import { BaseElement } from 'src/BaseElement';
+import { BaseElement } from '../../src/BaseElement';
 
 const tag = defineCE(
 	class extends BaseElement {
