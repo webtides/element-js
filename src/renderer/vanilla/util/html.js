@@ -1,4 +1,4 @@
-import { camelToDash } from './AttributeParser';
+import { camelToDash } from '../../../util/AttributeParser';
 
 class Part {
 	constructor(value) {

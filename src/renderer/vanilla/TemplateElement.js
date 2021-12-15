@@ -1,9 +1,11 @@
-import { StyledElement } from './StyledElement';
-import { html } from 'lit-html';
-import { render } from 'lit-html/lib/shady-render';
-export { i18n } from './util/i18n';
+import { StyledElement } from '../../StyledElement';
+import { html, attr, unsafeHTML } from './util/html';
+import { render } from './util/render';
+export { i18n } from '../../util/i18n';
 
-class LitTemplateElement extends StyledElement {
+class TemplateElement extends StyledElement {
+	static _$templateElement$ = true;
+
 	constructor(options) {
 		super({
 			deferUpdate: false,
@@ -31,16 +33,7 @@ class LitTemplateElement extends StyledElement {
 
 	renderTemplate() {
 		const template = this._template || this.template();
-		if (typeof template === 'string') {
-			// just a plain string literal. no lit-html required
-			this.getRoot().innerHTML = `${template}`;
-		} else {
-			// render via lit-html
-			render(html` ${template} `, this.getRoot(), {
-				scopeName: this.localName,
-				eventContext: this,
-			});
-		}
+		render(template, this.getRoot());
 	}
 
 	getRoot() {
@@ -48,4 +41,4 @@ class LitTemplateElement extends StyledElement {
 	}
 }
 
-export { LitTemplateElement, html, render };
+export { TemplateElement, html, unsafeHTML, render, attr };
