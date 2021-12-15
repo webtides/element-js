@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-expressions */
 import { fixture, defineCE, assert } from '@open-wc/testing';
-import { i18n } from 'src/util/i18n';
+import { i18n } from '../../src/util/i18n';
 import { StyledElement } from '../../src/StyledElement';
 
 describe('util/i18n', () => {
@@ -34,7 +34,7 @@ describe('util/i18n', () => {
 		const translation = i18n('key');
 		assert.equal(translation, 'key');
 	});
-	
+
 	it('will fallback to fallback if global i18n config is missing and fallback is passed', async () => {
 		window.elementjs = null;
 		const translation = i18n('key', 'fallback');

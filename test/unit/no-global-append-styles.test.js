@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-expressions */
 
-import { fixtureSync, defineCE, assert, expect, html, nextFrame } from '@open-wc/testing';
-import { TemplateElement } from 'src/TemplateElement';
+import { fixtureSync, defineCE, assert, expect, nextFrame } from '@open-wc/testing';
+import { TemplateElement, html } from '../../src/TemplateElement';
 
 const color2 = 'rgb(255, 0, 255)';
 const shadowTag = defineCE(

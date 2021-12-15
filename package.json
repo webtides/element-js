@@ -31,9 +31,8 @@
 		"lit-html": "^1.2.1"
 	},
 	"devDependencies": {
-		"@open-wc/semantic-dom-diff": "^0.17.9",
-		"@open-wc/testing": "^2.5.16",
-		"@open-wc/testing-karma": "^3.3.19",
+		"@open-wc/testing": "^3.0.3",
+		"@web/test-runner": "^0.13.22",
 		"babel-eslint": "^10.1.0",
 		"babel-plugin-module-resolver": "^4.0.0",
 		"deepmerge": "^4.2.2",
@@ -60,8 +59,8 @@
 	"scripts": {
 		"lint": "eslint src/**/*.js",
 		"prepare": "esbuild index.js --outfile=dist/index.js --bundle --format=esm --sourcemap --target=chrome79,firefox68,safari12,edge79",
-		"test": "karma start",
-		"test:coverage": "karma start --coverage",
-		"test:watch": "karma start --auto-watch=true --single-run=false"
+		"test": "web-test-runner test/**/*.test.js --node-resolve",
+		"test:coverage": "web-test-runner test/**/*.test.js --node-resolve --coverage",
+		"test:watch": "web-test-runner test/**/*.test.js --node-resolve --watch"
 	}
 }

@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-expressions */
-import { fixture, defineCE, assert, expect, html, nextFrame } from '@open-wc/testing';
-import { TemplateElement } from 'src/TemplateElement';
-import { StyledElement } from 'src/StyledElement';
+import { fixture, defineCE, assert, expect, nextFrame } from '@open-wc/testing';
+import { TemplateElement, html } from '../../src/TemplateElement';
+import { StyledElement } from '../../src/StyledElement';
 
 const color = 'rgb(255, 240, 0)';
 const shadowTag = defineCE(
@@ -34,7 +34,7 @@ const lightTag = defineCE(
 describe('element-styles', () => {
 	it('adopts element styles in lightDom', async () => {
 		const el = await fixture(`<${lightTag}></${lightTag}>`);
-		await nextFrame;
+		await nextFrame();
 		const computedColor = await window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
 		assert.equal(computedColor, color);
 	});
