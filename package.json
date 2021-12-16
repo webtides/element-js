@@ -8,6 +8,18 @@
 		"/src",
 		"index.js"
 	],
+	"exports": {
+		".": {
+			"browser": "./dist/index.js",
+			"import": "./index.js",
+			"default": "./index.js"
+		},
+		"./src/*": "./src/*.js",
+		"./src/util/*": "./src/util/*.js",
+		"./src/renderer/vanilla": "./src/renderer/vanilla/index.js",
+		"./src/renderer/vanilla/TemplateElement": "./src/renderer/vanilla/TemplateElement.js",
+		"./src/renderer/vanilla/util/*": "./src/renderer/vanilla/util/*.js"
+	},
 	"repository": "https://github.com/webtides/element-js.git",
 	"author": "@webtides",
 	"license": "MIT",
