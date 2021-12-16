@@ -1,5 +1,5 @@
 import { StyledElement } from '../../StyledElement';
-import { html, attr, unsafeHTML } from './util/html';
+import { html, spreadAttributes, unsafeHTML } from './util/html';
 import { render } from './util/render';
 export { i18n } from '../../util/i18n';
 
@@ -41,4 +41,4 @@ class TemplateElement extends StyledElement {
 	}
 }
 
-export { TemplateElement, html, unsafeHTML, render, attr };
+export { TemplateElement, html, unsafeHTML, render, spreadAttributes };

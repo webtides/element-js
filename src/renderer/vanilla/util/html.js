@@ -83,7 +83,7 @@ const unsafeHTML = (string) => {
 	return () => `<!--$$plainly-set-inner-html-->${decodeURIComponent(string)}`;
 };
 
-const attr = (attributes) => {
+const spreadAttributes = (attributes) => {
 	return () => {
 		return Object.keys(attributes)
 			.map((key) => {
@@ -93,4 +93,4 @@ const attr = (attributes) => {
 	};
 };
 
-export { html, unsafeHTML, attr };
+export { html, unsafeHTML, spreadAttributes };
