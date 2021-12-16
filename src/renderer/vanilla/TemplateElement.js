@@ -1,7 +1,6 @@
 import { StyledElement } from '../../StyledElement';
 import { html, spreadAttributes, unsafeHTML } from './util/html';
 import { render } from './util/render';
-import { attachDeclarativeShadowDOM } from '../../util/DOMHelper';
 export { i18n } from '../../util/i18n';
 
 class TemplateElement extends StyledElement {
@@ -20,12 +19,8 @@ class TemplateElement extends StyledElement {
 		});
 		this._template = this._options.template;
 
-		if (this._options.shadowRender) {
-			const internals = this.attachInternals();
-
-			if (!internals?.shadowRoot) {
-				this.attachShadow({ mode: 'open' });
-			}
+		if (this._options.shadowRender && !this.shadowRoot) {
+			this.attachShadow({ mode: 'open' });
 		}
 	}
 
