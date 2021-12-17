@@ -5,45 +5,45 @@ import { StyledElement } from '../../src/StyledElement';
 
 const color = 'rgb(255, 240, 0)';
 const shadowTag = defineCE(
-	class extends TemplateElement {
-		constructor() {
-			super({ shadowRender: true });
-		}
+    class extends TemplateElement {
+        constructor() {
+            super({ shadowRender: true });
+        }
 
-		styles() {
-			return [`p {color: ${color};}`];
-		}
+        styles() {
+            return [`p {color: ${color};}`];
+        }
 
-		template() {
-			return html` <p ref="coloredP">red content</p> `;
-		}
-	},
+        template() {
+            return html` <p ref="coloredP">red content</p> `;
+        }
+    },
 );
 
 const lightTag = defineCE(
-	class extends TemplateElement {
-		styles() {
-			return [`p {color: ${color};}`];
-		}
-		template() {
-			return html` <p ref="coloredP">light content</p> `;
-		}
-	},
+    class extends TemplateElement {
+        styles() {
+            return [`p {color: ${color};}`];
+        }
+        template() {
+            return html` <p ref="coloredP">light content</p> `;
+        }
+    },
 );
 
 describe('element-styles', () => {
-	it('adopts element styles in lightDom', async () => {
-		const el = await fixture(`<${lightTag}></${lightTag}>`);
-		await nextFrame();
-		const computedColor = await window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
-		assert.equal(computedColor, color);
-	});
+    it('adopts element styles in lightDom', async () => {
+        const el = await fixture(`<${lightTag}></${lightTag}>`);
+        await nextFrame();
+        const computedColor = await window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
+        assert.equal(computedColor, color);
+    });
 
-	it('adopts element styles in shadowDom', async () => {
-		const el = await fixture(`<${shadowTag}></${shadowTag}>`);
-		//this needs to be called to find the styles added ar runtime
-		await nextFrame();
-		const computedColor = await window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
-		assert.equal(computedColor, color);
-	});
+    it('adopts element styles in shadowDom', async () => {
+        const el = await fixture(`<${shadowTag}></${shadowTag}>`);
+        //this needs to be called to find the styles added ar runtime
+        await nextFrame();
+        const computedColor = await window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
+        assert.equal(computedColor, color);
+    });
 });

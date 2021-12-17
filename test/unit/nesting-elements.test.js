@@ -3,63 +3,63 @@ import { fixture, defineCE, assert, html, nextFrame } from '@open-wc/testing';
 import { BaseElement } from '../../src/BaseElement';
 
 const outerTag = defineCE(
-	class extends BaseElement {
-		constructor() {
-			super({ shadowRender: true });
-		}
+    class extends BaseElement {
+        constructor() {
+            super({ shadowRender: true });
+        }
 
-		connected() {
-			this.connectedCalled = true;
-		}
+        connected() {
+            this.connectedCalled = true;
+        }
 
-		properties() {
-			return {
-				connectedCalled: false,
-			};
-		}
+        properties() {
+            return {
+                connectedCalled: false,
+            };
+        }
 
-		template() {
-			return html`
-				<div>outer content</div>
-				<slot></slot>
-			`;
-		}
-	},
+        template() {
+            return html`
+                <div>outer content</div>
+                <slot></slot>
+            `;
+        }
+    },
 );
 
 const innerTag = defineCE(
-	class extends BaseElement {
-		connected() {
-			this.connectedCalled = true;
-		}
+    class extends BaseElement {
+        connected() {
+            this.connectedCalled = true;
+        }
 
-		properties() {
-			return {
-				connectedCalled: false,
-			};
-		}
+        properties() {
+            return {
+                connectedCalled: false,
+            };
+        }
 
-		template() {
-			return html` <div>inner content</div> `;
-		}
-	},
+        template() {
+            return html` <div>inner content</div> `;
+        }
+    },
 );
 
 describe('nesting-elements', () => {
-	it('nested elements will get connected along side outer elements', async () => {
-		const el = await fixture(`
+    it('nested elements will get connected along side outer elements', async () => {
+        const el = await fixture(`
             <${outerTag}>
                 <${innerTag} ref="nested"></${innerTag}>
             </${outerTag}>
         `);
 
-		await nextFrame();
+        await nextFrame();
 
-		assert.isTrue(el.connectedCalled);
+        assert.isTrue(el.connectedCalled);
 
-		const innerElement = el.querySelector(`${innerTag}`);
+        const innerElement = el.querySelector(`${innerTag}`);
 
-		await nextFrame();
-		assert.isTrue(innerElement.connectedCalled);
-	});
+        await nextFrame();
+        assert.isTrue(innerElement.connectedCalled);
+    });
 });
