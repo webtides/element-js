@@ -72,3 +72,13 @@ export function decodeAttribute(attribute) {
 		.replace(/&quot;/g, '"')
 		.replace(/&apos;/g, "'");
 }
+
+export function encodeAttribute(attribute) {
+	return `${attribute}`
+		.replace(/'/g, '&apos;')
+		.replace(/"/g, '&quot;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/\r\n/g, '\n')
+		.replace(/[\r\n]/g, '\n');
+}

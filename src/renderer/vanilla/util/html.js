@@ -1,33 +1,15 @@
-import { camelToDash } from '../../../util/AttributeParser';
+import { camelToDash, decodeAttribute, encodeAttribute } from '../../../util/AttributeParser';
 
 class Part {
 	constructor(value) {
 		this.value = value;
 	}
 
-	/**
-	 * TODO: do we really need this here ??
-	 *
-	 * @param attribute
-	 * @param preserveCR
-	 * @returns {string}
-	 */
-	encodeAttribute(attribute, preserveCR = false) {
-		preserveCR = preserveCR ? '&#13;' : '\n';
-		return `${attribute}`
-			.replace(/'/g, '&apos;') /* The 4 other predefined entities, required. */
-			.replace(/"/g, '&quot;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;')
-			.replace(/\r\n/g, preserveCR) /* Must be before the next replacement. */
-			.replace(/[\r\n]/g, preserveCR);
-	}
-
 	toString() {
 		if (typeof this.value !== 'string') {
-			return this.encodeAttribute(JSON.stringify(this.value));
+			return encodeAttribute(JSON.stringify(this.value));
 		}
-		return this.encodeAttribute(this.value);
+		return encodeAttribute(this.value);
 	}
 }
 
@@ -80,7 +62,7 @@ const html = function (strings, ...values) {
 };
 
 const unsafeHTML = (string) => {
-	return () => `<!--$$plainly-set-inner-html-->${decodeURIComponent(string)}`;
+	return () => `<!--$$plainly-set-inner-html-->${decodeAttribute(string)}`;
 };
 
 const spreadAttributes = (attributes) => {
