@@ -1,6 +1,6 @@
 import { StyledElement } from './StyledElement';
 import { html } from 'lit-html';
-import { render } from 'lit-html/lib/shady-render';
+import { render } from 'lit-html/lib/shady-render.js';
 export { i18n } from './util/i18n';
 
 class TemplateElement extends StyledElement {
