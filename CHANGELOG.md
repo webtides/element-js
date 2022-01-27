@@ -15,6 +15,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## Unreleased
+
+### Added
+* a "vanilla" renderer with support for hydration and no dependencies
+
 ## [0.3.3] - 2021-09-22
 
 ### Added
