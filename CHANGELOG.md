@@ -15,10 +15,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
-## Unreleased
+## [0.4.0] - 2022-01-28
 
 ### Added
 * a "vanilla" renderer with support for hydration and no dependencies
+
+### Changed
+* uses new @web/test-runner isntead of karma (#27)
 
 ## [0.3.3] - 2021-09-22
 
