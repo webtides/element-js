@@ -14,7 +14,7 @@ const elementTag = defineCE(
 	},
 );
 
-const preferLastRefExpression = defineCE(
+const ignoreFollowingSingularExpression = defineCE(
 	class extends TemplateElement {
 		template() {
 			return html`<p ref="unique">no content</p>
@@ -47,16 +47,17 @@ describe('ref-registration', () => {
 		assert.isTrue(Array.prototype.isPrototypeOf(el.$refs.notsounique));
 	});
 
-	it('it prefers the last occuring ref expression in $refs map if its a [] expression', async () => {
+	it('it ignores a singular expressions that is followed by a [] expression', async () => {
 		const el = await fixture(`<${elementTag}></${elementTag}>`);
 		assert.exists(el.$refs.notsounique);
 		assert.equal(el.$refs.notsounique.length, 2);
 		assert.isTrue(Array.prototype.isPrototypeOf(el.$refs.notsounique));
 	});
 
-	it('it prefers the last occuring ref expression in $refs map if its a singular ref', async () => {
-		const el = await fixture(`<${preferLastRefExpression}></${preferLastRefExpression}>`);
+	it('it ignores a singular expressions that follows a [] expression', async () => {
+		const el = await fixture(`<${ignoreFollowingSingularExpression}></${ignoreFollowingSingularExpression}>`);
 		assert.exists(el.$refs.notsounique);
-		assert.isFalse(Array.prototype.isPrototypeOf(el.$refs.notsounique));
+		assert.equal(el.$refs.notsounique.length, 2);
+		assert.isTrue(Array.prototype.isPrototypeOf(el.$refs.notsounique));
 	});
 });

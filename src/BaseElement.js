@@ -408,15 +408,22 @@ class BaseElement extends HTMLElement {
 
 		refsArray.forEach((refNode) => {
 			const refKey = refNode.getAttribute('ref');
-			if (refKey.endsWith('[]')) {
-				const cleanKey = refKey.slice(0, -2);
-				if (!refsMap[cleanKey] || !Array.isArray(refsMap[cleanKey])) {
+			const isListKey = refKey.endsWith('[]');
+			const cleanKey = isListKey ? refKey.slice(0, -2) : refKey;
+			const hasListRef = Array.isArray(refsMap[cleanKey]);
+
+			if (isListKey) {
+				if (!refsMap[cleanKey] || !hasListRef) {
 					// create or overwrite previously registered single ref
 					refsMap[cleanKey] = [];
 				}
 				refsMap[cleanKey].push(cleanKey);
-			} else {
+			} else if (!hasListRef) {
 				refsMap[refKey] = refNode;
+			} else {
+				console.warn(
+					`Did not register singular ref ${refKey}, ${refNode} as a ref list is already registered under the same name.`,
+				);
 			}
 		});
 
