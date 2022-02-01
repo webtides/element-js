@@ -112,7 +112,7 @@ const diffAttributes = function (template, existing) {
 
 	// Get attributes to change
 	const change = template.attributes.filter(function (attribute) {
-		const getAtt = find(existing.attributes, function (existingAtt) {
+		const getAtt = existing.attributes.find((existingAtt) => {
 			return attribute.attributeName === existingAtt.attributeName;
 		});
 		return getAtt === undefined || getAtt.value !== attribute.value;
