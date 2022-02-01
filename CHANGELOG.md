@@ -15,6 +15,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+### Fixed
+vanilla-renderer: fixes attribute comparsion 
+
 ### Added
 * refs="id[]" aka possibbility to refrence a list of nodes to the $refs map. 
 
