@@ -15,12 +15,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [0.4.1] - 2022-02-01
+
 ### Fixed
 * vanilla-renderer: fixes attribute comparsion 
 
 ### Added
 * refs="id[]" aka possibbility to refrence a list of nodes to the $refs map. 
-
 
 ## [0.4.0] - 2022-01-28
 
