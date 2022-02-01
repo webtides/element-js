@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+### Added
+* refs="id[]" aka possibbility to refrence a list of nodes to the $refs map. 
+
+
 ## [0.4.0] - 2022-01-28
 
 ### Added
