@@ -947,11 +947,17 @@ export class MyElement extends BaseElement {
 ### Refs
 
 To avoid constant lookups of (child) elements from your elements _element-js_ will collect all elements with a `[ref=“id”]` attribute and make them available as an object on the element itself via the special `this.$refs` reference.
+_element-js_ also provides referencing a list of Nodes by adding a dangling `[]` to the refs id `[ref=“entries[]”]`. 
+Be aware that list references will override singular references with the same name as they are considered to be more explicit.  
 
 ```html
 <places-search>
 	<input type="text" ref="input"/>
-	<places-list ref="list"></places-list>
+	<places-list ref="list">
+		<list-entry ref="entries[]">A</list-entry>
+		<list-entry ref="entries[]">B</list-entry>
+		<list-entry ref="entries[]">C</list-entry>
+	</places-list>
 </places-search>
 ```
 
@@ -965,7 +971,10 @@ export class PlacesSearch extends BaseElement {
                 blur: (e) => {
                     // fetch places...
                     const places = [];
+                    // update singular ref
                     this.$refs.list = places;
+                    // do something with a list reference 
+                    this.$refs.entries.forEach( entry => console.log(entry.innerText)); // A , B , C
                 }
             }
         };
