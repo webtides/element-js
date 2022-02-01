@@ -408,7 +408,16 @@ class BaseElement extends HTMLElement {
 
 		refsArray.forEach((refNode) => {
 			const refKey = refNode.getAttribute('ref');
-			refsMap[refKey] = refNode;
+			if (refKey.endsWith('[]')) {
+				const cleanKey = refKey.slice(0, -2);
+				if (!refsMap[cleanKey] || !Array.isArray(refsMap[cleanKey])) {
+					// create or overwrite previously registered single ref
+					refsMap[cleanKey] = [];
+				}
+				refsMap[cleanKey].push(cleanKey);
+			} else {
+				refsMap[refKey] = refNode;
+			}
 		});
 
 		this.$refs = refsMap;
