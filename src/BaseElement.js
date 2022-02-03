@@ -417,7 +417,7 @@ class BaseElement extends HTMLElement {
 					// create or overwrite previously registered single ref
 					refsMap[cleanKey] = [];
 				}
-				refsMap[cleanKey].push(cleanKey);
+				refsMap[cleanKey].push(refNode);
 			} else if (!hasListRef) {
 				refsMap[refKey] = refNode;
 			} else {
