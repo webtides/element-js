@@ -50,8 +50,9 @@ describe('ref-registration', () => {
 	it('it ignores a singular expressions that is followed by a [] expression', async () => {
 		const el = await fixture(`<${elementTag}></${elementTag}>`);
 		assert.exists(el.$refs.notsounique);
-		assert.equal(el.$refs.notsounique.length, 2);
 		assert.isTrue(Array.prototype.isPrototypeOf(el.$refs.notsounique));
+		assert.equal(el.$refs.notsounique.length, 2);
+		assert.isTrue(el.$refs.notsounique[0] instanceof HTMLElement);
 	});
 
 	it('it ignores a singular expressions that follows a [] expression', async () => {
