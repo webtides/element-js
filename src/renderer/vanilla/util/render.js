@@ -10,6 +10,28 @@ const convertStringToHTML = (templateString) => {
 	return document.querySelector('main');
 };
 
+const isTemplateElement = (element) => {
+	const tagName = element.node?.tagName?.toLowerCase() ?? false;
+	if (!tagName || !tagName.includes('-')) {
+		return false;
+	}
+
+	if (_cachedTemplateElements[tagName]) {
+		return true;
+	}
+
+	const elementClass = customElements.get(tagName);
+
+	// TODO: that is not working right now. Allow passing a condition the "render" method.
+	const isTemplateElement = elementClass && elementClass._$templateElement$ === true;
+
+	if (isTemplateElement) {
+		_cachedTemplateElements[tagName] = elementClass;
+	}
+
+	return isTemplateElement;
+};
+
 /**
  * Create an array of the attributes on an element
  * @param  {NamedNodeMap} attributes The attributes on an element
@@ -29,43 +51,37 @@ const getAttributes = function (attributes) {
  *
  * @param  {HTMLElement}    element The element to map
  * @param  {Boolean} isSVG   If true, node is within an SVG
- * @return {{ domMap: Array, plainlySetInnerHTML?: boolean, innerHTML?: string }} A DOM tree map
+ * @return {{ domMap: Array }} A DOM tree map
  */
 const createDOMMap = function (element, isChild = false, isSVG = false, type = 'template') {
 	const children = [...element.childNodes];
 
-	// If the list contains a comment which says "$$plainly-set-inner-html" it means
-	// that the all children of the element will be set as unsafe `innerHTML´
-	// which means that there won't be any diffing or fancy things
-	// but we will just mark it as a pure component and leave it be.
-	for (const child of children) {
-		if (child?.nodeType === NODE_TYPE_COMMENT && child.textContent === '$$plainly-set-inner-html') {
-			return {
-				domMap: [],
-				plainlySetInnerHTML: true,
-				innerHTML: element.innerHTML,
+	const domMap = children
+		.map((node) => {
+			const details = {
+				content: node.childNodes && node.childNodes.length > 0 ? null : node.textContent,
+				attributes: node.nodeType !== 1 ? [] : getAttributes(node.attributes),
+				type:
+					node.nodeType === NODE_TYPE_TEXT
+						? 'text'
+						: node.nodeType === NODE_TYPE_COMMENT
+						? 'comment'
+						: node.tagName.toLowerCase(),
+				node: node,
 			};
-		}
-	}
 
-	const domMap = children.map((node, index) => {
-		const details = {
-			content: node.childNodes && node.childNodes.length > 0 ? null : node.textContent,
-			attributes: node.nodeType !== 1 ? [] : getAttributes(node.attributes),
-			type:
-				node.nodeType === NODE_TYPE_TEXT
-					? 'text'
-					: node.nodeType === NODE_TYPE_COMMENT
-					? 'comment'
-					: node.tagName.toLowerCase(),
-			node: node,
-		};
+			details.isSVG = isSVG || details.type === 'svg';
 
-		details.isSVG = isSVG || details.type === 'svg';
-		details.children =
-			isChild && isTemplateElement({ node }) ? { domMap: [] } : createDOMMap(node, true, details.isSVG);
-		return details;
-	});
+			if (details.isSVG) {
+				details.innerHTML = node.innerHTML;
+			}
+
+			const ignoreChildren = details.isSVG || (isChild && isTemplateElement({ node }));
+			details.children = ignoreChildren ? { domMap: [] } : createDOMMap(node, true, details.isSVG);
+
+			return details;
+		})
+		.filter((element) => !!element);
 
 	return {
 		domMap,
@@ -88,11 +104,11 @@ const addAttributes = function (element, attributes) {
 		if (attribute.attributeName.startsWith('.')) {
 			// Directly set the attribute on the element instance as property
 			// instead of setting the attribute.
-			element[attribute.attributeName.substring(1)] = attribute.value || '';
+			element[attribute.attributeName.substring(1)] = attribute.value ?? '';
 			return;
 		}
 
-		element.setAttribute(attribute.attributeName, attribute.value || '');
+		element.setAttribute(attribute.attributeName, attribute.value ?? '');
 	});
 };
 
@@ -148,35 +164,15 @@ const makeElement = function (element, templateResult) {
 	// If the element has child nodes, create them
 	// Otherwise, add textContent
 
-	if (element.children.domMap.length > 0) {
+	if (element.isSVG) {
+		node.innerHTML = element.innerHTML;
+	} else if (element.children.domMap.length > 0) {
 		diff(element.children, { domMap: [] }, node);
-	} else if (templateResult.plainlySetInnerHTML) {
-		node.innerHTML = templateResult.innerHTML;
 	} else if (element.type !== 'text') {
 		node.textContent = element.content;
 	}
 
 	return node;
-};
-
-const isTemplateElement = (element) => {
-	const tagName = element.node?.tagName?.toLowerCase() ?? false;
-	if (!tagName || !tagName.includes('-')) {
-		return false;
-	}
-
-	if (_cachedTemplateElements[tagName]) {
-		return true;
-	}
-
-	const elementClass = customElements.get(tagName);
-	const isTemplateElement = elementClass && elementClass._$templateElement$ === true;
-
-	if (isTemplateElement) {
-		_cachedTemplateElements[tagName] = elementClass;
-	}
-
-	return isTemplateElement;
 };
 
 /**
@@ -194,8 +190,6 @@ const diff = function (templateResult, domResult, element) {
 	}
 
 	const domMap = domResult.domMap;
-
-	// If extra elements in domMap, remove them
 	let count = domMap.length - templateMap.length;
 	if (count > 0) {
 		for (; count > 0; count--) {
