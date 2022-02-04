@@ -10,28 +10,6 @@ const convertStringToHTML = (templateString) => {
 	return document.querySelector('main');
 };
 
-const isTemplateElement = (element) => {
-	const tagName = element.node?.tagName?.toLowerCase() ?? false;
-	if (!tagName || !tagName.includes('-')) {
-		return false;
-	}
-
-	if (_cachedTemplateElements[tagName]) {
-		return true;
-	}
-
-	const elementClass = customElements.get(tagName);
-
-	// TODO: that is not working right now. Allow passing a condition the "render" method.
-	const isTemplateElement = elementClass && elementClass._$templateElement$ === true;
-
-	if (isTemplateElement) {
-		_cachedTemplateElements[tagName] = elementClass;
-	}
-
-	return isTemplateElement;
-};
-
 /**
  * Create an array of the attributes on an element
  * @param  {NamedNodeMap} attributes The attributes on an element
@@ -175,21 +153,40 @@ const makeElement = function (element, templateResult) {
 	return node;
 };
 
+const isTemplateElement = (element) => {
+	const tagName = element.node?.tagName?.toLowerCase() ?? false;
+	if (!tagName || !tagName.includes('-')) {
+		return false;
+	}
+
+	if (_cachedTemplateElements[tagName]) {
+		return true;
+	}
+
+	const elementClass = customElements.get(tagName);
+
+	// TODO: that is not working right now. Allow passing a condition the "render" method.
+	const isTemplateElement = elementClass && elementClass._$templateElement$ === true;
+
+	if (isTemplateElement) {
+		_cachedTemplateElements[tagName] = elementClass;
+	}
+
+	return isTemplateElement;
+};
+
 /**
  * Diff the existing DOM node versus the template
- * @param  {{ domMap: Array, plainlySetInnerHTML?: boolean, innerHTML?: string }} templateResult A DOM tree map of the template content
+ * @param  {{ domMap: Array, innerHTML?: string }} templateResult A DOM tree map of the template content
  * @param  {{ domMap: array }} domResult      A DOM tree map of the existing DOM node
  * @param  {HTMLElement}  element        The element to render content into
  */
 const diff = function (templateResult, domResult, element) {
 	const templateMap = templateResult.domMap;
 
-	if (templateResult.plainlySetInnerHTML) {
-		element.innerHTML = templateResult.innerHTML;
-		return;
-	}
-
 	const domMap = domResult.domMap;
+
+	// If extra elements in domMap, remove them
 	let count = domMap.length - templateMap.length;
 	if (count > 0) {
 		for (; count > 0; count--) {
@@ -218,8 +215,9 @@ const diff = function (templateResult, domResult, element) {
 		// If attributes are different, update them
 		diffAttributes(templateMap[index], domMap[index]);
 
-		if (node.children.plainlySetInnerHTML && domMap[index]) {
-			domMap[index].innerHTML = node.children.innerHTML;
+		// Both types are svg and the content is different, we can replace the svg content.
+		if (templateMap[index].type === 'svg' && templateMap[index].innerHTML !== domMap[index].innerHTML) {
+			domMap[index].node.innerHTML = templateMap[index].innerHTML;
 			return;
 		}
 
