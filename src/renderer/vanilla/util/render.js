@@ -163,7 +163,7 @@ const isTemplateElement = (element) => {
 		return true;
 	}
 
-	const elementClass = customElements.get(tagName);
+	const elementClass = window.customElements.get(tagName);
 
 	// TODO: that is not working right now. Allow passing a condition the "render" method.
 	const isTemplateElement = elementClass && elementClass._$templateElement$ === true;
