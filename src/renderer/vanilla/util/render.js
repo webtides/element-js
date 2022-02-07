@@ -82,11 +82,11 @@ const addAttributes = function (element, attributes) {
 		if (attribute.attributeName.startsWith('.')) {
 			// Directly set the attribute on the element instance as property
 			// instead of setting the attribute.
-			element[attribute.attributeName.substring(1)] = attribute.value ?? '';
+			element[attribute.attributeName.substring(1)] = attribute.value || '';
 			return;
 		}
 
-		element.setAttribute(attribute.attributeName, attribute.value ?? '');
+		element.setAttribute(attribute.attributeName, attribute.value || '');
 	});
 };
 
