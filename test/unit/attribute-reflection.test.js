@@ -11,6 +11,9 @@ const propertyOptionsTag = defineCE(
 				propertyOptions: {
 					loaded: { reflect: true },
 					unimportant: { reflect: false },
+					custom: {
+						reflect: () => 'custom',
+					},
 				},
 			});
 		}
@@ -18,6 +21,7 @@ const propertyOptionsTag = defineCE(
 		properties() {
 			return {
 				loaded: false,
+				custom: 'initial',
 			};
 		}
 	},
@@ -95,5 +99,13 @@ describe('attribute-reflection', () => {
 		await nextFrame();
 		assert.equal(el.unimportant, true);
 		assert.equal(el.hasAttribute('unimportant'), false);
+	});
+
+	it('it allows to custom reflect a property via propertyOptions', async () => {
+		const el = await fixture(`<${propertyOptionsTag} ></${propertyOptionsTag}>`);
+		await nextFrame();
+		assert.equal(el.custom, 'initial');
+		assert.equal(el.hasAttribute('custom'), true);
+		assert.equal(el.getAttribute('custom'), 'custom');
 	});
 });

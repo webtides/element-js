@@ -63,14 +63,12 @@ class BaseElement extends HTMLElement {
 		// see: https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver#Example_usage
 		this._mutationObserver = new MutationObserver((mutations) => {
 			mutations.forEach((mutation) => {
-				if (
-					mutation.type === 'attributes' &&
-					mutation.target === this &&
-					this._state.hasOwnProperty(dashToCamel(mutation.attributeName))
-				) {
+				const name = dashToCamel(mutation.attributeName);
+				if (mutation.type === 'attributes' && mutation.target === this && this._state.hasOwnProperty(name)) {
 					// update property by invoking the setter
 					this[dashToCamel(mutation.attributeName)] = parseAttribute(
 						this.getAttribute(mutation.attributeName),
+						this._options.propertyOptions[name],
 					);
 				}
 				if (mutation.type === 'attributes' && mutation.target !== this) {
@@ -159,7 +157,9 @@ class BaseElement extends HTMLElement {
 				return !ignoreAttributes.includes(attribute.name);
 			})
 			.forEach((attribute) => {
-				this.defineProperty(dashToCamel(attribute.name), parseAttribute(attribute.value), true);
+				const name = dashToCamel(attribute.name);
+				const parseOptions = this._options.propertyOptions[name];
+				this.defineProperty(name, parseAttribute(attribute.value, parseOptions), true);
 			});
 	}
 
@@ -200,8 +200,8 @@ class BaseElement extends HTMLElement {
 			return;
 		}
 
-		// if property did not come from an attribute but has the option to reflect
-		if (!reflectAttribute && this._options.propertyOptions[property]?.reflect === true) {
+		// if property did not come from an attribute but has the option to reflect // enabled or custom fn
+		if (!reflectAttribute && this._options.propertyOptions[property]?.reflect) {
 			this.reflectProperty({ property: property, newValue: value });
 		}
 
@@ -223,7 +223,7 @@ class BaseElement extends HTMLElement {
 				if (JSON.stringify(oldValue) !== newValueString) {
 					this._state[property] = newValue;
 
-					if (reflectAttribute || this._options.propertyOptions[property]?.reflect === true) {
+					if (reflectAttribute || this._options.propertyOptions[property]?.reflect) {
 						this.reflectProperty({ property, newValue, newValueString });
 					}
 
@@ -271,7 +271,10 @@ class BaseElement extends HTMLElement {
 			// which is not the desired behaviour. Therefore we reflect them as empty strings
 			this.setAttribute(camelToDash(property), '');
 		} else {
-			const attributeValue = isObjectLike(newValue) ? newValueString : newValue;
+			let attributeValue = isObjectLike(newValue) ? newValueString : newValue;
+			if (typeof this._options.propertyOptions[property]?.reflect === 'function') {
+				attributeValue = this._options.propertyOptions[property].reflect(newValue);
+			}
 			this.setAttribute(camelToDash(property), attributeValue);
 		}
 	}

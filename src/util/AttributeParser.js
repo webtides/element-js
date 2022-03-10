@@ -33,11 +33,17 @@ export function isNaN(value) {
 	return Number.isNaN(value);
 }
 
-export function parseAttribute(value) {
-	if (!isString(value)) {
+export function parseAttribute(value, options = {}) {
+	if (options.parse === false || !isString(value)) {
+		// no-op
 		return value;
 	}
+	if (typeof options.parse === 'function') {
+		// custom parse fn
+		return options.parse(value);
+	}
 
+	// default parse
 	let parsedValue = value;
 
 	if (isJSON(value)) parsedValue = JSON.parse(value);

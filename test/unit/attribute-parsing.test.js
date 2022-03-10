@@ -2,7 +2,22 @@
 import { fixture, defineCE, assert } from '@open-wc/testing';
 import { BaseElement } from '../../src/BaseElement';
 
-const tag = defineCE(class extends BaseElement {});
+const tag = defineCE(
+	class extends BaseElement {
+		constructor() {
+			super({
+				propertyOptions: {
+					parseDisabled: {
+						parse: false,
+					},
+					parseString: {
+						parse: (value) => value.toString(),
+					},
+				},
+			});
+		}
+	},
+);
 
 describe('attribute-parsing', () => {
 	it('parses string attribute as string property', async () => {
@@ -57,5 +72,17 @@ describe('attribute-parsing', () => {
 		const el = await fixture(`<${tag} array-value='["one","two",3]'></${tag}>`);
 		assert.equal(el.getAttribute('array-value'), '["one","two",3]');
 		assert.deepEqual(el.arrayValue, ['one', 'two', 3]);
+	});
+
+	it('wont parses attribute where parse is set to false in propertyOptions', async () => {
+		const el = await fixture(`<${tag} parse-disabled='["one","two",3]'></${tag}>`);
+		assert.equal(el.getAttribute('parse-disabled'), '["one","two",3]');
+		assert.isString(el.parseDisabled);
+	});
+
+	it('wont parses attribute with a custom parse Function provided in propertyOptions', async () => {
+		const el = await fixture(`<${tag} parse-string='10000'></${tag}>`);
+		assert.equal(el.getAttribute('parse-string'), '10000');
+		assert.isString(el.parseString);
 	});
 });
