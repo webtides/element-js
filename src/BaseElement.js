@@ -63,12 +63,15 @@ class BaseElement extends HTMLElement {
 		// see: https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver#Example_usage
 		this._mutationObserver = new MutationObserver((mutations) => {
 			mutations.forEach((mutation) => {
-				const name = dashToCamel(mutation.attributeName);
-				if (mutation.type === 'attributes' && mutation.target === this && this._state.hasOwnProperty(name)) {
+				if (
+					mutation.type === 'attributes' &&
+					mutation.target === this &&
+					this._state.hasOwnProperty(dashToCamel(mutation.attributeName))
+				) {
 					// update property by invoking the setter
 					this[dashToCamel(mutation.attributeName)] = parseAttribute(
 						this.getAttribute(mutation.attributeName),
-						this._options.propertyOptions[name],
+						this._options.propertyOptions[dashToCamel(mutation.attributeName)],
 					);
 				}
 				if (mutation.type === 'attributes' && mutation.target !== this) {
