@@ -1,6 +1,11 @@
 <html>
 <head>
 	<style id="globalStyles">
+
+		.content .text-orange-specific {
+			color: rgb(255, 120, 10);
+		}
+
 		.text-red {
 			color: rgb(255, 0, 0);
 		}
@@ -11,10 +16,6 @@
 
 		.text-yellow {
 			color: rgb(255, 255, 0);
-		}
-
-		.content .text-orange-specific {
-			color: rgb(255, 120, 10);
 		}
 
 		.text-green-important {
@@ -47,24 +48,23 @@
 
 	runTests(() => {
 
-		const componentStyles = `p {color: ${colorComponent}} .text-component {color: ${colorComponentClass}};`;
-		const template = html`
-			<p ref="coloredP">red content</p>
-			<p ref="textComponent" class="text-component">component text</p>
-			<p ref="violetP" class="text-violet">violet content</p>
-			<div class="content">
-				<slot></slot>
-			</div>`;
 
 		class TestElement extends TemplateElement {
 			styles() {
-				return [componentStyles];
+				return [`p {color: ${colorComponent}} .text-component {color: ${colorComponentClass}};`];
 			}
+
 			template() {
-				return template;
+				return html`
+					<p ref="coloredP">red content</p>
+					<p ref="textComponent" class="text-component">component text</p>
+					<p ref="violetP" class="text-violet">violet content</p>
+					<p ref="classOrder" class="text-red text-violet">red but violet content</p>
+					<div class="content">
+						<slot></slot>
+					</div>`;
 			}
 		}
-
 
 		class ShadowElement extends TestElement {
 			constructor() {
@@ -74,7 +74,7 @@
 
 		class ScopedShadowElement extends TestElement {
 			constructor() {
-				super({shadowRender: true, adoptGlobalStyles : false});
+				super({shadowRender: true, adoptGlobalStyles: false});
 			}
 		}
 
@@ -82,62 +82,50 @@
 		defineElement('shadow-element', ShadowElement)
 		defineElement('light-element', TestElement)
 
-
-		it('applies component styles in lightDom', async () => {
-			const el = document.querySelector('light-element');
+		const componentBasicStyles = async (el) => {
 			await nextFrame();
 			expect(getComputedStyle(el.$refs.coloredP).color).to.equal(colorComponent);
-		});
+		}
 
-		it('applies component classes in lightDom', async () => {
-			const el = document.querySelector('light-element');
+		it('applies component styles in lightDom', () => componentBasicStyles(document.querySelector('light-element')));
+		it('applies component styles in shadowDom', () => componentBasicStyles(document.querySelector('shadow-element')));
+
+		const componentClasses = async (el) => {
 			await nextFrame();
 			expect(getComputedStyle(el.$refs.textComponent).color).to.equal(colorComponentClass);
-		});
+		}
 
+		it('applies component classes in lightDom', () => componentClasses(document.querySelector('light-element')));
+		it('applies component classes in shadowDom', () => componentClasses(document.querySelector('shadow-element')));
 
-		it('applies global classes in lightDom', async () => {
-			const el = document.querySelector('light-element');
+		const globalClasses = async (el) => {
 			await nextFrame();
 			expect(getComputedStyle(el.$refs.violetP).color).to.equal(colorViolet);
-		});
+		}
+		it('applies global classes in lightDom', () => globalClasses(document.querySelector('light-element')));
+		it('applies global classes in shadowDom', () => globalClasses(document.querySelector('shadow-element')));
 
-		it('applies component styles in shadowDom', async () => {
-			const el = document.querySelector('shadow-element');
-			//this needs to be called to find the styles added ar runtime
-			await nextFrame();
-			// const computedColor = await window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
-			expect(getComputedStyle(el.$refs.coloredP).color).to.equal(colorComponent);
-		});
-		it('applies component classes in shadowDom', async () => {
-			const el = document.querySelector('shadow-element');
-			await nextFrame();
-			expect(getComputedStyle(el.$refs.textComponent).color).to.equal(colorComponentClass);
-		});
-		it('applies global classes in in shadowDom', async () => {
-			const el = document.querySelector('shadow-element');
+		const respectOrder = async (el) => {
 			await nextFrame();
 			expect(getComputedStyle(el.$refs.violetP).color).to.equal(colorViolet);
-		});
+		}
+		it('respects class order in lightDom', () => respectOrder(document.querySelector('light-element')));
+		it('respects class order in shadowDom', () => respectOrder(document.querySelector('shadow-element')));
+
+		//TODO add tests for slot styling and general specifity
 
 
-		it('applies component styles in shadowDom', async () => {
-			const el = document.querySelector('scoped-shadow-element');
-			//this needs to be called to find the styles added ar runtime
-			await nextFrame();
-			// const computedColor = await window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
-			expect(getComputedStyle(el.$refs.coloredP).color).to.equal(colorComponent);
-		});
-		it('applies component classes in shadowDom', async () => {
+		it('applies component classes in scoped shadowDom', async () => {
 			const el = document.querySelector('scoped-shadow-element');
 			await nextFrame();
 			expect(getComputedStyle(el.$refs.textComponent).color).to.equal(colorComponentClass);
 		});
-		it('applies global classes in in shadowDom', async () => {
+		it('does not apply global classes in in shadowDom', async () => {
 			const el = document.querySelector('scoped-shadow-element');
 			await nextFrame();
 			expect(getComputedStyle(el.$refs.violetP).color).to.equal(colorComponent);
 		});
+
 
 	});
 </script>
