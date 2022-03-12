@@ -60,8 +60,8 @@
 	"scripts": {
 		"lint": "eslint src/**/*.js",
 		"prepare": "esbuild index.js --outfile=dist/index.js --bundle --format=esm --sourcemap --target=chrome79,firefox68,safari12,edge79",
-		"test": "web-test-runner test/**/*.test.js --node-resolve",
-		"test:coverage": "web-test-runner test/**/*.test.js --node-resolve --coverage",
-		"test:watch": "web-test-runner test/**/*.test.js --node-resolve --watch"
+		"test": "web-test-runner test/**/*.test.{html,js} --node-resolve",
+		"test:coverage": "web-test-runner test/**/*.test.{html,js} --node-resolve --coverage",
+		"test:watch": "web-test-runner test/**/*.test.{html,js} --node-resolve --watch"
 	}
 }
