@@ -165,7 +165,14 @@ By setting the `subtree` option to `true` the element will also call the `reques
 
 > Please note that observing `subtree` mutations might have performance implications and use it only if necessary.
 
-#### propertyOptions
+#### propertyOptions: {
+					parseDisabled: {
+						parse: false,
+					},
+					parseString: {
+						parse: (value) => value.toString(),
+					},
+				},
 
 Type: `object` Default `{}`
 
@@ -181,14 +188,33 @@ By default all options are `false` for all properties/attributes. Currently the 
 
 ```json
 {
-    "reflect": false,
+    "reflect": false ,
+    "parse": false,
     "notify": false
 }
 ```
 
 _reflect_ When set to `true` the element will reflect property changes back to attributes if the attribute was not present when connecting the element. By default all attributes that are present when connecting the element will be reflected anyway.
 
+_parse_ When set to `false` the element will not automatically try to parse the attributes string value to a complex type (number, array, object).
+
 _notify_ When set to `true` the element will dispatch `CustomEvent`s for every property/attribute change. The event name will be the property name all lowercase and camel to dashes with a postfix of `-changed`. For example `propertyA` will dispatch an event with the name `property-a-changed` . The event `detail` property will be the changed property value. The event will `bubble` by default.
+
+
+_parse_ and _reflect_ can also be provided with a callback function for total control of the parsing and/or reflection of the attributes value
+
+```js 
+
+propertyOptions = {
+		parseString: {
+			parse: (value) => value.toString()
+		},
+		reflectCustom: {
+			reflect: () => 'custom',
+		},
+	}
+```
+
 
 #### shadowRender
 
