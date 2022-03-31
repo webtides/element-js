@@ -14,6 +14,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Changed -->
 <!-- ### Removed -->
 <!-- ### Fixed -->
+## [NEXT] - ???
+
+### ADDED
+* parse option to propertyOptions that can be either a boolean OR a function for custom parsing
+* enhance reflect option in propertyOptions that it can also be a function for custom reflection
 
 ## [0.4.2] - 2022-02-03
 
