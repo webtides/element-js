@@ -1,4 +1,4 @@
-import { parseAttribute, isNaN, dashToCamel, camelToDash, isObjectLike } from './util/AttributeParser.js';
+import { camelToDash, dashToCamel, isNaN, isObjectLike, parseAttribute } from './util/AttributeParser.js';
 import { getClosestParentCustomElementNode, isOfSameNodeType } from './util/DOMHelper.js';
 
 export { defineElement } from './util/defineElement';
@@ -8,7 +8,9 @@ class BaseElement extends HTMLElement {
 	constructor(options = {}) {
 		super();
 		this.$refs = {};
-		this._state = {};
+		this._state = this._state || {};
+		this._elementQueries = this._elementQueries || [];
+		this._reactiveModels = this._reactiveModels || [];
 		this._mutationObserver = null;
 		this._registeredEvents = [];
 		this._batchUpdate = null;
@@ -22,7 +24,7 @@ class BaseElement extends HTMLElement {
 				subtree: false,
 				...options.mutationObserverOptions,
 			},
-			propertyOptions: {},
+			propertyOptions: this._propertyOptions || {},
 			...options,
 		};
 
@@ -48,7 +50,8 @@ class BaseElement extends HTMLElement {
 		this.defineObserver();
 
 		if (this.hasAttribute('defer-update') || this._options.deferUpdate) {
-			// don't updates/render, but register refs and events
+			// don't update/render, but perform queries and register refs and events
+			this.performElementQueries();
 			this.registerEventsAndRefs();
 
 			this.triggerHook('connected');
@@ -132,9 +135,24 @@ class BaseElement extends HTMLElement {
 	 * Here we will register the events and the refs for the element.
 	 */
 	update(options = { notify: true }) {
+		this.performElementQueries();
 		this.registerEventsAndRefs();
 		if (options.notify === true) {
 			this.triggerHook('afterUpdate');
+		}
+	}
+
+	/**
+	 * Perform all element queries for previously registered selectors
+	 */
+	performElementQueries() {
+		const queries = this._elementQueries;
+
+		for (const query of queries) {
+			// TODO: consider the query.once boolean value
+			this[query.name] = query.all
+				? query.root.querySelectorAll(`${query.selector}`)
+				: query.root.querySelector(`${query.selector}`);
 		}
 	}
 
@@ -265,6 +283,10 @@ class BaseElement extends HTMLElement {
 		});
 	}
 
+	/**
+	 * Reflects a property as attribute on the element
+	 * @param options
+	 */
 	reflectProperty(options) {
 		const { property, newValue } = options;
 		const newValueString = options.newValueString || JSON.stringify(newValue);
@@ -280,6 +302,24 @@ class BaseElement extends HTMLElement {
 			}
 			this.setAttribute(camelToDash(property), attributeValue);
 		}
+	}
+
+	/**
+	 * Adds a Query to the list of element queries to be selected
+	 * @param query
+	 */
+	addElementQuery(query) {
+		this._elementQueries = this._elementQueries || [];
+		this._elementQueries.push(query);
+	}
+
+	/**
+	 * Adds a Model to the list of Models to be notified for lifecycle hooks
+	 * @param model
+	 */
+	addReactiveModel(model) {
+		this._reactiveModels = this._reactiveModels || [];
+		this._reactiveModels.push(model);
 	}
 
 	// Deprecated
@@ -307,6 +347,18 @@ class BaseElement extends HTMLElement {
 			);
 			this.hooks()[name]();
 			return;
+		}
+
+		if (name === 'connected') {
+			for (const model of this._reactiveModels) {
+				model.controllerConnected();
+			}
+		}
+
+		if (name === 'disconnected') {
+			for (const model of this._reactiveModels) {
+				model.controllerDisconnected();
+			}
 		}
 
 		if (name in this) {

@@ -24,7 +24,8 @@ class StyledElement extends BaseElement {
 			adoptGlobalStyles: true,
 			...options,
 		});
-		this._styles = [...this._options.styles, ...this.styles()];
+		const stylesFromDecorator = this.__proto__.constructor._styles || [];
+		this._styles = [...stylesFromDecorator, ...this._options.styles, ...this.styles()];
 	}
 
 	connectedCallback() {
