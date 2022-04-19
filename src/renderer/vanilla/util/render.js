@@ -4,9 +4,11 @@ const NODE_TYPE_TEXT = 3;
 const _cachedTemplateElements = {};
 
 const convertStringToHTML = (templateString) => {
+	//console.time('convertStringToHTML');
 	const parser = new DOMParser();
 	const document = parser.parseFromString(`<main>${templateString}</main>`, 'text/html');
 
+	//console.timeEnd('convertStringToHTML');
 	return document.querySelector('main');
 };
 
@@ -16,12 +18,18 @@ const convertStringToHTML = (templateString) => {
  * @return {Array}                   The attributes on an element as an array of key/value pairs
  */
 const getAttributes = function (attributes) {
-	return Array.prototype.map.call(attributes, function (attribute) {
+	return Array.from(attributes).map((attribute) => {
 		return {
 			attributeName: attribute.name,
 			value: attribute.value,
 		};
 	});
+	// return Array.prototype.map.call(attributes, function (attribute) {
+	// 	return {
+	// 		attributeName: attribute.name,
+	// 		value: attribute.value,
+	// 	};
+	// });
 };
 
 /**
@@ -32,6 +40,7 @@ const getAttributes = function (attributes) {
  * @return {{ domMap: Array, plainlySetInnerHTML?: boolean, innerHTML?: string }} A DOM tree map
  */
 const createDOMMap = function (element, isChild = false, isSVG = false, type = 'template') {
+	//console.time('createDOMMap');
 	const children = [...element.childNodes];
 
 	// If the list contains a comment which says "$$plainly-set-inner-html" it means
@@ -66,6 +75,37 @@ const createDOMMap = function (element, isChild = false, isSVG = false, type = '
 			isChild && isTemplateElement({ node }) ? { domMap: [] } : createDOMMap(node, true, details.isSVG);
 		return details;
 	});
+
+	//console.timeEnd('createDOMMap');
+	return {
+		domMap,
+	};
+};
+
+const createDOMMapWithTreeWalker = function (element, isChild = false, isSVG = false, type = 'template') {
+	// TODO: handle "$$plainly-set-inner-html"
+
+	//const domMap = [element];
+	const domMap = [];
+	const tw = document.createTreeWalker(element);
+	let node;
+	while ((node = tw.nextNode())) {
+		const details = {
+			content: node.childNodes && node.childNodes.length > 0 ? null : node.textContent,
+			attributes: node.nodeType !== 1 ? [] : getAttributes(node.attributes),
+			type:
+				node.nodeType === NODE_TYPE_TEXT
+					? 'text'
+					: node.nodeType === NODE_TYPE_COMMENT
+					? 'comment'
+					: node.tagName.toLowerCase(),
+			node: node,
+		};
+
+		details.isSVG = isSVG || details.type === 'svg';
+
+		domMap.push(details);
+	}
 
 	return {
 		domMap,
@@ -121,6 +161,36 @@ const diffAttributes = function (template, existing) {
 	// Add/remove any required attributes
 	addAttributes(existing.node, change);
 	removeAttributes(existing.node, remove);
+};
+
+const diffAttributesJIT = function (template, target) {
+	// Get attributes to remove
+	const toRemove = Array.from(target.attributes).filter(function (targetAttribute) {
+		const getAtt = Array.from(template.attributes).find(function (templateAttribute) {
+			return targetAttribute.name === templateAttribute.name;
+		});
+		return getAtt === undefined;
+	});
+
+	// Get attributes to change
+	const toChange = Array.from(template.attributes).filter(function (templateAttribute) {
+		const getAtt = Array.from(target.attributes).find((targetAttribute) => {
+			return templateAttribute.attributeName === targetAttribute.attributeName;
+		});
+		return getAtt === undefined || getAtt.value !== templateAttribute.value;
+	});
+
+	// add/update toChange attributes
+	for (const attribute of toChange) {
+		// TODO: handle attributes with "." aka properties...
+		target.setAttribute(attribute.name, attribute.value || '');
+	}
+
+	// remove toRemove attributes
+	for (const attribute of toRemove) {
+		// TODO: handle attributes with "." aka properties...
+		target.removeAttribute(attribute.name);
+	}
 };
 
 /**
@@ -186,6 +256,7 @@ const isTemplateElement = (element) => {
  * @param  {HTMLElement}  element        The element to render content into
  */
 const diff = function (templateResult, domResult, element) {
+	//console.time('diff');
 	const templateMap = templateResult.domMap;
 
 	if (templateResult.plainlySetInnerHTML) {
@@ -203,10 +274,21 @@ const diff = function (templateResult, domResult, element) {
 		}
 	}
 
+	// TODO: use TreeWalker here instead of custom nested list of domMaps
+	// https://developer.mozilla.org/en-US/docs/Web/API/Document/createTreeWalker
+	// https://github.com/patrick-steele-idem/morphdom/issues/15
+	// https://stackoverflow.com/questions/64551229/queryselectorall-vs-nodeiterator-vs-treewalker-fastest-pure-js-flat-dom-iterat
+	// createDomMap is what takes the longest time...
+	// but we don't need it because we have a walkable tree already
+	// also when creating the dom map we cannot stop/return early because we don't know
+	// if we diff on the fly, we can return early and don't need to recurse any deeper...
+
 	// Diff each item in the templateMap
 	templateMap.forEach(function (node, index) {
 		// If element doesn't exist, create it
 		if (!domMap[index]) {
+			// TODO: if I would use a TreWalker I could simply take the element from the template right?!
+			// We don't have to create a new one then...
 			const newElement = makeElement(node, node.children);
 			element.appendChild(newElement);
 			return;
@@ -214,6 +296,8 @@ const diff = function (templateResult, domResult, element) {
 
 		// If element is not the same type, replace it with new element
 		if (templateMap[index].type !== domMap[index].type) {
+			// TODO: Same here... if I would use a TreWalker I could simply take the element from the template right?!
+			// We don't have to create a new one then...
 			domMap[index].node.parentNode.replaceChild(
 				makeElement(templateMap[index], node.children),
 				domMap[index].node,
@@ -266,13 +350,253 @@ const diff = function (templateResult, domResult, element) {
 			}
 		}
 	});
+	//console.timeEnd('diff');
+};
+
+const diff2 = function (templateResult, domResult, element) {
+	const templateMap = templateResult.domMap;
+
+	if (templateResult.plainlySetInnerHTML) {
+		element.innerHTML = templateResult.innerHTML;
+		return;
+	}
+
+	const domMap = domResult.domMap;
+
+	// If extra elements in domMap, remove them
+	let count = domMap.length - templateMap.length;
+	if (count > 0) {
+		for (; count > 0; count--) {
+			domMap[domMap.length - count].node.parentNode.removeChild(domMap[domMap.length - count].node);
+		}
+	}
+
+	// Diff each item in the templateMap
+	templateMap.forEach(function (node, index) {
+		// If element doesn't exist, create it
+		if (!domMap[index]) {
+			const newElement = makeElement(node, node.children);
+			element.appendChild(newElement);
+			return;
+		}
+
+		// If element is not the same type, replace it with new element
+		if (templateMap[index].type !== domMap[index].type) {
+			domMap[index].node.parentNode.replaceChild(
+				makeElement(templateMap[index], node.children),
+				domMap[index].node,
+			);
+			return;
+		}
+
+		// If attributes are different, update them
+		diffAttributes(templateMap[index], domMap[index]);
+
+		// If content is different, update it
+		if (templateMap[index].content !== domMap[index].content) {
+			if (!isTemplateElement(domMap[index])) {
+				// ignore custom elements.
+				domMap[index].node.textContent = templateMap[index].content;
+			}
+		}
+	});
+};
+
+const diffJIT = function (template, target) {
+	const templateChildNodes = [...template.childNodes];
+	const targetChildNodes = [...target.childNodes];
+
+	// TODO: what about plainlySetInnerHTML ?!
+
+	// If extra elements in target, remove them
+	let count = targetChildNodes.length - templateChildNodes.length;
+	if (count > 0) {
+		for (; count > 0; count--) {
+			targetChildNodes[targetChildNodes.length - count].parentNode.removeChild(
+				targetChildNodes[targetChildNodes.length - count],
+			);
+		}
+	}
+
+	// Diff each item in the templateMap
+	//templateChildNodes.forEach(function (templateNode, index) {
+	for (let index = 0; index < templateChildNodes.length; index++) {
+		const templateNode = templateChildNodes[index];
+		const targetNode = targetChildNodes[index];
+
+		// If target node doesn't exist, create it
+		if (!targetChildNodes[index]) {
+			target.appendChild(templateNode);
+			continue;
+		}
+
+		if (templateNode && targetNode) {
+			// If element is not the same type, replace it with new element
+			if (templateNode.nodeType !== targetNode.nodeType) {
+				targetNode.parentNode.replaceChild(templateNode, targetNode);
+				continue;
+			}
+
+			// If attributes are different, update them
+			if (templateNode.nodeType === 1 && targetNode.nodeType === 1) {
+				const targetNode = targetChildNodes[index];
+				// diffAttributes(
+				// 	{ attributes: getAttributes(templateNode.attributes), node: templateNode },
+				// 	{ attributes: getAttributes(targetNode.attributes), node: targetNode },
+				// );
+				diffAttributesJIT(templateNode, targetNode);
+			}
+
+			// if (node.children.plainlySetInnerHTML && domMap[index]) {
+			// 	domMap[index].innerHTML = node.children.innerHTML;
+			// 	return;
+			// }
+
+			// If content is different, update it
+			if (targetNode.nodeType === 3 && templateNode.nodeType === 3) {
+				// If content is different, update it
+				if (targetNode.textContent !== templateNode.textContent) {
+					targetNode.textContent = templateNode.textContent;
+				}
+			}
+
+			// If target should be empty, remove all child nodes
+			if (targetNode.hasChildNodes() && !templateNode.hasChildNodes()) {
+				targetNode.replaceChildren();
+				continue;
+			}
+
+			// If target is empty but shouldn't be, add child nodes
+			if (!targetNode.hasChildNodes() && templateNode.hasChildNodes()) {
+				targetNode.replaceChildren(...templateNode.childNodes);
+				continue;
+			}
+
+			// If there are existing child elements that need to be modified, diff them
+			if (templateNode.hasChildNodes()) {
+				if (!isTemplateElement(templateNode)) {
+					diffJIT(templateNode, targetNode);
+				}
+			}
+		}
+	}
+};
+
+const diffWithTreeWalker = function (template, target) {
+	// for the first render, if target is initially empty
+	if (!target.hasChildNodes() && template.hasChildNodes()) {
+		// If target is empty but shouldn't be, add child nodes
+		target.replaceChildren(...template.childNodes);
+		return;
+	}
+
+	// if (templateResult.plainlySetInnerHTML) {
+	// 	element.innerHTML = templateResult.innerHTML;
+	// 	return;
+	// }
+
+	// If extra elements in domMap, remove them
+	// let count = domMap.length - templateMap.length;
+	// if (count > 0) {
+	// 	for (; count > 0; count--) {
+	// 		domMap[domMap.length - count].node.parentNode.removeChild(domMap[domMap.length - count].node);
+	// 	}
+	// }
+
+	// https://developer.mozilla.org/en-US/docs/Web/API/Document/createTreeWalker
+	// https://github.com/patrick-steele-idem/morphdom/issues/15
+	// https://stackoverflow.com/questions/64551229/queryselectorall-vs-nodeiterator-vs-treewalker-fastest-pure-js-flat-dom-iterat
+
+	const templateTreeWalker = document.createTreeWalker(template);
+	const targetTreeWalker = document.createTreeWalker(target);
+	let templateNode = templateTreeWalker.nextNode();
+	let targetNode = targetTreeWalker.nextNode();
+	while (templateNode || targetNode) {
+		// If target node doesn't exist, create it
+		if (!targetNode) {
+			target.appendChild(templateNode);
+			targetNode = targetTreeWalker.nextNode();
+		}
+
+		if (templateNode && targetNode) {
+			// TODO: diff attributes...
+
+			if (targetNode.nodeType !== templateNode.nodeType) {
+				// If nodes are not the same type, replace it with new node from template
+				// const oldTargetNode = targetNode;
+				// //const parentTargetNode = targetTreeWalker.parentNode();
+				// targetNode.parentNode.replaceChild(templateNode, oldTargetNode);
+				// targetNode = targetTreeWalker.nextNode();
+				targetNode.parentNode.replaceChild(templateNode, targetNode);
+				// TODO: this is a problem here... :(
+				// when a list for example has more items now the next target node will not be at the same level...
+			} else if (targetNode.nodeType === 1 && templateNode.nodeType === 1) {
+				// If child count is different
+				if (targetNode.childNodes.length !== templateNode.childNodes.length) {
+					targetNode.replaceChildren(...templateNode.childNodes);
+					targetNode = targetTreeWalker.nextNode();
+				}
+			} else if (targetNode.nodeType === 3 && templateNode.nodeType === 3) {
+				// If content is different, update it
+				if (targetNode.textContent !== templateNode.textContent) {
+					targetNode.textContent = templateNode.textContent;
+				}
+			} else if (targetNode.hasChildNodes() && !templateNode.hasChildNodes()) {
+				// If target should be empty, remove all child nodes
+				targetNode.replaceChildren();
+			} else if (!targetNode.hasChildNodes() && templateNode.hasChildNodes()) {
+				// If target is empty but shouldn't be, add child nodes
+				targetNode.replaceChildren(...templateNode.childNodes);
+			}
+		}
+
+		templateNode = templateTreeWalker.nextNode();
+		targetNode = targetTreeWalker.nextNode();
+	}
 };
 
 const render = (template, target) => {
-	const templateDOMMap = createDOMMap(convertStringToHTML(template), false, false, 'template');
-	const domMap = createDOMMap(target, false, false, 'dom');
+	console.time('render');
 
-	diff(templateDOMMap, domMap, target);
+	console.time('convertStringToHTML');
+	const domTemplate = convertStringToHTML(template);
+	console.timeEnd('convertStringToHTML');
+
+	// console.time('templateDOMMap');
+	// const templateDOMMap = createDOMMap(domTemplate, false, false, 'template');
+	// console.timeEnd('templateDOMMap');
+
+	// console.time('templateDOMMap2');
+	// const templateDOMMap2 = createDOMMapWithTreeWalker(domTemplate, false, false, 'template');
+	// console.timeEnd('templateDOMMap2');
+
+	// console.time('domMap');
+	// const domMap = createDOMMap(target, false, false, 'dom');
+	// console.timeEnd('domMap');
+
+	// console.time('domMap2');
+	// const domMap2 = createDOMMapWithTreeWalker(target, false, false, 'dom');
+	// console.timeEnd('domMap2');
+
+	// console.log('dom maps: ', { templateDOMMap, domMap, templateDOMMap2, domMap2 });
+
+	// console.time('diff');
+	// diff(templateDOMMap, domMap, target);
+	// console.timeEnd('diff');
+
+	// console.time('diff2');
+	// diff2(templateDOMMap, domMap, target);
+	// console.timeEnd('diff2');
+
+	console.time('diffJIT');
+	diffJIT(domTemplate, target);
+	console.timeEnd('diffJIT');
+
+	// console.time('diffWithTreeWalker');
+	// diffWithTreeWalker(domTemplate, target);
+	// console.timeEnd('diffWithTreeWalker');
+
+	console.timeEnd('render');
 };
 
 export { render };
