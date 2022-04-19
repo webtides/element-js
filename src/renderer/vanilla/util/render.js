@@ -9,36 +9,33 @@ const convertStringToHTML = (templateString) => {
 
 /**
  * Diff the attributes on the target DOM node versus the template DOM node
- * @param  {Node} template The new template
- * @param  {Node} existing The existing DOM node
+ * @param  {Element} template The new template
+ * @param  {Element} target The existing DOM node
  */
 const diffAttributes = function (template, target) {
-	// Get attributes to remove
-	const toRemove = Array.from(target.attributes).filter(function (targetAttribute) {
-		const getAtt = Array.from(template.attributes).find(function (templateAttribute) {
-			return targetAttribute.name === templateAttribute.name;
-		});
-		return getAtt === undefined;
-	});
-
-	// Get attributes to change
-	const toChange = Array.from(template.attributes).filter(function (templateAttribute) {
-		const getAtt = Array.from(target.attributes).find((targetAttribute) => {
-			return templateAttribute.attributeName === targetAttribute.attributeName;
-		});
-		return getAtt === undefined || getAtt.value !== templateAttribute.value;
-	});
-
-	// add/update toChange attributes
-	for (const attribute of toChange) {
-		// TODO: handle attributes with "." aka properties...
-		target.setAttribute(attribute.name, attribute.value || '');
+	const templateAttributes = {};
+	for (const attribute of Array.from(template.attributes)) {
+		templateAttributes[attribute.name] = attribute.value;
 	}
 
-	// remove toRemove attributes
-	for (const attribute of toRemove) {
+	const targetAttributes = {};
+	for (const attribute of Array.from(target.attributes)) {
+		targetAttributes[attribute.name] = attribute.value;
+	}
+
+	// TODO: maybe we can compare them and return early if the are the same?!
+
+	// remove attributes
+	for (const attributeName of Object.keys(targetAttributes)) {
+		if (!templateAttributes[attributeName]) {
+			target.removeAttribute(attributeName);
+		}
+	}
+
+	// add/update attributes
+	for (const attributeName of Object.keys(templateAttributes)) {
 		// TODO: handle attributes with "." aka properties...
-		target.removeAttribute(attribute.name);
+		target.setAttribute(attributeName, templateAttributes[attributeName] || '');
 	}
 };
 
@@ -83,9 +80,9 @@ const diff = function (template, target) {
 		}
 	}
 
-	// Diff each item in the templateMap
-	//templateChildNodes.forEach(function (templateNode, index) {
-	for (let index = 0; index < templateChildNodes.length; index++) {
+	// Diff each node in the template child nodes array
+	const length = templateChildNodes.length;
+	for (let index = 0; index < length; index++) {
 		const templateNode = templateChildNodes[index];
 		const targetNode = targetChildNodes[index];
 
