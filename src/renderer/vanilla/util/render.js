@@ -430,53 +430,52 @@ const diffJIT = function (template, target) {
 			continue;
 		}
 
-		if (templateNode && targetNode) {
-			// If element is not the same type, replace it with new element
-			if (templateNode.nodeType !== targetNode.nodeType) {
-				targetNode.parentNode.replaceChild(templateNode, targetNode);
+		// If target node is equal to the template node, don't do anything
+		if (targetNode.isEqualNode(templateNode)) {
+			continue;
+		}
+
+		// If node type is not the same, replace it with the template node
+		if (templateNode.nodeType !== targetNode.nodeType) {
+			targetNode.parentNode.replaceChild(templateNode, targetNode);
+			continue;
+		}
+
+		// If attributes are different, update them
+		if (templateNode.nodeType === 1) {
+			diffAttributesJIT(templateNode, targetNode);
+		}
+
+		// If content is different, update it
+		if (targetNode.nodeType === 3) {
+			if (targetNode.textContent !== templateNode.textContent) {
+				targetNode.textContent = templateNode.textContent;
 				continue;
 			}
+		}
 
-			// If attributes are different, update them
-			if (templateNode.nodeType === 1 && targetNode.nodeType === 1) {
-				const targetNode = targetChildNodes[index];
-				// diffAttributes(
-				// 	{ attributes: getAttributes(templateNode.attributes), node: templateNode },
-				// 	{ attributes: getAttributes(targetNode.attributes), node: targetNode },
-				// );
-				diffAttributesJIT(templateNode, targetNode);
-			}
+		// TODO: what about plainlySetInnerHTML ?!
+		// if (node.children.plainlySetInnerHTML && domMap[index]) {
+		// 	domMap[index].innerHTML = node.children.innerHTML;
+		// 	return;
+		// }
 
-			// if (node.children.plainlySetInnerHTML && domMap[index]) {
-			// 	domMap[index].innerHTML = node.children.innerHTML;
-			// 	return;
-			// }
+		// If target should be empty, remove all child nodes
+		if (targetNode.hasChildNodes() && !templateNode.hasChildNodes()) {
+			targetNode.replaceChildren();
+			continue;
+		}
 
-			// If content is different, update it
-			if (targetNode.nodeType === 3 && templateNode.nodeType === 3) {
-				// If content is different, update it
-				if (targetNode.textContent !== templateNode.textContent) {
-					targetNode.textContent = templateNode.textContent;
-				}
-			}
+		// If target is empty but shouldn't be, add child nodes
+		if (!targetNode.hasChildNodes() && templateNode.hasChildNodes()) {
+			targetNode.replaceChildren(...templateNode.childNodes);
+			continue;
+		}
 
-			// If target should be empty, remove all child nodes
-			if (targetNode.hasChildNodes() && !templateNode.hasChildNodes()) {
-				targetNode.replaceChildren();
-				continue;
-			}
-
-			// If target is empty but shouldn't be, add child nodes
-			if (!targetNode.hasChildNodes() && templateNode.hasChildNodes()) {
-				targetNode.replaceChildren(...templateNode.childNodes);
-				continue;
-			}
-
-			// If there are existing child elements that need to be modified, diff them
-			if (templateNode.hasChildNodes()) {
-				if (!isTemplateElement(templateNode)) {
-					diffJIT(templateNode, targetNode);
-				}
+		// If there are existing child elements that need to be modified, diff them
+		if (templateNode.hasChildNodes()) {
+			if (!isTemplateElement(templateNode)) {
+				diffJIT(templateNode, targetNode);
 			}
 		}
 	}
