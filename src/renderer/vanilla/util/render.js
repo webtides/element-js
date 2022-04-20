@@ -1,4 +1,5 @@
-import domdiff from '../../domdiff/index';
+// import domdiff from '../../domdiff/index';
+// import udomdiff from '../../udomdiff/index';
 
 const _cachedTemplateElements = {};
 
@@ -157,13 +158,17 @@ const render = (template, target) => {
 	const domTemplate = convertStringToHTML(template);
 	console.timeEnd('convertStringToHTML');
 
-	// console.time('diff');
-	// diff(domTemplate, target);
-	// console.timeEnd('diff');
-
 	console.time('diff');
-	domdiff(target, [...target.childNodes], [...domTemplate.childNodes]);
+	diff(domTemplate, target);
 	console.timeEnd('diff');
+
+	// console.time('domdiff');
+	// domdiff(target, [...target.childNodes], [...domTemplate.childNodes]);
+	// console.timeEnd('domdiff');
+
+	// console.time('udomdiff');
+	// udomdiff(target, [...target.childNodes], [...domTemplate.childNodes]);
+	// console.timeEnd('udomdiff');
 
 	console.timeEnd('render');
 };
