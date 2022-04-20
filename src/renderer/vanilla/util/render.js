@@ -1,3 +1,5 @@
+import domdiff from '../../domdiff/index';
+
 const _cachedTemplateElements = {};
 
 const convertStringToHTML = (templateString) => {
@@ -73,6 +75,11 @@ const diff = function (template, target) {
 	// If extra elements in target, remove them
 	let count = targetChildNodes.length - templateChildNodes.length;
 	if (count > 0) {
+		// TODO: this is where we could improve things if we could find out the correct indexes to remove
+		// instead of just blindly removing at the end
+		// because afterwards every node will be different because the index is shifted by 1 or 2
+		// (2 because every?! element node is always?! followed by a text node with whitespace or something)
+		// but I cant find a solution that is better than O(n2) which slows things down...
 		for (; count > 0; count--) {
 			targetChildNodes[targetChildNodes.length - count].parentNode.removeChild(
 				targetChildNodes[targetChildNodes.length - count],
@@ -150,9 +157,13 @@ const render = (template, target) => {
 	const domTemplate = convertStringToHTML(template);
 	console.timeEnd('convertStringToHTML');
 
-	console.time('diffJIT');
-	diff(domTemplate, target);
-	console.timeEnd('diffJIT');
+	// console.time('diff');
+	// diff(domTemplate, target);
+	// console.timeEnd('diff');
+
+	console.time('diff');
+	domdiff(target, [...target.childNodes], [...domTemplate.childNodes]);
+	console.timeEnd('diff');
 
 	console.timeEnd('render');
 };
