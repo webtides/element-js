@@ -34,6 +34,8 @@ const diffAttributes = function (templateElement, domElement) {
 			domElement.removeAttribute(attribute.name);
 		}
 	}
+
+	// TODO: this is not enough... we are currently missing newly added attributes :(
 };
 
 /**
