@@ -17,29 +17,15 @@ const convertStringToHTML = (template) => {
  * @param  {Element} domElement The existing DOM node
  */
 const diffAttributes = function (templateElement, domElement) {
-	const templateAttributes = {};
-	for (const attribute of Array.from(templateElement.attributes)) {
-		templateAttributes[attribute.name] = attribute.value;
-	}
-
-	const targetAttributes = {};
-	for (const attribute of Array.from(domElement.attributes)) {
-		targetAttributes[attribute.name] = attribute.value;
-	}
-
 	// TODO: maybe we can compare them and return early if the are the same?!
 
-	// remove attributes
-	for (const attributeName of Object.keys(targetAttributes)) {
-		if (!templateAttributes[attributeName]) {
-			domElement.removeAttribute(attributeName);
+	for (/** @type {Attr} */ const attribute of Array.from(domElement.attributes)) {
+		if (templateElement.hasAttribute(attribute.name)) {
+			// TODO: handle attributes with "." aka properties...
+			domElement.setAttribute(attribute.name, templateElement.getAttribute(attribute.name) || '');
+		} else {
+			domElement.removeAttribute(attribute.name);
 		}
-	}
-
-	// add/update attributes
-	for (const attributeName of Object.keys(templateAttributes)) {
-		// TODO: handle attributes with "." aka properties...
-		domElement.setAttribute(attributeName, templateAttributes[attributeName] || '');
 	}
 };
 
