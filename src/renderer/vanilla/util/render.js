@@ -1,33 +1,3 @@
-// import domdiff from '../../domdiff/index';
-// import udomdiff from '../../udomdiff/index';
-
-let isEqual = 0;
-let isNotEqual = 0;
-
-const hashCache = new Map();
-
-const hash = function (string) {
-	let hash;
-	for (let index = 0; index < string.length; index++) hash = (Math.imul(31, hash) + string.charCodeAt(index)) | 0;
-	return hash;
-};
-
-const hashForNode = function (node) {
-	let nodeValue = node.outerHTML || node.textContent || 'whitespace';
-
-	let hashValue = hash(`${nodeValue}`).toString();
-
-	if (hashCache.has(hashValue)) {
-		const previousIndex = hashCache.get(hashValue);
-		hashCache.set(hashValue, previousIndex + 1);
-		hashValue = `${hashValue}_${previousIndex + 1}`;
-	} else {
-		hashCache.set(hashValue, 0);
-	}
-
-	return hashValue;
-};
-
 const _cachedTemplateElements = {};
 
 const convertStringToHTML = (templateString) => {
@@ -99,45 +69,16 @@ const diff = function (template, target) {
 	const targetChildNodes = [...target.childNodes];
 
 	// TODO: what about plainlySetInnerHTML ?!
+	// TODO: what about SVGs ?! do they need special handling?!
 
 	// If extra elements in target, add dummy elements to template so that the length will match
 	let count = targetChildNodes.length - templateChildNodes.length;
-	count = targetChildNodes.length - templateChildNodes.length;
 	if (count > 0) {
-		const targetHashes = [];
-		const templateHashes = [];
-
-		hashCache.clear();
-		for (const childNode of targetChildNodes) {
-			targetHashes.push(hashForNode(childNode));
-		}
-
-		hashCache.clear();
-		for (const childNode of templateChildNodes) {
-			templateHashes.push(hashForNode(childNode));
-		}
-
-		console.log('nodes');
-		console.log(targetChildNodes, templateChildNodes);
-
-		console.log('hashes');
-		console.log(targetHashes, templateHashes);
-
-		const missingNodes = targetHashes.filter(function (el) {
-			return templateHashes.indexOf(el) < 0;
-		});
-
-		const missingIndexes = missingNodes.map(function (node) {
-			return targetHashes.indexOf(node);
-		});
-
-		for (const missingIndex of missingIndexes) {
+		for (let index = count; index > 0; index--) {
 			const node = document.createElement('span');
 			node['delete-me'] = true;
-			templateChildNodes.splice(missingIndex, 0, node);
+			templateChildNodes.push(node);
 		}
-
-		// console.log('missingIndexes', missingIndexes);
 	}
 
 	// Diff each node in the template child nodes array
@@ -160,12 +101,7 @@ const diff = function (template, target) {
 
 		// If target node is equal to the template node, don't do anything
 		if (targetNode.isEqualNode(templateNode)) {
-			//console.log('isEqualNode');
-			isEqual++;
 			continue;
-		} else {
-			isNotEqual++;
-			//console.log('NOT isEqualNode');
 		}
 
 		// If node type is not the same, replace it with the template node
@@ -221,22 +157,9 @@ const render = (template, target) => {
 	const domTemplate = convertStringToHTML(template);
 	console.timeEnd('convertStringToHTML');
 
-	isEqual = 0;
-	isNotEqual = 0;
-
 	console.time('diff');
 	diff(domTemplate, target);
 	console.timeEnd('diff');
-
-	console.log('equals', isEqual, isNotEqual);
-
-	// console.time('domdiff');
-	// domdiff(target, [...target.childNodes], [...domTemplate.childNodes]);
-	// console.timeEnd('domdiff');
-
-	// console.time('udomdiff');
-	// udomdiff(target, [...target.childNodes], [...domTemplate.childNodes]);
-	// console.timeEnd('udomdiff');
 
 	console.timeEnd('render');
 };
