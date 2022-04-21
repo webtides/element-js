@@ -90,41 +90,41 @@ const diff = function (templateNode, domNode) {
 
 	// Diff each node in the template child nodes array
 	for (let index = 0; index < templateChildNodes.length; index++) {
-		const templateNode = templateChildNodes[index];
-		const domNode = domChildNodes[index];
+		const templateChildNode = templateChildNodes[index];
+		const domChildNode = domChildNodes[index];
 
 		// If template node is dummy node, remove node in target
-		if (templateNode.tagName === 'DELETE-ME') {
-			domNode.parentNode.removeChild(domNode);
+		if (templateChildNode.tagName === 'DELETE-ME') {
+			domChildNode.parentNode.removeChild(domChildNode);
 			continue;
 		}
 
 		// If target node doesn't exist, create it
 		if (!domChildNodes[index]) {
-			domNode.appendChild(templateNode);
+			domNode.appendChild(templateChildNode);
 			continue;
 		}
 
 		// If target node is equal to the template node, don't do anything
-		if (domNode.isEqualNode(templateNode)) {
+		if (domChildNode.isEqualNode(templateChildNode)) {
 			continue;
 		}
 
 		// If node type is not the same, replace it with the template node
-		if (templateNode.nodeType !== domNode.nodeType) {
-			domNode.parentNode.replaceChild(templateNode, domNode);
+		if (templateChildNode.nodeType !== domChildNode.nodeType) {
+			domChildNode.parentNode.replaceChild(templateChildNode, domChildNode);
 			continue;
 		}
 
 		// If attributes are different, update them
-		if (templateNode.nodeType === 1) {
-			diffAttributes(templateNode, domNode);
+		if (templateChildNode.nodeType === 1) {
+			diffAttributes(templateChildNode, domChildNode);
 		}
 
 		// If content is different, update it
-		if (domNode.nodeType === 3) {
-			if (domNode.textContent !== templateNode.textContent) {
-				domNode.textContent = templateNode.textContent;
+		if (domChildNode.nodeType === 3) {
+			if (domChildNode.textContent !== templateChildNode.textContent) {
+				domChildNode.textContent = templateChildNode.textContent;
 				continue;
 			}
 		}
@@ -136,21 +136,21 @@ const diff = function (templateNode, domNode) {
 		// }
 
 		// If target should be empty, remove all child nodes
-		if (domNode.hasChildNodes() && !templateNode.hasChildNodes()) {
-			domNode.replaceChildren();
+		if (domChildNode.hasChildNodes() && !templateChildNode.hasChildNodes()) {
+			domChildNode.replaceChildren();
 			continue;
 		}
 
 		// If target is empty but shouldn't be, add child nodes
-		if (!domNode.hasChildNodes() && templateNode.hasChildNodes()) {
-			domNode.replaceChildren(...templateNode.childNodes);
+		if (!domChildNode.hasChildNodes() && templateChildNode.hasChildNodes()) {
+			domChildNode.replaceChildren(...templateChildNode.childNodes);
 			continue;
 		}
 
 		// If there are existing child elements that need to be modified, diff them
-		if (templateNode.hasChildNodes()) {
-			if (!isTemplateElement(templateNode)) {
-				diff(templateNode, domNode);
+		if (templateChildNode.hasChildNodes()) {
+			if (!isTemplateElement(templateChildNode)) {
+				diff(templateChildNode, domChildNode);
 			}
 		}
 	}
