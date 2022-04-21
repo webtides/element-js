@@ -75,9 +75,7 @@ const diff = function (template, target) {
 	let count = targetChildNodes.length - templateChildNodes.length;
 	if (count > 0) {
 		for (let index = count; index > 0; index--) {
-			const node = document.createElement('span');
-			node['delete-me'] = true;
-			templateChildNodes.push(node);
+			templateChildNodes.push(document.createElement('delete-me'));
 		}
 	}
 
@@ -88,7 +86,7 @@ const diff = function (template, target) {
 		const targetNode = targetChildNodes[index];
 
 		// If template node is dummy node, remove node in target
-		if (templateNode['delete-me']) {
+		if (templateNode.tagName === 'DELETE-ME') {
 			targetNode.parentNode.removeChild(targetNode);
 			continue;
 		}
