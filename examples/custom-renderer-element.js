@@ -5,6 +5,7 @@ class CustomRendererElement extends TemplateElement {
 		return {
 			name: 'John',
 			items: 1,
+			array: [1, 2, 3, 4],
 		};
 	}
 
@@ -23,6 +24,7 @@ class CustomRendererElement extends TemplateElement {
 				<ul>
 					${this.listItems.map((item) => html` <li>${item}</li> `)}
 				</ul>
+				<div>${this.array.map((item) => html` <div>${item}</div> `)}</div>
 			</div>
 		`;
 	}
