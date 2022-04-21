@@ -7,8 +7,8 @@ const _cachedTemplateElements = {};
  */
 const convertStringToHTML = (template) => {
 	const parser = new DOMParser();
-	const document = parser.parseFromString(`<main>${template}</main>`, 'text/html');
-	return document.querySelector('main');
+	const document = parser.parseFromString(template.toString(), 'text/html');
+	return document.body;
 };
 
 /**
