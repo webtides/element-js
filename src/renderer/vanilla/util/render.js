@@ -1,6 +1,33 @@
 // import domdiff from '../../domdiff/index';
 // import udomdiff from '../../udomdiff/index';
 
+let isEqual = 0;
+let isNotEqual = 0;
+
+const hashCache = new Map();
+
+const hash = function (string) {
+	let hash;
+	for (let index = 0; index < string.length; index++) hash = (Math.imul(31, hash) + string.charCodeAt(index)) | 0;
+	return hash;
+};
+
+const hashForNode = function (node) {
+	let nodeValue = node.outerHTML || node.textContent || 'whitespace';
+
+	let hashValue = hash(`${nodeValue}`).toString();
+
+	if (hashCache.has(hashValue)) {
+		const previousIndex = hashCache.get(hashValue);
+		hashCache.set(hashValue, previousIndex + 1);
+		hashValue = `${hashValue}_${previousIndex + 1}`;
+	} else {
+		hashCache.set(hashValue, 0);
+	}
+
+	return hashValue;
+};
+
 const _cachedTemplateElements = {};
 
 const convertStringToHTML = (templateString) => {
@@ -73,19 +100,44 @@ const diff = function (template, target) {
 
 	// TODO: what about plainlySetInnerHTML ?!
 
-	// If extra elements in target, remove them
+	// If extra elements in target, add dummy elements to template so that the length will match
 	let count = targetChildNodes.length - templateChildNodes.length;
+	count = targetChildNodes.length - templateChildNodes.length;
 	if (count > 0) {
-		// TODO: this is where we could improve things if we could find out the correct indexes to remove
-		// instead of just blindly removing at the end
-		// because afterwards every node will be different because the index is shifted by 1 or 2
-		// (2 because every?! element node is always?! followed by a text node with whitespace or something)
-		// but I cant find a solution that is better than O(n2) which slows things down...
-		for (; count > 0; count--) {
-			targetChildNodes[targetChildNodes.length - count].parentNode.removeChild(
-				targetChildNodes[targetChildNodes.length - count],
-			);
+		const targetHashes = [];
+		const templateHashes = [];
+
+		hashCache.clear();
+		for (const childNode of targetChildNodes) {
+			targetHashes.push(hashForNode(childNode));
 		}
+
+		hashCache.clear();
+		for (const childNode of templateChildNodes) {
+			templateHashes.push(hashForNode(childNode));
+		}
+
+		console.log('nodes');
+		console.log(targetChildNodes, templateChildNodes);
+
+		console.log('hashes');
+		console.log(targetHashes, templateHashes);
+
+		const missingNodes = targetHashes.filter(function (el) {
+			return templateHashes.indexOf(el) < 0;
+		});
+
+		const missingIndexes = missingNodes.map(function (node) {
+			return targetHashes.indexOf(node);
+		});
+
+		for (const missingIndex of missingIndexes) {
+			const node = document.createElement('span');
+			node['delete-me'] = true;
+			templateChildNodes.splice(missingIndex, 0, node);
+		}
+
+		// console.log('missingIndexes', missingIndexes);
 	}
 
 	// Diff each node in the template child nodes array
@@ -93,6 +145,12 @@ const diff = function (template, target) {
 	for (let index = 0; index < length; index++) {
 		const templateNode = templateChildNodes[index];
 		const targetNode = targetChildNodes[index];
+
+		// If template node is dummy node, remove node in target
+		if (templateNode['delete-me']) {
+			targetNode.parentNode.removeChild(targetNode);
+			continue;
+		}
 
 		// If target node doesn't exist, create it
 		if (!targetChildNodes[index]) {
@@ -102,7 +160,12 @@ const diff = function (template, target) {
 
 		// If target node is equal to the template node, don't do anything
 		if (targetNode.isEqualNode(templateNode)) {
+			//console.log('isEqualNode');
+			isEqual++;
 			continue;
+		} else {
+			isNotEqual++;
+			//console.log('NOT isEqualNode');
 		}
 
 		// If node type is not the same, replace it with the template node
@@ -158,9 +221,14 @@ const render = (template, target) => {
 	const domTemplate = convertStringToHTML(template);
 	console.timeEnd('convertStringToHTML');
 
+	isEqual = 0;
+	isNotEqual = 0;
+
 	console.time('diff');
 	diff(domTemplate, target);
 	console.timeEnd('diff');
+
+	console.log('equals', isEqual, isNotEqual);
 
 	// console.time('domdiff');
 	// domdiff(target, [...target.childNodes], [...domTemplate.childNodes]);
