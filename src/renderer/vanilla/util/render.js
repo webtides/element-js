@@ -86,8 +86,9 @@ const diff = function (templateNode, domNode) {
 		const templateChildNode = templateChildNodes[index];
 		const domChildNode = domChildNodes[index];
 
-		// If DOM node is equal to the template node, don't do anything
-		if (domChildNode.isEqualNode(templateChildNode)) {
+		// If the DOM node doesn't exist, append/copy the template node
+		if (!domChildNodes[index]) {
+			domNode.appendChild(templateChildNode);
 			continue;
 		}
 
@@ -97,9 +98,8 @@ const diff = function (templateNode, domNode) {
 			continue;
 		}
 
-		// If the DOM node doesn't exist, append/copy the template node
-		if (!domChildNodes[index]) {
-			domNode.appendChild(templateChildNode);
+		// If DOM node is equal to the template node, don't do anything
+		if (domChildNode.isEqualNode(templateChildNode)) {
 			continue;
 		}
 
