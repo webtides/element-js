@@ -73,7 +73,7 @@ const diff = function (templateNode, domNode) {
 	// TODO: what about plainlySetInnerHTML ?!
 	// TODO: what about SVGs ?! do they need special handling?!
 
-	// If extra elements in target, add dummy elements to template so that the length will match
+	// If extra nodes in the DOM, add dummy nodes to the template DOM so that the length will be the same
 	let count = domChildNodes.length - templateChildNodes.length;
 	if (count > 0) {
 		for (let index = count; index > 0; index--) {
@@ -81,40 +81,40 @@ const diff = function (templateNode, domNode) {
 		}
 	}
 
-	// Diff each node in the template child nodes array
+	// Diff each node in the template child nodes list
 	for (let index = 0; index < templateChildNodes.length; index++) {
 		const templateChildNode = templateChildNodes[index];
 		const domChildNode = domChildNodes[index];
 
-		// If template node is dummy node, remove node in target
+		// If DOM node is equal to the template node, don't do anything
+		if (domChildNode.isEqualNode(templateChildNode)) {
+			continue;
+		}
+
+		// If the template node is a dummy node, remove the node in the DOM
 		if (templateChildNode.tagName === 'DELETE-ME') {
 			domChildNode.parentNode.removeChild(domChildNode);
 			continue;
 		}
 
-		// If target node doesn't exist, create it
+		// If the DOM node doesn't exist, append/copy the template node
 		if (!domChildNodes[index]) {
 			domNode.appendChild(templateChildNode);
 			continue;
 		}
 
-		// If target node is equal to the template node, don't do anything
-		if (domChildNode.isEqualNode(templateChildNode)) {
-			continue;
-		}
-
-		// If node type is not the same, replace it with the template node
+		// If node types are not the same, replace the DOM node with the template node
 		if (templateChildNode.nodeType !== domChildNode.nodeType) {
 			domChildNode.parentNode.replaceChild(templateChildNode, domChildNode);
 			continue;
 		}
 
-		// If attributes are different, update them
+		// If the node is an Element node, diff the attributes
 		if (templateChildNode.nodeType === 1) {
 			diffAttributes(templateChildNode, domChildNode);
 		}
 
-		// If content is different, update it
+		// If the node is a Text node and the content is different, update it
 		if (domChildNode.nodeType === 3) {
 			if (domChildNode.textContent !== templateChildNode.textContent) {
 				domChildNode.textContent = templateChildNode.textContent;
@@ -128,19 +128,19 @@ const diff = function (templateNode, domNode) {
 		// 	return;
 		// }
 
-		// If target should be empty, remove all child nodes
+		// If the DOM node should be empty, remove all child nodes
 		if (domChildNode.hasChildNodes() && !templateChildNode.hasChildNodes()) {
 			domChildNode.replaceChildren();
 			continue;
 		}
 
-		// If target is empty but shouldn't be, add child nodes
+		// If the DOM node is empty, but should have children, add child nodes from the template node
 		if (!domChildNode.hasChildNodes() && templateChildNode.hasChildNodes()) {
 			domChildNode.replaceChildren(...templateChildNode.childNodes);
 			continue;
 		}
 
-		// If there are existing child elements that need to be modified, diff them
+		// If there are child nodes, diff them recursively
 		if (templateChildNode.hasChildNodes()) {
 			if (!isTemplateElement(templateChildNode)) {
 				diff(templateChildNode, domChildNode);
