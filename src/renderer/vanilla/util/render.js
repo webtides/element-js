@@ -17,12 +17,19 @@ const convertStringToHTML = (template) => {
  * @param  {Element} domElement The existing DOM node
  */
 const diffAttributes = function (templateElement, domElement) {
-	// TODO: maybe we can compare them and return early if the are the same?!
+	// TODO: maybe we can compare them and return early if they are the same?!
+	// unfortunately there is (currently) no native way to compare the NamedNodeMap from element.attributes
+	// we would have to loop over them and map them to be able to stringify them -> too slow at the moment
+	// and also it would depend on attributes and there values being in the same order (which is actually not necessary)
 
 	for (/** @type {Attr} */ const attribute of Array.from(domElement.attributes)) {
 		if (templateElement.hasAttribute(attribute.name)) {
 			// TODO: handle attributes with "." aka properties...
-			domElement.setAttribute(attribute.name, templateElement.getAttribute(attribute.name) || '');
+			const oldValue = attribute.value;
+			const newValue = templateElement.getAttribute(attribute.name) || '';
+			if (oldValue !== newValue) {
+				domElement.setAttribute(attribute.name, newValue);
+			}
 		} else {
 			domElement.removeAttribute(attribute.name);
 		}
