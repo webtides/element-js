@@ -1,6 +1,6 @@
 import { BaseElement, defineElement } from '../src/BaseElement.js';
 
-class ExampleElement extends BaseElement {
+class ExampleBaseElement extends BaseElement {
 	// normal public properties
 	greeting = 'Hello';
 	name = 'John';
@@ -33,7 +33,7 @@ class ExampleElement extends BaseElement {
 
 	// method
 	greet() {
-		alert('greeting: ' + this.computedMsg);
+		console.log('greeting: ' + this.computedMsg);
 	}
 }
-defineElement('example-element', ExampleElement);
+defineElement('example-base-element', ExampleBaseElement);
