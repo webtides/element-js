@@ -1,5 +1,7 @@
 const _cachedTemplateElements = {};
 
+let countChanges = 0;
+
 const hashCache1 = new Map();
 const hashCache2 = new Map();
 
@@ -129,6 +131,8 @@ const diff = function (templateNode, domNode) {
 		// If DOM node is equal to the template node, don't do anything
 		if (domChildNode.isEqualNode(templateChildNode)) {
 			continue;
+		} else {
+			countChanges++;
 		}
 
 		// If node types are not the same, replace the DOM node with the template node
@@ -274,6 +278,8 @@ const diffWithHashing = function (templateNode, domNode) {
 		// If DOM node is equal to the template node, don't do anything
 		if (domChildNode.isEqualNode(templateChildNode)) {
 			continue;
+		} else {
+			countChanges++;
 		}
 
 		// If node types are not the same, replace the DOM node with the template node
@@ -450,6 +456,8 @@ const diffWithHashingJIT = function (templateNode, domNode) {
 		// If DOM node is equal to the template node, don't do anything
 		if (domChildNode.isEqualNode(templateChildNode)) {
 			continue;
+		} else {
+			countChanges++;
 		}
 
 		// If node types are not the same, replace the DOM node with the template node
@@ -510,9 +518,11 @@ const render = (template, domNode) => {
 	const templateNode = convertStringToHTML(template);
 	console.timeEnd('convertStringToHTML');
 
+	countChanges = 0;
 	console.time('diff');
 	diffWithHashingJIT(templateNode, domNode);
 	console.timeEnd('diff');
+	console.log('countChanges', countChanges);
 
 	console.timeEnd('render');
 };
