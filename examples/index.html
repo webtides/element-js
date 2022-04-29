@@ -3,12 +3,18 @@
 	<head>
 		<meta charset="UTF-8" />
 		<title>Example Elements</title>
-		<script type="module" src="custom-renderer-element.js"></script>
-		<script type="module" src="example-element.js"></script>
+		<script type="module" src="example-base-element.js"></script>
+		<script type="module" src="example-template-element.js"></script>
+		<script src="https://cdn.tailwindcss.com"></script>
+		<style type="text/tailwindcss">
+			.btn {
+				@apply inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
+			}
+		</style>
 	</head>
 	<body>
-		<h1> Test</h1>
-		<example-element family-name="Smith"></example-element>
-		<custom-renderer-element name="Jane" items="1" array='[1, 2, 3, 4]'></custom-renderer-element>
+		<h1>Test</h1>
+		<example-base-element family-name="Smith"></example-base-element>
+		<example-template-element name="Jane" items="1" array="[1,2,3,4]"></example-template-element>
 	</body>
 </html>
