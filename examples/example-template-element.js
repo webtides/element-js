@@ -89,7 +89,6 @@ class Store {
 		}
 	}
 	delete(id) {
-		console.log('delete', id);
 		const idx = this.data.findIndex((d) => d.id == id);
 		this.data = this.data.filter((e, i) => i != idx);
 		//return this;
@@ -167,7 +166,6 @@ class ExampleTemplateElement extends TemplateElement {
 					} else if (e.target.matches('#swaprows')) {
 						this.store.swapRows();
 					} else if (e.target.matches('.remove')) {
-						console.log('remove');
 						const tr = e.target.closest('tr');
 						const id = parseInt(tr.id);
 						this.store.delete(id);
