@@ -322,7 +322,7 @@ const diffWithHashing = function (templateNode, domNode) {
 		// If there are child nodes, diff them recursively
 		if (templateChildNode.hasChildNodes()) {
 			if (!isTemplateElement(templateChildNode)) {
-				diff(templateChildNode, domChildNode);
+				diffWithHashing(templateChildNode, domChildNode);
 			}
 		}
 	}
@@ -387,6 +387,10 @@ const diffWithHashingJIT = function (templateNode, domNode) {
 
 			// console.log('children');
 			// console.log(domChildNodes, templateChildNodes);
+			// console.log(
+			// 	domChildNodes.map((child) => child.textContent || child.innerHTML),
+			// 	templateChildNodes.map((child) => child.textContent || child.innerHTML),
+			// );
 
 			// console.log('hashes');
 			// console.log([...domHashes.entries()], [...templateHashes.entries()]);
@@ -500,7 +504,7 @@ const diffWithHashingJIT = function (templateNode, domNode) {
 		// If there are child nodes, diff them recursively
 		if (templateChildNode.hasChildNodes()) {
 			if (!isTemplateElement(templateChildNode)) {
-				diff(templateChildNode, domChildNode);
+				diffWithHashingJIT(templateChildNode, domChildNode);
 			}
 		}
 	}
@@ -520,6 +524,8 @@ const render = (template, domNode) => {
 
 	countChanges = 0;
 	console.time('diff');
+	// diff(templateNode, domNode);
+	// diffWithHashing(templateNode, domNode);
 	diffWithHashingJIT(templateNode, domNode);
 	console.timeEnd('diff');
 	console.log('countChanges', countChanges);
