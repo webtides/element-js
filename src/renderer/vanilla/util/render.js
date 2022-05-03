@@ -525,8 +525,8 @@ const render = (template, domNode) => {
 	countChanges = 0;
 	console.time('diff');
 	// diff(templateNode, domNode);
-	// diffWithHashing(templateNode, domNode);
-	diffWithHashingJIT(templateNode, domNode);
+	diffWithHashing(templateNode, domNode);
+	// diffWithHashingJIT(templateNode, domNode);
 	console.timeEnd('diff');
 	console.log('countChanges', countChanges);
 
