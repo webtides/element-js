@@ -71,20 +71,38 @@ export function camelToDash(string) {
 	return string.replace(/([A-Z])/g, '-$1').toLowerCase();
 }
 
+/**
+ * Decodes an attribute. Can only be encoded with the `encodeAttribute` method which
+ * is exported from this file.
+ *
+ * @param attribute
+ * @returns {string}
+ */
 export function decodeAttribute(attribute) {
 	return `${attribute}`
-		.replace(/&lt;/g, '<')
-		.replace(/&gt;/g, '>')
-		.replace(/&quot;/g, '"')
-		.replace(/&apos;/g, "'");
+		.replace(/\$lt;/g, '<')
+		.replace(/\$gt;/g, '>')
+		.replace(/\$quot;/g, '"')
+		.replace(/\$apos;/g, "'");
 }
 
+/**
+ * Encodes an attribute. Can only be decoded with the `decodeAttribute` method which
+ * is exported from this file.
+ *
+ * This does not use the standard way to encode an attribute, as the dom parser
+ * that renders the html would understand and automatically decode it. Which results
+ * in non sanitized html output.
+ *
+ * @param attribute
+ * @returns {string}
+ */
 export function encodeAttribute(attribute) {
 	return `${attribute}`
-		.replace(/'/g, '&apos;')
-		.replace(/"/g, '&quot;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
+		.replace(/'/g, '$apos;')
+		.replace(/"/g, '$quot;')
+		.replace(/</g, '$lt;')
+		.replace(/>/g, '$gt;')
 		.replace(/\r\n/g, '\n')
 		.replace(/[\r\n]/g, '\n');
 }
