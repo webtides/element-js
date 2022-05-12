@@ -73,7 +73,6 @@ const diff = function (templateNode, domNode) {
 	const domChildNodes = [...domNode.childNodes];
 	const templateChildNodes = [...templateNode.childNodes];
 
-	// TODO: what about plainlySetInnerHTML ?!
 	// TODO: what about SVGs ?! do they need special handling?!
 
 	// If extra nodes in the DOM, add dummy nodes to the template DOM so that the length will be the same
@@ -124,12 +123,6 @@ const diff = function (templateNode, domNode) {
 				continue;
 			}
 		}
-
-		// TODO: what about plainlySetInnerHTML ?!
-		// if (node.children.plainlySetInnerHTML && domMap[index]) {
-		// 	domMap[index].innerHTML = node.children.innerHTML;
-		// 	return;
-		// }
 
 		// If the DOM node should be empty, remove all child nodes
 		if (domChildNode.hasChildNodes() && !templateChildNode.hasChildNodes()) {
