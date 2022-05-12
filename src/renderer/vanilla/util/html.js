@@ -62,7 +62,7 @@ const html = function (strings, ...values) {
 };
 
 const unsafeHTML = (string) => {
-	return () => `<!--$$plainly-set-inner-html-->${decodeAttribute(string)}`;
+	return () => `${decodeAttribute(string)}`;
 };
 
 const spreadAttributes = (attributes) => {
