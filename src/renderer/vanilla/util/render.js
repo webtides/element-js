@@ -73,8 +73,6 @@ const diff = function (templateNode, domNode) {
 	const domChildNodes = [...domNode.childNodes];
 	const templateChildNodes = [...templateNode.childNodes];
 
-	// TODO: what about SVGs ?! do they need special handling?!
-
 	// If extra nodes in the DOM, add dummy nodes to the template DOM so that the length will be the same
 	let count = domChildNodes.length - templateChildNodes.length;
 	if (count > 0) {
@@ -111,17 +109,27 @@ const diff = function (templateNode, domNode) {
 			continue;
 		}
 
+		// If the element tag names are not the same, replace the DOM node with the template node
+		if (templateChildNode.nodeType === 1 && templateChildNode.tagName !== domChildNode.tagName) {
+			domChildNode.parentNode.replaceChild(templateChildNode, domChildNode);
+			continue;
+		}
+
+		// If the node is an SVG element, don't even think about diffing it, just replace it
+		if (templateChildNode.nodeType === 1 && templateChildNode.tagName === 'SVG') {
+			domChildNode.parentNode.replaceChild(templateChildNode, domChildNode);
+			continue;
+		}
+
 		// If the node is an Element node, diff the attributes
 		if (templateChildNode.nodeType === 1) {
 			diffAttributes(templateChildNode, domChildNode);
 		}
 
-		// If the node is a Text node and the content is different, update it
-		if (domChildNode.nodeType === 3) {
-			if (domChildNode.textContent !== templateChildNode.textContent) {
-				domChildNode.textContent = templateChildNode.textContent;
-				continue;
-			}
+		// If the node is a Text node or a Comment node, update it
+		if (domChildNode.nodeType === 3 || domChildNode.nodeType === 8) {
+			domChildNode.textContent = templateChildNode.textContent;
+			continue;
 		}
 
 		// If the DOM node should be empty, remove all child nodes
