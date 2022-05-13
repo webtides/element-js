@@ -70,19 +70,12 @@ const isTemplateElement = (element) => {
  * @param {Node} domNode
  */
 const diffNodes = function (templateNode, domNode) {
-	const domChildNodes = [...domNode.childNodes];
 	const templateChildNodes = [...templateNode.childNodes];
+	const domChildNodes = [...domNode.childNodes];
 
-	// If extra nodes in the DOM, add dummy nodes to the template DOM so that the length will be the same
-	let count = domChildNodes.length - templateChildNodes.length;
-	if (count > 0) {
-		for (let index = count; index > 0; index--) {
-			templateChildNodes.push(document.createElement('delete-me'));
-		}
-	}
-
-	// Diff each node in the template child nodes list
-	for (let index = 0; index < templateChildNodes.length; index++) {
+	// Diff each node in the child node lists
+	const length = Math.max(templateChildNodes.length, domChildNodes.length);
+	for (let index = 0; index < length; index++) {
 		const templateChildNode = templateChildNodes[index];
 		const domChildNode = domChildNodes[index];
 
@@ -92,8 +85,8 @@ const diffNodes = function (templateNode, domNode) {
 			continue;
 		}
 
-		// If the template node is a dummy node, remove the node in the DOM
-		if (templateChildNode.tagName === 'DELETE-ME') {
+		// If the template node doesn't exist, remove the node in the DOM
+		if (!templateChildNode) {
 			domChildNode.parentNode.removeChild(domChildNode);
 			continue;
 		}
