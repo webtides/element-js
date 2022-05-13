@@ -5,12 +5,14 @@ import { BaseElement } from '../../src/BaseElement';
 class UpdateCountElement extends BaseElement {
 	constructor(options) {
 		super({ deferUpdate: false, ...options });
-		this.updateCount = 0;
+		this.updateCount = -1; // -1 because the first afterUpdate after the connected hook
 	}
 
 	afterUpdate() {
 		this.updateCount++;
-		this.dispatch('afterUpdate', null, true);
+		if (this.updateCount > 0) {
+			this.dispatch('afterUpdate', null, true);
+		}
 	}
 }
 
