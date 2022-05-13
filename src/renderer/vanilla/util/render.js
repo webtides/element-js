@@ -69,8 +69,7 @@ const isTemplateElement = (element) => {
  * @param {Node} templateNode
  * @param {Node} domNode
  */
-const diff = function (templateNode, domNode) {
-	//console.log('diff');
+const diffNodes = function (templateNode, domNode) {
 	const domChildNodes = [...domNode.childNodes];
 	const templateChildNodes = [...templateNode.childNodes];
 
@@ -88,7 +87,7 @@ const diff = function (templateNode, domNode) {
 		const domChildNode = domChildNodes[index];
 
 		// If the DOM node doesn't exist, append/copy the template node
-		if (!domChildNodes[index]) {
+		if (!domChildNode) {
 			domNode.appendChild(templateChildNode);
 			continue;
 		}
@@ -148,7 +147,7 @@ const diff = function (templateNode, domNode) {
 		// If there are child nodes, diff them recursively
 		if (templateChildNode.hasChildNodes()) {
 			if (!isTemplateElement(templateChildNode)) {
-				diff(templateChildNode, domChildNode);
+				diffNodes(templateChildNode, domChildNode);
 			}
 		}
 	}
@@ -160,17 +159,8 @@ const diff = function (templateNode, domNode) {
  * @param {Node} domNode
  */
 const render = (template, domNode) => {
-	console.time('render');
-
-	console.time('convertStringToHTML');
 	const templateNode = convertStringToHTML(template);
-	console.timeEnd('convertStringToHTML');
-
-	console.time('diff');
-	diff(templateNode, domNode);
-	console.timeEnd('diff');
-
-	console.timeEnd('render');
+	diffNodes(templateNode, domNode);
 };
 
 export { render };
