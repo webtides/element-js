@@ -1,32 +1,8 @@
-/* eslint-disable no-unused-expressions */
-import { fixture, defineCE, assert, nextFrame } from '@open-wc/testing';
-import { TemplateElement as LitTemplateElement, html as litHtml } from '../../src/TemplateElement';
-import {
-	TemplateElement as VanillaTemplateElement,
-	html as vanillaHtml,
-} from '../../src/renderer/vanilla/TemplateElement';
+import { fixture, assert } from '@open-wc/testing';
 
-const litTemplateTag = defineCE(
-	class extends LitTemplateElement {
-		async updateTemplate(template) {
-			this._template = template;
-			await this.requestUpdate();
-		}
-	},
-);
-
-const vanillaTemplateTag = defineCE(
-	class extends VanillaTemplateElement {
-		async updateTemplate(template) {
-			this._template = template;
-			await this.requestUpdate();
-		}
-	},
-);
-
-const runTemplateTests = function (name, templateTag, html) {
-	describe(`${name} templates`, () => {
-		it('can render simple dom without any bindings', async () => {
+export const testTemplateBindings = function (name, templateTag, html, unsafeHTML) {
+	describe(`template bindings for ${name}`, () => {
+		it('creates the correct string from the literal', async () => {
 			const el = await fixture(`<${templateTag}></${templateTag}>`);
 
 			await el.updateTemplate(html`<div class="parent"><div class="child">content</div></div>`);
@@ -34,13 +10,32 @@ const runTemplateTests = function (name, templateTag, html) {
 			assert.lightDom.equal(el, '<div class="parent"><div class="child">content</div></div>');
 		});
 
-		it('can render simple bindings as node content', async () => {
+		it('parses variables as string from the literal', async () => {
 			const el = await fixture(`<${templateTag}></${templateTag}>`);
 
 			let name = 'John';
 			await el.updateTemplate(html`<div>Hello ${name}</div>`);
 
 			assert.lightDom.equal(el, '<div>Hello John</div>');
+		});
+
+		if (name !== 'lit') {
+			// TODO: for some reason the lit html literal does not sanitize...
+			it('correctly sanitizes html input', async () => {
+				const el = await fixture(`<${templateTag}></${templateTag}>`);
+
+				await el.updateTemplate(html`${`<strong>Unsafe HTML</strong>`}`);
+
+				assert.lightDom.equal(el, '$lt;strong$gt;Unsafe HTML$lt;/strong$gt;');
+			});
+		}
+
+		it('allows unsafe html input with the "unsafeHTML" directive', async () => {
+			const el = await fixture(`<${templateTag}></${templateTag}>`);
+
+			await el.updateTemplate(html`${unsafeHTML(`<strong>Unsafe HTML</strong>`)}`);
+
+			assert.lightDom.equal(el, '<strong>Unsafe HTML</strong>');
 		});
 
 		it('can have functions as bindings', async () => {
@@ -52,7 +47,7 @@ const runTemplateTests = function (name, templateTag, html) {
 			assert.lightDom.equal(el, '<div>Hello John</div>');
 		});
 
-		it('can render bindings with html templates', async () => {
+		it('can render bindings with html literals', async () => {
 			const el = await fixture(`<${templateTag}></${templateTag}>`);
 
 			let nested = html`<div class="nested"></div>`;
@@ -61,13 +56,37 @@ const runTemplateTests = function (name, templateTag, html) {
 			assert.lightDom.equal(el, '<div><div class="nested"></div></div>');
 		});
 
-		it('can render list bindings', async () => {
+		it('correctly parses arrays of literals', async () => {
 			const el = await fixture(`<${templateTag}></${templateTag}>`);
 
 			let list = [html`<div>1</div>`, html`<div>2</div>`, html`<div>3</div>`];
 			await el.updateTemplate(html`<div>${list}</div>`);
 
 			assert.lightDom.equal(el, '<div><div>1</div><div>2</div><div>3</div></div>');
+		});
+
+		if (name !== 'lit') {
+			// TODO: for some reason the lit html literal does not sanitize...
+			it('correctly parses an array of unsafe strings', async () => {
+				const el = await fixture(`<${templateTag}></${templateTag}>`);
+
+				const parts = [`<strong>First part</strong>`, `<strong>Second part</strong>`];
+				await el.updateTemplate(html`${parts}`);
+
+				assert.lightDom.equal(
+					el,
+					'$lt;strong$gt;First part$lt;/strong$gt;$lt;strong$gt;Second part$lt;/strong$gt;',
+				);
+			});
+		}
+
+		it('allows unsafe html input with the "unsafeHTML" directive in arrays', async () => {
+			const el = await fixture(`<${templateTag}></${templateTag}>`);
+
+			const parts = [unsafeHTML(`<strong>First part</strong>`), unsafeHTML(`<strong>Second part</strong>`)];
+			await el.updateTemplate(html`${parts}`);
+
+			assert.lightDom.equal(el, '<strong>First part</strong><strong>Second part</strong>');
 		});
 
 		// TODO: this should actually work for lit-html but it crashes...
@@ -131,6 +150,3 @@ const runTemplateTests = function (name, templateTag, html) {
 		});
 	});
 };
-
-runTemplateTests('lit', litTemplateTag, litHtml);
-runTemplateTests('vanilla', vanillaTemplateTag, vanillaHtml);
