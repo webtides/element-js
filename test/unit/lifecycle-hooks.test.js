@@ -47,17 +47,29 @@ describe('lifecycle-hooks', () => {
 		assert.equal(el.connectedCalled, true);
 	});
 
+	it('does not call the "beforeUpdate" hook for the first update after the element was connected', async () => {
+		const el = await fixture(`<${tag}></${tag}>`);
+		assert.equal(el.connectedCalled, true);
+		assert.equal(el.beforeUpdateCalled, false);
+	});
+
+	it('calls a "afterUpdate" hook when the element was updated for the first time while connecting', async () => {
+		const el = await fixture(`<${tag}></${tag}>`);
+		assert.equal(el.connectedCalled, true);
+		assert.equal(el.afterUpdateCalled, true);
+	});
+
 	it('calls a "beforeUpdate" hook when the element is about to be updated', async () => {
 		const el = await fixture(`<${tag}></${tag}>`);
 		assert.equal(el.beforeUpdateCalled, false);
 		el.count++;
 		await nextFrame();
-
 		assert.equal(el.beforeUpdateCalled, true);
 	});
 
 	it('calls a "afterUpdate" hook when the element was updated', async () => {
 		const el = await fixture(`<${tag}></${tag}>`);
+		el.afterUpdateCalled = false;
 		assert.equal(el.afterUpdateCalled, false);
 		el.count++;
 		await nextFrame();
@@ -74,9 +86,9 @@ describe('lifecycle-hooks', () => {
 
 	it('calls all hooks in the correct order at connection and after updating the element', async () => {
 		const el = await fixture(`<${tag}></${tag}>`);
-		assert.deepEqual(el.calledHooks, ['connected']);
+		assert.deepEqual(el.calledHooks, ['connected', 'afterUpdate']);
 		el.count++;
 		await nextFrame();
-		assert.deepEqual(el.calledHooks, ['connected', 'beforeUpdate', 'afterUpdate']);
+		assert.deepEqual(el.calledHooks, ['connected', 'afterUpdate', 'beforeUpdate', 'afterUpdate']);
 	});
 });

@@ -52,13 +52,14 @@ class BaseElement extends HTMLElement {
 		this.defineObserver();
 
 		if (this.hasAttribute('defer-update') || this._options.deferUpdate) {
-			// don't updates/render, but register refs and events
+			// don't update/render, but register refs and events
 			this.registerEventsAndRefs();
 
 			this.triggerHook('connected');
 		} else {
 			this.requestUpdate({ notify: false }).then(() => {
 				this.triggerHook('connected');
+				this.triggerHook('afterUpdate');
 			});
 		}
 	}
