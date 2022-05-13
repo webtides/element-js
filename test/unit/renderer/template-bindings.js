@@ -89,15 +89,43 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 			assert.lightDom.equal(el, '<strong>First part</strong><strong>Second part</strong>');
 		});
 
-		// TODO: this should actually work for lit-html but it crashes...
-		// it('can render bindings as node attributes', async () => {
-		// 	const el = await fixture(`<${templateTag}></${templateTag}>`);
-		//
-		// 	const disabled = true;
-		// 	await el.updateTemplate(html`<button ${disabled ? 'disabled' : ''}>Label</button>`);
-		//
-		// 	assert.lightDom.equal(el, '<button disabled>Label</button>');
-		// });
+		if (name !== 'lit') {
+			// TODO: this should actually work for lit-html but it crashes...
+			it('can render bindings as node attributes', async () => {
+				const el = await fixture(`<${templateTag}></${templateTag}>`);
+
+				const disabled = true;
+				await el.updateTemplate(html`<button ${disabled ? 'disabled' : ''}>Label</button>`);
+
+				assert.lightDom.equal(el, '<button disabled>Label</button>');
+			});
+
+			it('can update attribute bindings', async () => {
+				const el = await fixture(`<${templateTag}></${templateTag}>`);
+
+				const disabled = true;
+				let hidden = true;
+				await el.updateTemplate(
+					html`<button ${disabled ? 'disabled' : ''} ${hidden ? 'hidden' : ''}>Label</button>`,
+				);
+
+				assert.lightDom.equal(el, '<button disabled hidden>Label</button>');
+
+				hidden = false;
+				await el.updateTemplate(
+					html`<button ${disabled ? 'disabled' : ''} ${hidden ? 'hidden' : ''}>Label</button>`,
+				);
+
+				assert.lightDom.equal(el, '<button disabled>Label</button>');
+
+				const active = true;
+				await el.updateTemplate(
+					html`<button ${disabled ? 'disabled' : ''} ${active ? 'active' : ''}>Label</button>`,
+				);
+
+				assert.lightDom.equal(el, '<button disabled active>Label</button>');
+			});
+		}
 
 		it('can render bindings inside attributes', async () => {
 			const el = await fixture(`<${templateTag}></${templateTag}>`);
