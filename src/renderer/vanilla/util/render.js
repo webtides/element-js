@@ -69,7 +69,7 @@ const isTemplateElement = (element) => {
  * @param {Node} domNode
  */
 const diff = function (templateNode, domNode) {
-	console.log('diff');
+	//console.log('diff');
 	const domChildNodes = [...domNode.childNodes];
 	const templateChildNodes = [...templateNode.childNodes];
 
