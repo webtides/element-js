@@ -48,9 +48,4 @@ const choose = (value, cases, defaultCase) => {
 	return cases[value] || defaultCase;
 };
 
-// what more?
-// ifDefined?
-// booleanAttribute?
-// ref?
-
 export { classMap, styleMap, when, choose };
