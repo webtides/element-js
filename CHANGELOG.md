@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Changed -->
 <!-- ### Removed -->
 <!-- ### Fixed -->
-## [NEXT] - ???
+## [0.4.3] - 2022-07-06
 
 ### ADDED
 * parse option to propertyOptions that can be either a boolean OR a function for custom parsing
