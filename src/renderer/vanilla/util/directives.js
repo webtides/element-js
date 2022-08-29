@@ -48,4 +48,6 @@ const choose = (value, cases, defaultCase) => {
 	return cases[value] || defaultCase;
 };
 
+// TODO: move unsafeHTML and spreadAttributes here...
+
 export { classMap, styleMap, when, choose };
