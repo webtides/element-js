@@ -1,9 +1,10 @@
 {
 	"root": true,
-	"extends": ["plugin:prettier/recommended"],
+	"extends": ["plugin:prettier/recommended", "plugin:import/recommended"],
 	"parser": "babel-eslint",
 	"rules": {
-		"prettier/prettier": ["error", { "semi": true }]
+		"prettier/prettier": ["error", { "semi": true }],
+		"import/extensions": ["error", "always"]
 	},
 	"globals": {
 		"document": true,
@@ -13,7 +14,7 @@
 		"requestAnimationFrame": true
 	},
 	"parserOptions": {
-		"ecmaVersion": 2018,
+		"ecmaVersion": 2022,
 		"sourceType": "module"
 	},
 	"env": {
