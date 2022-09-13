@@ -20,7 +20,6 @@ const diffAttributes = function (templateElement, domElement) {
 	// remove or update previous attributes
 	for (/** @type {Attr} */ const attribute of Array.from(domElement.attributes)) {
 		if (templateElement.hasAttribute(attribute.name)) {
-			// TODO: handle attributes with "." aka properties...
 			const oldValue = attribute.value;
 			const newValue = templateElement.getAttribute(attribute.name) || '';
 			if (oldValue !== newValue) {
