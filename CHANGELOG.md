@@ -14,6 +14,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Changed -->
 <!-- ### Removed -->
 <!-- ### Fixed -->
+## [0.5.0] - 2022-09-13
+
+### Changed
+* improved the performance of the vanilla-renderer
+
+### Removed
+* setting attributes as properties during dom diffing for the vanilla renderer. This is potentially a **breaking** change if you used attributes with the "." (dot) notation
+
 ## [0.4.3] - 2022-07-06
 
 ### ADDED
