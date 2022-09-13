@@ -33,7 +33,7 @@ class ExampleElement extends BaseElement {
 
 	// method
 	greet() {
-		alert('greeting: ' + this.computedMsg);
+		console.log('greeting: ' + this.computedMsg);
 	}
 }
 defineElement('example-element', ExampleElement);
