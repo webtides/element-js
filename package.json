@@ -18,7 +18,10 @@
 		"./src/util/*": "./src/util/*.js",
 		"./src/renderer/vanilla": "./src/renderer/vanilla/index.js",
 		"./src/renderer/vanilla/TemplateElement": "./src/renderer/vanilla/TemplateElement.js",
-		"./src/renderer/vanilla/util/*": "./src/renderer/vanilla/util/*.js"
+		"./src/renderer/vanilla/util/*": "./src/renderer/vanilla/util/*.js",
+		"./src/renderer/vanilla/util/directives.js": "./src/renderer/vanilla/util/directives.js",
+		"./src/renderer/vanilla/util/html.js": "./src/renderer/vanilla/util/html.js",
+		"./src/renderer/vanilla/util/render.js": "./src/renderer/vanilla/util/render.js"
 	},
 	"repository": "https://github.com/webtides/element-js.git",
 	"author": "@webtides",
