@@ -15,6 +15,7 @@ class ExampleDirectives extends TemplateElement {
 			enabled: true,
 			hidden: true,
 			choose: 'home',
+			array: [1, 2, 3, 4],
 		};
 	}
 
@@ -62,6 +63,10 @@ class ExampleDirectives extends TemplateElement {
 						camelToDash: 'automagically',
 					})}
 				></div>
+				<div>map:</div>
+				<ul>
+					${this.array.map((item) => html`<li>mapped item: ${item}</li>`)}
+				</ul>
 			</div>
 		`;
 	}
