@@ -1,4 +1,4 @@
-import { defineElement } from '../src/BaseElement';
+import { defineElement } from '../src/BaseElement.js';
 import { TemplateElement, html } from '../src/renderer/vanilla/TemplateElement.js';
 import { choose, classMap, styleMap, when } from '../src/renderer/vanilla/util/directives.js';
 
