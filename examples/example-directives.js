@@ -1,6 +1,13 @@
 import { defineElement } from '../src/BaseElement.js';
 import { TemplateElement, html } from '../src/renderer/vanilla/TemplateElement.js';
-import { choose, classMap, styleMap, when } from '../src/renderer/vanilla/util/directives.js';
+import {
+	choose,
+	classMap,
+	styleMap,
+	when,
+	unsafeHTML,
+	spreadAttributes,
+} from '../src/renderer/vanilla/util/directives.js';
 
 class ExampleDirectives extends TemplateElement {
 	properties() {
@@ -40,6 +47,21 @@ class ExampleDirectives extends TemplateElement {
 						</div>`,
 					})}
 				</div>
+				<div>safeHTML:</div>
+				<div>${`<p>I'm supposed to be escaped</p>`}</div>
+				<div>unsafeHTML:</div>
+				<div>${unsafeHTML`<p>I'm supposed to be parsed as HTML</p>`}</div>
+				<div>spreadAttributes:</div>
+				<div
+					${spreadAttributes({
+						string: 'string',
+						number: 13,
+						boolean: true,
+						list: [1, '2', 3],
+						map: { foo: 'bar' },
+						camelToDash: 'automagically',
+					})}
+				></div>
 			</div>
 		`;
 	}
