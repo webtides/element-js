@@ -1,4 +1,5 @@
-import { camelToDash, decodeAttribute, encodeAttribute } from '../../../util/AttributeParser';
+import { encodeAttribute } from '../../../util/AttributeParser';
+import { unsafeHTML, spreadAttributes } from './directives.js';
 
 class Part {
 	constructor(value) {
@@ -61,18 +62,4 @@ const html = function (strings, ...values) {
 	return new TemplateLiteral(strings, ...values);
 };
 
-const unsafeHTML = (string) => {
-	return () => `${decodeAttribute(string)}`;
-};
-
-const spreadAttributes = (attributes) => {
-	return () => {
-		return Object.keys(attributes)
-			.map((key) => {
-				return `${camelToDash(key)}='${new Part(attributes[key])}'`;
-			})
-			.join(' ');
-	};
-};
-
-export { html, unsafeHTML, spreadAttributes };
+export { Part, TemplatePart, TemplateLiteral, html, unsafeHTML, spreadAttributes };

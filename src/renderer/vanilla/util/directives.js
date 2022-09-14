@@ -1,3 +1,6 @@
+import { camelToDash, decodeAttribute } from '../../../util/AttributeParser.js';
+import { Part } from './html.js';
+
 /**
  * Maps a list of classes to an element from an object.
  * The keys will become the classes when the value is truthy.
@@ -48,6 +51,28 @@ const choose = (value, cases, defaultCase) => {
 	return cases[value] || defaultCase;
 };
 
-// TODO: move unsafeHTML and spreadAttributes here...
+/**
+ * Renders a given string as HTML instead of text
+ * @param {string} string
+ * @returns {function(): string}
+ */
+const unsafeHTML = (string) => {
+	return () => `${decodeAttribute(string)}`;
+};
 
-export { classMap, styleMap, when, choose };
+/**
+ * Renders multiple attributes as key="value" pairs from a map of attributes
+ * @param {Object.<string, any>} attributes
+ * @returns {function(): string}
+ */
+const spreadAttributes = (attributes) => {
+	return () => {
+		return Object.keys(attributes)
+			.map((key) => {
+				return `${camelToDash(key)}='${new Part(attributes[key])}'`;
+			})
+			.join(' ');
+	};
+};
+
+export { classMap, styleMap, when, choose, unsafeHTML, spreadAttributes };
