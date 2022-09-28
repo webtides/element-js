@@ -90,8 +90,6 @@ const diffNodes = function (templateNode, domNode) {
 	const templateChildNodes = [...templateNode.childNodes];
 	const domChildNodes = [...domNode.childNodes];
 
-	let alteredChildNodes = 0;
-
 	// Diff each node in the child node lists
 	let length = Math.max(templateChildNodes.length, domChildNodes.length);
 	for (let index = 0; index < length; index++) {
@@ -113,42 +111,45 @@ const diffNodes = function (templateNode, domNode) {
 		// If DOM node is equal to the template node, don't do anything
 		if (domChildNode.isEqualNode(templateChildNode)) {
 			continue;
-		} else {
-			// this doesn't have to be correct, but it could improve things and should not worsen things
-			// in the worst case we still have to compare and swap all the elements
-			// but in the best case we find the one element that should actually be inserted or removed
-			// and from here on, every element that comes after should be the same again
+		}
 
-			// we try to delete here (kind of early) instead of at the end
-			if (domNode.childNodes.length > templateNode.childNodes.length) {
-				domChildNodes.splice(index, 1);
-				domNode.removeChild(domChildNode);
-				length--;
-				index--; // because .childNodes is a live array and will decrease under the hood
+		// the following two checks don't have to be correct, but it could bring as back to the fast path
+		// in the worst case we still have to compare and swap all the elements
+		// but in the best case we find the one element that should actually be inserted or removed
+		// and from there on, every node that comes after should be equal again
 
-				// we might have corrected everything and the parents could be equal again
-				// if so, we can skip the rest of children
-				if (domNode.childNodes.length === templateNode.childNodes.length && domNode.isEqualNode(templateNode)) {
-					return;
-				}
+		// fast path for removing DOM nodes - we delete the node now instead of at the end
+		if (domNode.childNodes.length > templateNode.childNodes.length) {
+			domChildNodes.splice(index, 1);
+			domNode.removeChild(domChildNode);
+			// because domChildNodes will get shorter by splicing it, everything moves up by one
+			// so the (actual) next element will have the same index now as we currently have
+			// therefore we have to adjust our counters
+			length--;
+			index--;
 
-				continue;
+			// we might have corrected everything and the parent nodes could be equal again
+			// if so, we can skip the rest of the child node checks
+			if (domNode.childNodes.length === templateNode.childNodes.length && domNode.isEqualNode(templateNode)) {
+				return;
 			}
 
-			// we try to insert here (kind of early) instead of at the end
-			// but do not insert before if we are at the end of the list of children
-			if (index !== domNode.childNodes.length - 1 && domNode.childNodes.length < templateNode.childNodes.length) {
-				domChildNodes.splice(index, 0, templateChildNode);
-				domNode.insertBefore(templateChildNode, domChildNode);
+			continue;
+		}
 
-				// we might have corrected everything and the parents could be equal again
-				// if so, we can skip the rest of children
-				if (domNode.childNodes.length === templateNode.childNodes.length && domNode.isEqualNode(templateNode)) {
-					return;
-				}
+		// fast path for adding DOM nodes - we insert the node now instead of at the end
+		// but NOT if we already are at the end of the list of child nodes
+		if (index !== domNode.childNodes.length - 1 && domNode.childNodes.length < templateNode.childNodes.length) {
+			domChildNodes.splice(index, 0, templateChildNode);
+			domNode.insertBefore(templateChildNode, domChildNode);
 
-				continue;
+			// we might have corrected everything and the parent nodes could be equal again
+			// if so, we can skip the rest of the child node checks
+			if (domNode.childNodes.length === templateNode.childNodes.length && domNode.isEqualNode(templateNode)) {
+				return;
 			}
+
+			continue;
 		}
 
 		// If node types are not the same, replace the DOM node with the template node
@@ -186,19 +187,6 @@ const diffNodes = function (templateNode, domNode) {
 				diffNodes(templateChildNode, domChildNode);
 			}
 		}
-
-		alteredChildNodes++;
-
-		// after we have done everything else, the parents could be equal again
-		// if so, we can skip the rest of children
-		// but if too many children are different, stop it and assume that everything could be changed...
-		// if (
-		// 	alteredChildNodes < 3 &&
-		// 	domNode.childNodes.length === templateNode.childNodes.length &&
-		// 	domNode.isEqualNode(templateNode)
-		// ) {
-		// 	return;
-		// }
 	}
 };
 
