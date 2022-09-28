@@ -44,3 +44,18 @@ export const supportsAdoptingStyleSheets = () =>
 
 // for IE11 we are using the ShadyDOM Polyfill. With the polyfill we cannot append stylesheets to the shadowRoot
 export const supportsAppendingStyleSheets = !window.ShadyDOM;
+
+// better hasChildNodes check because the native check will also count for empty whitespace as child nodes... :(
+export const hasChildNodes = (node) => {
+	const childNodesLength = node.childNodes.length;
+
+	if (childNodesLength === 0) return false;
+
+	if (childNodesLength === 1 && node.firstChild.nodeType === 3 && node.firstChild.textContent.trim() === '')
+		return false;
+
+	// children will not contain text nodes...
+	if (childNodesLength > 0) return true;
+
+	// TODO: check if more than 1 child nodes, but all childnodes are whitespace text ndoes?!
+};

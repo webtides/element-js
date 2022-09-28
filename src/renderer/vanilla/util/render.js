@@ -1,3 +1,9 @@
+import { hasChildNodes } from '../../../util/DOMHelper';
+
+const ELEMENT_NODE = 1;
+const TEXT_NODE = 3;
+const COMMENT_NODE = 8;
+
 const _cachedTemplateElements = {};
 
 /**
@@ -69,11 +75,25 @@ const isTemplateElement = (element) => {
  * @param {Node} domNode
  */
 const diffNodes = function (templateNode, domNode) {
+	// If the DOM node should be empty, remove all child nodes
+	if (hasChildNodes(domNode) && !hasChildNodes(templateNode)) {
+		domNode.replaceChildren();
+		return;
+	}
+
+	// If the DOM node is empty, but should have children, add child nodes from the template node
+	if (!hasChildNodes(domNode) && hasChildNodes(templateNode)) {
+		domNode.replaceChildren(...templateNode.childNodes);
+		return;
+	}
+
 	const templateChildNodes = [...templateNode.childNodes];
 	const domChildNodes = [...domNode.childNodes];
 
+	let alteredChildNodes = 0;
+
 	// Diff each node in the child node lists
-	const length = Math.max(templateChildNodes.length, domChildNodes.length);
+	let length = Math.max(templateChildNodes.length, domChildNodes.length);
 	for (let index = 0; index < length; index++) {
 		const templateChildNode = templateChildNodes[index];
 		const domChildNode = domChildNodes[index];
@@ -86,54 +106,78 @@ const diffNodes = function (templateNode, domNode) {
 
 		// If the template node doesn't exist, remove the node in the DOM
 		if (!templateChildNode) {
-			domChildNode.parentNode.removeChild(domChildNode);
+			domNode.removeChild(domChildNode);
 			continue;
 		}
 
 		// If DOM node is equal to the template node, don't do anything
 		if (domChildNode.isEqualNode(templateChildNode)) {
 			continue;
+		} else {
+			// this doesn't have to be correct, but it could improve things and should not worsen things
+			// in the worst case we still have to compare and swap all the elements
+			// but in the best case we find the one element that should actually be inserted or removed
+			// and from here on, every element that comes after should be the same again
+
+			// we try to delete here (kind of early) instead of at the end
+			if (domNode.childNodes.length > templateNode.childNodes.length) {
+				domChildNodes.splice(index, 1);
+				domNode.removeChild(domChildNode);
+				length--;
+				index--; // because .childNodes is a live array and will decrease under the hood
+
+				// we might have corrected everything and the parents could be equal again
+				// if so, we can skip the rest of children
+				if (domNode.childNodes.length === templateNode.childNodes.length && domNode.isEqualNode(templateNode)) {
+					return;
+				}
+
+				continue;
+			}
+
+			// we try to insert here (kind of early) instead of at the end
+			// but do not insert before if we are at the end of the list of children
+			if (index !== domNode.childNodes.length - 1 && domNode.childNodes.length < templateNode.childNodes.length) {
+				domChildNodes.splice(index, 0, templateChildNode);
+				domNode.insertBefore(templateChildNode, domChildNode);
+
+				// we might have corrected everything and the parents could be equal again
+				// if so, we can skip the rest of children
+				if (domNode.childNodes.length === templateNode.childNodes.length && domNode.isEqualNode(templateNode)) {
+					return;
+				}
+
+				continue;
+			}
 		}
 
 		// If node types are not the same, replace the DOM node with the template node
 		if (templateChildNode.nodeType !== domChildNode.nodeType) {
-			domChildNode.parentNode.replaceChild(templateChildNode, domChildNode);
+			domNode.replaceChild(templateChildNode, domChildNode);
 			continue;
-		}
-
-		// If the element tag names are not the same, replace the DOM node with the template node
-		if (templateChildNode.nodeType === 1 && templateChildNode.tagName !== domChildNode.tagName) {
-			domChildNode.parentNode.replaceChild(templateChildNode, domChildNode);
-			continue;
-		}
-
-		// If the node is an SVG element, don't even think about diffing it, just replace it
-		if (templateChildNode.nodeType === 1 && templateChildNode.tagName === 'SVG') {
-			domChildNode.parentNode.replaceChild(templateChildNode, domChildNode);
-			continue;
-		}
-
-		// If the node is an Element node, diff the attributes
-		if (templateChildNode.nodeType === 1) {
-			diffAttributes(templateChildNode, domChildNode);
 		}
 
 		// If the node is a Text node or a Comment node, update it
-		if (domChildNode.nodeType === 3 || domChildNode.nodeType === 8) {
+		if (domChildNode.nodeType === TEXT_NODE || domChildNode.nodeType === COMMENT_NODE) {
 			domChildNode.textContent = templateChildNode.textContent;
 			continue;
 		}
 
-		// If the DOM node should be empty, remove all child nodes
-		if (domChildNode.hasChildNodes() && !templateChildNode.hasChildNodes()) {
-			domChildNode.replaceChildren();
+		// If the element tag names are not the same, replace the DOM node with the template node
+		if (templateChildNode.nodeType === ELEMENT_NODE && templateChildNode.tagName !== domChildNode.tagName) {
+			domNode.replaceChild(templateChildNode, domChildNode);
 			continue;
 		}
 
-		// If the DOM node is empty, but should have children, add child nodes from the template node
-		if (!domChildNode.hasChildNodes() && templateChildNode.hasChildNodes()) {
-			domChildNode.replaceChildren(...templateChildNode.childNodes);
+		// If the node is an SVG element, don't even think about diffing it, just replace it
+		if (templateChildNode.nodeType === ELEMENT_NODE && templateChildNode.tagName === 'SVG') {
+			domNode.replaceChild(templateChildNode, domChildNode);
 			continue;
+		}
+
+		// If the node is an Element node, diff the attributes
+		if (templateChildNode.nodeType === ELEMENT_NODE) {
+			diffAttributes(templateChildNode, domChildNode);
 		}
 
 		// If there are child nodes, diff them recursively
@@ -142,6 +186,19 @@ const diffNodes = function (templateNode, domNode) {
 				diffNodes(templateChildNode, domChildNode);
 			}
 		}
+
+		alteredChildNodes++;
+
+		// after we have done everything else, the parents could be equal again
+		// if so, we can skip the rest of children
+		// but if too many children are different, stop it and assume that everything could be changed...
+		// if (
+		// 	alteredChildNodes < 3 &&
+		// 	domNode.childNodes.length === templateNode.childNodes.length &&
+		// 	domNode.isEqualNode(templateNode)
+		// ) {
+		// 	return;
+		// }
 	}
 };
 
@@ -152,7 +209,9 @@ const diffNodes = function (templateNode, domNode) {
  */
 const render = (template, domNode) => {
 	const templateNode = convertStringToHTML(template);
+	console.time('diff');
 	diffNodes(templateNode, domNode);
+	console.timeEnd('diff');
 };
 
 export { render };
