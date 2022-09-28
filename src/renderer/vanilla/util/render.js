@@ -1,4 +1,5 @@
 import { hasChildNodes } from '../../../util/DOMHelper';
+import udomdiff from './udomdiff.js';
 
 const ELEMENT_NODE = 1;
 const TEXT_NODE = 3;
@@ -197,8 +198,12 @@ const diffNodes = function (templateNode, domNode) {
  */
 const render = (template, domNode) => {
 	const templateNode = convertStringToHTML(template);
+	// console.time('diff');
+	// diffNodes(templateNode, domNode);
+	// console.timeEnd('diff');
+
 	console.time('diff');
-	diffNodes(templateNode, domNode);
+	udomdiff(domNode, [...domNode.childNodes], [...templateNode.childNodes], (node) => node);
 	console.timeEnd('diff');
 };
 
