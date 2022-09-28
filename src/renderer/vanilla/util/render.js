@@ -205,6 +205,8 @@ const render = (template, domNode) => {
 	console.time('diff');
 	udomdiff(domNode, [...domNode.childNodes], [...templateNode.childNodes], (node) => node);
 	console.timeEnd('diff');
+	// TODO: I think it is faster because it skips recursive diffing.. :(
+	// and if so, it would be completely useless...
 };
 
 export { render };
