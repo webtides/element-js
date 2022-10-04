@@ -1,6 +1,7 @@
 import { defineElement } from '../src/BaseElement';
 // import { TemplateElement, html } from '../src/TemplateElement';
-import { TemplateElement, html } from '../src/renderer/vanilla/TemplateElement.js';
+// import { TemplateElement, html } from '../src/renderer/vanilla/TemplateElement.js';
+import { TemplateElement, html } from '../src/renderer/uhtml/TemplateElement.js';
 
 function _random(max) {
 	return Math.round(Math.random() * 1000) % max;
@@ -213,7 +214,9 @@ class ExampleTemplateElement extends TemplateElement {
 									<btn
 										class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"
 									>
-										<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true">x</span>
+										<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"
+											>x</span
+										>
 									</btn>
 								</td>
 							</tr>`,

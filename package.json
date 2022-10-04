@@ -38,7 +38,8 @@
 		"shadow-dom"
 	],
 	"dependencies": {
-		"lit-html": "^1.2.1"
+		"lit-html": "^1.2.1",
+		"uhtml": "^3.1.0"
 	},
 	"devDependencies": {
 		"@open-wc/testing": "^3.0.3",

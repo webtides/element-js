@@ -1,6 +1,5 @@
 import { StyledElement } from '../../StyledElement';
-import { html, spreadAttributes, unsafeHTML } from './util/html';
-import { render } from './util/render';
+import { html, render } from 'uhtml';
 export { i18n } from '../../util/i18n';
 
 class TemplateElement extends StyledElement {
@@ -40,7 +39,9 @@ class TemplateElement extends StyledElement {
 			// just a plain string literal. no fancy rendering required
 			this.getRoot().innerHTML = `${template}`;
 		} else {
-			render(template, this.getRoot());
+			console.time('diff');
+			render(this.getRoot(), template);
+			console.timeEnd('diff');
 		}
 	}
 
@@ -49,4 +50,4 @@ class TemplateElement extends StyledElement {
 	}
 }
 
-export { TemplateElement, html, unsafeHTML, render, spreadAttributes };
+export { TemplateElement, html, render };
