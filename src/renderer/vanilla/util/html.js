@@ -38,10 +38,13 @@ class TemplatePart extends Part {
 	}
 }
 
-class TemplateLiteral {
+export class TemplateLiteral {
 	$$templateLiteral = true;
 
 	constructor(strings, ...values) {
+		this.strings = strings;
+		this.values = values;
+
 		let result = [];
 		for (let i = 0; i < strings.length; i++) {
 			result.push(strings[i]);
