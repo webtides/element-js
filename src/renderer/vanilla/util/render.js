@@ -618,19 +618,21 @@ const createWire = (fragment) => {
 };
 
 // as html and svg can be nested calls, but no parent node is known
-// until rendered somewhere, the unroll operation is needed to
+// until rendered somewhere, the parseTemplate operation is needed to
 // discover what to do with each interpolation, which will result
 // into an update operation.
-export const unroll = (templateInfo, templateLiteral) => {
+export const parseTemplate = (templateInfo, templateLiteral) => {
 	const { strings, values } = templateLiteral;
 	// interpolations can contain holes and arrays, so these need
 	// to be recursively discovered
-	const length = unrollValues(templateInfo, values);
+	const length = parseValues(templateInfo, values);
 	let { entry } = templateInfo;
 	// if the cache entry is either null or different from the template
-	// and the type this unroll should resolve, create a new entry
+	// and the type this parseTemplate should resolve, create a new entry
 	// assigning a new content fragment and the list of updates.
-	if (!entry || entry.strings !== strings) templateInfo.entry = entry = createEntry(strings);
+	if (!entry || entry.strings !== strings) {
+		templateInfo.entry = entry = createEntry(strings);
+	}
 	const { templateNode, updates, wire } = entry;
 	// even if the fragment and its nodes is not live yet,
 	// it is already possible to update via interpolations values.
@@ -646,24 +648,30 @@ export const unroll = (templateInfo, templateLiteral) => {
 
 // the stack retains, per each interpolation value, the cache
 // related to each interpolation value, or null, if the render
-// was conditional and the value is not special (Array or Hole)
-const unrollValues = (templateInfo, values) => {
+// was conditional and the value is not special (TemplateLiteral or Array)
+const parseValues = (templateInfo, values) => {
 	const { stack } = templateInfo;
 	const { length } = values;
-	for (let i = 0; i < length; i++) {
-		const hole = values[i];
-		// each Hole gets unrolled and re-assigned as value
-		// so that domdiff will deal with a node/wire, not with a hole
-		if (hole instanceof TemplateLiteral) values[i] = unroll(stack[i] || (stack[i] = createTemplateInfo()), hole);
+	for (let index = 0; index < length; index++) {
+		const value = values[index];
+		// each TemplateLiteral gets unrolled and re-assigned as value
+		// so that domdiff will deal with a node/wire and not with a TemplateLiteral
+		if (value instanceof TemplateLiteral) {
+			values[index] = parseTemplate(stack[index] || (stack[index] = createTemplateInfo()), value);
+		}
 		// arrays are recursively resolved so that each entry will contain
 		// also a DOM node or a wire, hence it can be diffed if/when needed
-		else if (Array.isArray(hole)) unrollValues(stack[i] || (stack[i] = createTemplateInfo()), hole);
+		else if (Array.isArray(value)) {
+			parseValues(stack[index] || (stack[index] = createTemplateInfo()), value);
+		}
 		// if the value is nothing special, the stack doesn't need to retain data
 		// this is useful also to cleanup previously retained data, if the value
-		// was a Hole, or an Array, but not anymore, i.e.:
+		// was a TemplateLiteral, or an Array, but not anymore, i.e.:
 		// const update = content => html`<div>${content}</div>`;
 		// update(listOfItems); update(null); update(html`hole`)
-		else stack[i] = null;
+		else {
+			stack[index] = null;
+		}
 	}
 	if (length < stack.length) stack.splice(length);
 	return length;
@@ -685,7 +693,7 @@ const render = (template, domNode) => {
 	}
 
 	// TODO: find a better name for wire...
-	const wire = template instanceof TemplateLiteral ? unroll(templateInfo, template) : template;
+	const wire = template instanceof TemplateLiteral ? parseTemplate(templateInfo, template) : template;
 	if (wire !== templateInfo.wire) {
 		templateInfo.wire = wire;
 		// valueOf() simply returns the node itself, but in case it was a "wire"
