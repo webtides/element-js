@@ -595,6 +595,7 @@ const mapTemplate = (strings) => {
 	return { templateNode, nodes };
 };
 
+// https://github.com/WebReflection/uwire
 const createWire = (fragment) => {
 	const { childNodes } = fragment;
 	const { length } = childNodes;
@@ -677,6 +678,7 @@ const parseValues = (templateInfo, values) => {
 	return length;
 };
 
+// TODO: these are not templates but dom nodes...
 const templates = new WeakMap();
 /**
  * Render a template string into the given DOM node
