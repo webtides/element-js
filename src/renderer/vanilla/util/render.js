@@ -27,26 +27,10 @@ const holes = /[\x01\x02]/g;
 // TODO: find a better name for TemplateInfo...
 export const createTemplateInfo = () => ({
 	stack: [], // each template gets a stack for each interpolation "hole"
-
-	entry: null, // each entry contains details, such as:
-	//  * the template that is representing
-	//  * the type of node it represents (html or svg)
-	//  * the content fragment with all nodes
-	//  * the list of updates per each node (template holes)
-	//  * the "wired" node or fragment that will get updates
-	// if the template or type are different from the previous one
-	// the entry gets re-created each time
-
 	wire: null, // each rendered node represent some wired content and
 	// this reference to the latest one. If different, the node
 	// will be cleaned up and the new "wire" will be appended
 });
-
-// the entry stored in the rendered node cache, and per each "hole"
-const createEntry = (strings) => {
-	const { templateNode, updates } = mapUpdates(strings);
-	return { strings, templateNode, updates, wire: null };
-};
 
 // Template Literals are unique per scope and static, meaning a template
 // should be parsed once, and once only, as it will always represent the same
@@ -63,13 +47,12 @@ const mapUpdates = (strings) => {
 		templateStrings.set(strings, mappedTemplate);
 	}
 
-	const { templateNode, nodes } = mappedTemplate;
 	// clone deeply the fragment
-	const fragment = globalThis.document?.importNode(templateNode, true);
+	const documentFragment = globalThis.document?.importNode(mappedTemplate.documentFragment, true);
 	// and relate an update handler per each node that needs one
-	const updates = nodes.map(updateHandlers, fragment);
+	const updates = mappedTemplate.nodes.map(updateHandlers, documentFragment);
 	// return the fragment and all updates to use within its nodes
-	return { templateNode: fragment, updates };
+	return { documentFragment, updates };
 };
 
 /**
@@ -97,10 +80,10 @@ const createTemplateString = (strings, prefix) => {
 // operation based on the same template, i.e. data => html`<p>${data}</p>`
 const mapTemplate = (strings) => {
 	const templateString = createTemplateString(strings, prefix);
-	const templateNode = convertStringToTemplate(templateString);
+	const documentFragment = convertStringToTemplate(templateString);
 	// once instrumented and reproduced as fragment, it's crawled
 	// to find out where each update is in the fragment tree
-	const tw = globalThis.document?.createTreeWalker(templateNode, 1 | 128);
+	const tw = globalThis.document?.createTreeWalker(documentFragment, 1 | 128);
 	const nodes = [];
 	const length = strings.length - 1;
 	let i = 0;
@@ -150,7 +133,7 @@ const mapTemplate = (strings) => {
 	// will be cloned in the future to represent the template, and all updates
 	// related to such content retrieved right away without needing to re-crawl
 	// the exact same template, and its content, more than once.
-	return { templateNode, nodes };
+	return { documentFragment, nodes };
 };
 
 // https://github.com/WebReflection/uwire
@@ -166,6 +149,10 @@ const createWire = (fragment) => {
 		nodeType,
 		firstChild,
 		lastChild,
+		// valueOf() simply returns the node itself, but in case it was a "wire"
+		// it will eventually re-append all nodes to its fragment so that such
+		// fragment can be re-appended many times in a meaningful way
+		// (wires are basically persistent fragments facades with special behavior)
 		valueOf() {
 			if (childNodes.length !== length) {
 				let i = 0;
@@ -174,32 +161,6 @@ const createWire = (fragment) => {
 			return fragment;
 		},
 	};
-};
-
-// as html and svg can be nested calls, but no parent node is known
-// until rendered somewhere, the parseTemplate operation is needed to
-// discover what to do with each interpolation, which will result
-// into an update operation.
-export const parseTemplate = (templateInfo, templateLiteral) => {
-	// interpolations can contain holes and arrays, so these need
-	// to be recursively discovered
-	const length = parseValues(templateInfo, templateLiteral.values);
-	// if the cache entry is either null or different from the template
-	// and the type this parseTemplate should resolve, create a new entry
-	// assigning a new content fragment and the list of updates.
-	if (!templateInfo.entry || templateInfo.entry.strings !== templateLiteral.strings) {
-		templateInfo.entry = createEntry(templateLiteral.strings);
-	}
-	// even if the fragment and its nodes is not live yet,
-	// it is already possible to update via interpolations values.
-	for (let i = 0; i < length; i++) {
-		templateInfo.entry.updates[i](templateLiteral.values[i]);
-	}
-	// if the entry was new, or representing a different template or type,
-	// create a new persistent entity to use during diffing.
-	// This is simply a DOM node, when the template has a single container,
-	// as in `<p></p>`, or a "wire" in `<p></p><p></p>` and similar cases.
-	return templateInfo.entry.wire || (templateInfo.entry.wire = createWire(templateInfo.entry.templateNode));
 };
 
 // the stack retains, per each interpolation value, the cache
@@ -233,15 +194,49 @@ const parseValues = (templateInfo, values) => {
 	return length;
 };
 
+// as html and svg can be nested calls, but no parent node is known
+// until rendered somewhere, the parseTemplate operation is needed to
+// discover what to do with each interpolation, which will result
+// into an update operation.
+export const parseTemplate = (templateInfo, templateLiteral) => {
+	// interpolations can contain holes and arrays, so these need
+	// to be recursively discovered
+	const length = parseValues(templateInfo, templateLiteral.values);
+	// if the cache entry is either null or different from the template
+	// and the type this parseTemplate should resolve, create a new entry
+	// assigning a new content fragment and the list of updates.
+	if (templateInfo.strings !== templateLiteral.strings) {
+		const { documentFragment, updates } = mapUpdates(templateLiteral.strings);
+		templateInfo.strings = templateLiteral.strings;
+		templateInfo.documentFragment = documentFragment;
+		templateInfo.updates = updates;
+		// TODO: wire2 because we need to be able to determine a difference in render()...
+		templateInfo.wire2 = createWire(templateInfo.documentFragment);
+	}
+	// even if the fragment and its nodes is not live yet,
+	// it is already possible to update via interpolations values.
+	for (let i = 0; i < length; i++) {
+		templateInfo.updates[i](templateLiteral.values[i]);
+	}
+	// if the entry was new, or representing a different template or type,
+	// create a new persistent entity to use during diffing.
+	// This is simply a DOM node, when the template has a single container,
+	// as in `<p></p>`, or a "wire" in `<p></p><p></p>` and similar cases.
+	return templateInfo.wire2;
+};
+
 // TODO: these are not templates but dom nodes...
 const templates = new WeakMap();
+
 /**
  * Render a template string into the given DOM node
  * @param {TemplateLiteral | string} template
  * @param {Node} domNode
  */
 const render = (template, domNode) => {
+	// console.time('diff');
 	// TODO: template could be a string ?!
+	// TODO: make it possible that template could also be an html element ?!
 
 	let templateInfo = templates.get(domNode);
 	if (!templateInfo) {
@@ -251,20 +246,13 @@ const render = (template, domNode) => {
 
 	// TODO: find a better name for wire...
 	const wire = template instanceof TemplateLiteral ? parseTemplate(templateInfo, template) : template;
+
 	if (wire !== templateInfo.wire) {
 		templateInfo.wire = wire;
-		// valueOf() simply returns the node itself, but in case it was a "wire"
-		// it will eventually re-append all nodes to its fragment so that such
-		// fragment can be re-appended many times in a meaningful way
-		// (wires are basically persistent fragments facades with special behavior)
 		domNode.replaceChildren(wire.valueOf());
 	}
-	//return domNode;
 
 	console.log('rendered');
-	// console.time('diff');
-	// const templateNode = convertStringToHTML(template);
-	// diffNodes(templateNode, domNode);
 	// console.timeEnd('diff');
 };
 
