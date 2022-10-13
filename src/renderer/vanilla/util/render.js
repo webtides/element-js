@@ -24,13 +24,81 @@ const holes = /[\x01\x02]/g;
 // \x01 Node.ELEMENT_NODE
 // \x02 Node.ATTRIBUTE_NODE
 
-// TODO: find a better name for TemplateInfo...
-export const createTemplateInfo = () => ({
-	stack: [], // each template gets a stack for each interpolation "hole"
-	wire: null, // each rendered node represent some wired content and
-	// this reference to the latest one. If different, the node
-	// will be cleaned up and the new "wire" will be appended
-});
+// TODO: find a better name ?!
+export class TemplateInstance {
+	stack = [];
+	wire = null;
+	strings = undefined;
+	documentFragment = undefined;
+	updates = undefined;
+	// TODO: wire2 because we need to be able to determine a difference in render()...
+	wire2 = undefined;
+
+	constructor(templateLiteral) {}
+
+	// the stack retains, per each interpolation value, the cache
+	// related to each interpolation value, or null, if the render
+	// was conditional and the value is not special (TemplateLiteral or Array)
+	parseValues(values) {
+		const stack = [];
+		for (let index = 0; index < values.length; index++) {
+			const value = values[index];
+			// each TemplateLiteral gets unrolled and re-assigned as value
+			// so that domdiff will deal with a node/wire and not with a TemplateLiteral
+			if (value instanceof TemplateLiteral) {
+				//values[index] = parseTemplate(stack[index] || (stack[index] = createTemplateInfo()), value);
+				let templateInstance = stack[index] || (stack[index] = new TemplateInstance(value));
+				templateInstance.update(value);
+				// TODO: it is not a good idea to manipulate values of another object/class
+				values[index] = templateInstance.wire2;
+			}
+			// arrays are recursively resolved so that each entry will contain
+			// also a DOM node or a wire, hence it can be diffed if/when needed
+			else if (Array.isArray(value)) {
+				//parseValues(stack[index] || (stack[index] = createTemplateInfo()), value);
+				stack[index] = this.parseValues(value);
+				// TODO: what about reusing previous values here?!
+			}
+			// if the value is nothing special, the stack doesn't need to retain data
+			// this is useful also to cleanup previously retained data, if the value
+			// was a TemplateLiteral, or an Array, but not anymore, i.e.:
+			// const update = content => html`<div>${content}</div>`;
+			// update(listOfItems); update(null); update(html`hole`)
+			else {
+				stack[index] = null;
+			}
+		}
+		if (values.length < stack.length) stack.splice(values.length);
+		return stack;
+	}
+
+	// as html and svg can be nested calls, but no parent node is known
+	// until rendered somewhere, the parseTemplate operation is needed to
+	// discover what to do with each interpolation, which will result
+	// into an update operation.
+	update(templateLiteral) {
+		// interpolations can contain holes and arrays, so these need
+		// to be recursively discovered
+		this.stack = this.parseValues(templateLiteral.values);
+
+		// if the cache entry is either null or different from the template
+		// and the type this parseTemplate should resolve, create a new entry
+		// assigning a new content fragment and the list of updates.
+		if (this.strings !== templateLiteral.strings) {
+			const { documentFragment, updates } = mapUpdates(templateLiteral.strings);
+			this.strings = templateLiteral.strings;
+			this.documentFragment = documentFragment;
+			this.updates = updates;
+			this.wire2 = createWire(this.documentFragment);
+		}
+
+		// even if the fragment and its nodes is not live yet,
+		// it is already possible to update via interpolations values.
+		for (let i = 0; i < templateLiteral.values.length; i++) {
+			this.updates[i](templateLiteral.values[i]);
+		}
+	}
+}
 
 // Template Literals are unique per scope and static, meaning a template
 // should be parsed once, and once only, as it will always represent the same
@@ -134,6 +202,7 @@ const mapTemplate = (strings) => {
 	// related to such content retrieved right away without needing to re-crawl
 	// the exact same template, and its content, more than once.
 	return { documentFragment, nodes };
+	/* NodePart ?! */
 };
 
 // https://github.com/WebReflection/uwire
@@ -163,68 +232,6 @@ const createWire = (fragment) => {
 	};
 };
 
-// the stack retains, per each interpolation value, the cache
-// related to each interpolation value, or null, if the render
-// was conditional and the value is not special (TemplateLiteral or Array)
-const parseValues = (templateInfo, values) => {
-	const { stack } = templateInfo;
-	const { length } = values;
-	for (let index = 0; index < length; index++) {
-		const value = values[index];
-		// each TemplateLiteral gets unrolled and re-assigned as value
-		// so that domdiff will deal with a node/wire and not with a TemplateLiteral
-		if (value instanceof TemplateLiteral) {
-			values[index] = parseTemplate(stack[index] || (stack[index] = createTemplateInfo()), value);
-		}
-		// arrays are recursively resolved so that each entry will contain
-		// also a DOM node or a wire, hence it can be diffed if/when needed
-		else if (Array.isArray(value)) {
-			parseValues(stack[index] || (stack[index] = createTemplateInfo()), value);
-		}
-		// if the value is nothing special, the stack doesn't need to retain data
-		// this is useful also to cleanup previously retained data, if the value
-		// was a TemplateLiteral, or an Array, but not anymore, i.e.:
-		// const update = content => html`<div>${content}</div>`;
-		// update(listOfItems); update(null); update(html`hole`)
-		else {
-			stack[index] = null;
-		}
-	}
-	if (length < stack.length) stack.splice(length);
-	return length;
-};
-
-// as html and svg can be nested calls, but no parent node is known
-// until rendered somewhere, the parseTemplate operation is needed to
-// discover what to do with each interpolation, which will result
-// into an update operation.
-export const parseTemplate = (templateInfo, templateLiteral) => {
-	// interpolations can contain holes and arrays, so these need
-	// to be recursively discovered
-	const length = parseValues(templateInfo, templateLiteral.values);
-	// if the cache entry is either null or different from the template
-	// and the type this parseTemplate should resolve, create a new entry
-	// assigning a new content fragment and the list of updates.
-	if (templateInfo.strings !== templateLiteral.strings) {
-		const { documentFragment, updates } = mapUpdates(templateLiteral.strings);
-		templateInfo.strings = templateLiteral.strings;
-		templateInfo.documentFragment = documentFragment;
-		templateInfo.updates = updates;
-		// TODO: wire2 because we need to be able to determine a difference in render()...
-		templateInfo.wire2 = createWire(templateInfo.documentFragment);
-	}
-	// even if the fragment and its nodes is not live yet,
-	// it is already possible to update via interpolations values.
-	for (let i = 0; i < length; i++) {
-		templateInfo.updates[i](templateLiteral.values[i]);
-	}
-	// if the entry was new, or representing a different template or type,
-	// create a new persistent entity to use during diffing.
-	// This is simply a DOM node, when the template has a single container,
-	// as in `<p></p>`, or a "wire" in `<p></p><p></p>` and similar cases.
-	return templateInfo.wire2;
-};
-
 // TODO: these are not templates but dom nodes...
 const templates = new WeakMap();
 
@@ -238,17 +245,19 @@ const render = (template, domNode) => {
 	// TODO: template could be a string ?!
 	// TODO: make it possible that template could also be an html element ?!
 
-	let templateInfo = templates.get(domNode);
-	if (!templateInfo) {
-		templateInfo = createTemplateInfo();
-		templates.set(domNode, templateInfo);
+	let templateInstance = templates.get(domNode);
+	if (!templateInstance) {
+		templateInstance = new TemplateInstance(template);
+		templates.set(domNode, templateInstance);
 	}
 
-	// TODO: find a better name for wire...
-	const wire = template instanceof TemplateLiteral ? parseTemplate(templateInfo, template) : template;
+	templateInstance.update(template);
 
-	if (wire !== templateInfo.wire) {
-		templateInfo.wire = wire;
+	//TODO: find a better name for wire...
+	const wire = templateInstance.wire2;
+
+	if (wire !== templateInstance.wire) {
+		templateInstance.wire = wire;
 		domNode.replaceChildren(wire.valueOf());
 	}
 
