@@ -33,14 +33,14 @@ const nodeParts = new WeakMap();
 // TODO: find a better name ?!
 export class TemplateInstance {
 	stack = [];
+	//TODO: find a better name for wire...
 	wire = null;
 	strings = undefined;
-	documentFragment = undefined;
 	updates = undefined;
-	// TODO: wire2 because we need to be able to determine a difference in render()...
-	wire2 = undefined;
 
-	constructor(templateLiteral) {}
+	constructor(templateLiteral) {
+		this.update(templateLiteral);
+	}
 
 	// the stack retains, per each interpolation value, the cache
 	// related to each interpolation value, or null, if the render
@@ -53,10 +53,11 @@ export class TemplateInstance {
 			// so that domdiff will deal with a node/wire and not with a TemplateLiteral
 			if (value instanceof TemplateLiteral) {
 				//values[index] = parseTemplate(stack[index] || (stack[index] = createTemplateInfo()), value);
+				// TODO: these templateInstances won't be cached?!
 				let templateInstance = stack[index] || (stack[index] = new TemplateInstance(value));
 				templateInstance.update(value);
 				// TODO: it is not a good idea to manipulate values of another object/class
-				values[index] = templateInstance.wire2;
+				values[index] = templateInstance.wire;
 			}
 			// arrays are recursively resolved so that each entry will contain
 			// also a DOM node or a wire, hence it can be diffed if/when needed
@@ -105,9 +106,8 @@ export class TemplateInstance {
 			const updates = nodePart.nodes.map(updateHandlers, documentFragment);
 
 			this.strings = templateLiteral.strings;
-			this.documentFragment = documentFragment;
 			this.updates = updates;
-			this.wire2 = createWire(this.documentFragment);
+			this.wire = createWire(documentFragment);
 		}
 
 		// even if the fragment and its nodes is not live yet,
@@ -204,6 +204,10 @@ export class NodePart {
 }
 
 // https://github.com/WebReflection/uwire
+// TODO: I think that a wire is supposed to be a LiveFragment | PersistentFragment ?!
+// https://github.com/WebReflection/document-persistent-fragment
+// https://github.com/whatwg/dom/issues/736
+// Or is it NodeTemplatePart from https://github.com/WICG/webcomponents/blob/gh-pages/proposals/Template-Instantiation.md
 const createWire = (fragment) => {
 	const { childNodes } = fragment;
 	const { length } = childNodes;
@@ -230,8 +234,6 @@ const createWire = (fragment) => {
 	};
 };
 
-const templateInstances = new WeakMap();
-
 /**
  * Render a template string into the given DOM node
  * @param {TemplateLiteral | string} template
@@ -242,21 +244,7 @@ const render = (template, domNode) => {
 	// TODO: template could be a string ?!
 	// TODO: make it possible that template could also be an html element ?!
 
-	let templateInstance = templateInstances.get(domNode);
-	if (!templateInstance) {
-		templateInstance = new TemplateInstance(template);
-		templateInstances.set(domNode, templateInstance);
-	}
-
-	templateInstance.update(template);
-
-	//TODO: find a better name for wire...
-	const wire = templateInstance.wire2;
-
-	if (wire !== templateInstance.wire) {
-		templateInstance.wire = wire;
-		domNode.replaceChildren(wire.valueOf());
-	}
+	template.renderInto(domNode);
 
 	console.log('rendered');
 	// console.timeEnd('diff');

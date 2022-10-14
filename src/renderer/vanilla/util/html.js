@@ -1,5 +1,5 @@
-import { encodeAttribute } from '../../../util/AttributeParser.js';
-import { unsafeHTML, spreadAttributes } from './directives.js';
+import { camelToDash, decodeAttribute, encodeAttribute } from '../../../util/AttributeParser';
+import { TemplateInstance } from './render';
 
 class Part {
 	constructor(value) {
@@ -38,6 +38,8 @@ class TemplatePart extends Part {
 	}
 }
 
+const templateInstances = new WeakMap();
+
 export class TemplateLiteral {
 	$$templateLiteral = true;
 
@@ -56,6 +58,18 @@ export class TemplateLiteral {
 		this.result = result;
 	}
 
+	renderInto(domNode) {
+		let templateInstance = templateInstances.get(domNode);
+		if (!templateInstance) {
+			templateInstance = new TemplateInstance(this);
+			templateInstances.set(domNode, templateInstance);
+
+			domNode.replaceChildren(templateInstance.wire.valueOf());
+		}
+
+		templateInstance.update(this);
+	}
+
 	toString() {
 		return `${this.result.join('')}`;
 	}
@@ -65,4 +79,18 @@ const html = function (strings, ...values) {
 	return new TemplateLiteral(strings, ...values);
 };
 
-export { Part, TemplatePart, TemplateLiteral, html, unsafeHTML, spreadAttributes };
+const unsafeHTML = (string) => {
+	return () => `${decodeAttribute(string)}`;
+};
+
+const spreadAttributes = (attributes) => {
+	return () => {
+		return Object.keys(attributes)
+			.map((key) => {
+				return `${camelToDash(key)}='${new Part(attributes[key])}'`;
+			})
+			.join(' ');
+	};
+};
+
+export { html, unsafeHTML, spreadAttributes };
