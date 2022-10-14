@@ -68,22 +68,26 @@ export class TemplateInstance {
 			this.wire = createWire(documentFragment);
 		}
 
-		// even if the fragment and its nodes is not live yet,
-		// it is already possible to update via interpolations values.
-		for (let i = 0; i < templateLiteral.values.length; i++) {
-			let value = templateLiteral.values[i];
-
+		const parseValue = (value) => {
 			// each TemplateLiteral gets unrolled and re-assigned as value
 			// so that domdiff will deal with a node/wire and not with a TemplateLiteral
 			if (value instanceof TemplateLiteral) {
 				// TODO: these templateInstances are not cached... :(
 				let templateInstance = new TemplateInstance(value);
-				value = templateInstance.wire;
+				return templateInstance.wire;
 			}
 
-			// TODO: do I need to handle Arrays somehow here as well?!
+			if (Array.isArray(value)) {
+				return value.map((item) => parseValue(item));
+			}
 
-			this.updates[i](value);
+			return value;
+		};
+
+		// even if the fragment and its nodes is not live yet,
+		// it is already possible to update via interpolations values.
+		for (let i = 0; i < templateLiteral.values.length; i++) {
+			this.updates[i](parseValue(templateLiteral.values[i]));
 		}
 	}
 }
@@ -216,7 +220,7 @@ const render = (template, domNode) => {
 
 	template.renderInto(domNode);
 
-	console.log('rendered');
+	// console.log('rendered');
 	// console.timeEnd('diff');
 };
 
