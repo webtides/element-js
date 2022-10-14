@@ -30,9 +30,8 @@ const holes = /[\x01\x02]/g;
 // This cache relates each template to its unique content and updates.
 const nodeParts = new WeakMap();
 
-// TODO: find a better name ?!
+// TODO: find a better name for TemplateInstance ?!
 export class TemplateInstance {
-	stack = [];
 	//TODO: find a better name for wire...
 	wire = null;
 	strings = undefined;
@@ -42,52 +41,11 @@ export class TemplateInstance {
 		this.update(templateLiteral);
 	}
 
-	// the stack retains, per each interpolation value, the cache
-	// related to each interpolation value, or null, if the render
-	// was conditional and the value is not special (TemplateLiteral or Array)
-	parseValues(values) {
-		const stack = [];
-		for (let index = 0; index < values.length; index++) {
-			const value = values[index];
-			// each TemplateLiteral gets unrolled and re-assigned as value
-			// so that domdiff will deal with a node/wire and not with a TemplateLiteral
-			if (value instanceof TemplateLiteral) {
-				//values[index] = parseTemplate(stack[index] || (stack[index] = createTemplateInfo()), value);
-				// TODO: these templateInstances won't be cached?!
-				let templateInstance = stack[index] || (stack[index] = new TemplateInstance(value));
-				templateInstance.update(value);
-				// TODO: it is not a good idea to manipulate values of another object/class
-				values[index] = templateInstance.wire;
-			}
-			// arrays are recursively resolved so that each entry will contain
-			// also a DOM node or a wire, hence it can be diffed if/when needed
-			else if (Array.isArray(value)) {
-				//parseValues(stack[index] || (stack[index] = createTemplateInfo()), value);
-				stack[index] = this.parseValues(value);
-				// TODO: what about reusing previous values here?!
-			}
-			// if the value is nothing special, the stack doesn't need to retain data
-			// this is useful also to cleanup previously retained data, if the value
-			// was a TemplateLiteral, or an Array, but not anymore, i.e.:
-			// const update = content => html`<div>${content}</div>`;
-			// update(listOfItems); update(null); update(html`hole`)
-			else {
-				stack[index] = null;
-			}
-		}
-		if (values.length < stack.length) stack.splice(values.length);
-		return stack;
-	}
-
 	// as html and svg can be nested calls, but no parent node is known
 	// until rendered somewhere, the parseTemplate operation is needed to
 	// discover what to do with each interpolation, which will result
 	// into an update operation.
 	update(templateLiteral) {
-		// interpolations can contain holes and arrays, so these need
-		// to be recursively discovered
-		this.stack = this.parseValues(templateLiteral.values);
-
 		// if the cache entry is either null or different from the template
 		// and the type this parseTemplate should resolve, create a new entry
 		// assigning a new content fragment and the list of updates.
@@ -113,7 +71,19 @@ export class TemplateInstance {
 		// even if the fragment and its nodes is not live yet,
 		// it is already possible to update via interpolations values.
 		for (let i = 0; i < templateLiteral.values.length; i++) {
-			this.updates[i](templateLiteral.values[i]);
+			let value = templateLiteral.values[i];
+
+			// each TemplateLiteral gets unrolled and re-assigned as value
+			// so that domdiff will deal with a node/wire and not with a TemplateLiteral
+			if (value instanceof TemplateLiteral) {
+				// TODO: these templateInstances are not cached... :(
+				let templateInstance = new TemplateInstance(value);
+				value = templateInstance.wire;
+			}
+
+			// TODO: do I need to handle Arrays somehow here as well?!
+
+			this.updates[i](value);
 		}
 	}
 }
