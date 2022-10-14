@@ -24,6 +24,12 @@ const holes = /[\x01\x02]/g;
 // \x01 Node.ELEMENT_NODE
 // \x02 Node.ATTRIBUTE_NODE
 
+// Template Literals are unique per scope and static, meaning a template
+// should be parsed once, and once only, as it will always represent the same
+// content, within the exact same amount of updates each time.
+// This cache relates each template to its unique content and updates.
+const nodeParts = new WeakMap();
+
 // TODO: find a better name ?!
 export class TemplateInstance {
 	stack = [];
@@ -85,7 +91,19 @@ export class TemplateInstance {
 		// and the type this parseTemplate should resolve, create a new entry
 		// assigning a new content fragment and the list of updates.
 		if (this.strings !== templateLiteral.strings) {
-			const { documentFragment, updates } = mapUpdates(templateLiteral.strings);
+			// if a template is unknown, perform the previous mapping, otherwise grab
+			// its details such as the fragment with all nodes, and updates info.
+			let nodePart = nodeParts.get(templateLiteral.strings);
+			if (!nodePart) {
+				nodePart = new NodePart(templateLiteral.strings);
+				nodeParts.set(templateLiteral.strings, nodePart);
+			}
+
+			// clone deeply the fragment
+			const documentFragment = globalThis.document?.importNode(nodePart.documentFragment, true);
+			// and relate an update handler per each node that needs one
+			const updates = nodePart.nodes.map(updateHandlers, documentFragment);
+
 			this.strings = templateLiteral.strings;
 			this.documentFragment = documentFragment;
 			this.updates = updates;
@@ -100,110 +118,90 @@ export class TemplateInstance {
 	}
 }
 
-// Template Literals are unique per scope and static, meaning a template
-// should be parsed once, and once only, as it will always represent the same
-// content, within the exact same amount of updates each time.
-// This cache relates each template to its unique content and updates.
-const templateStrings = new WeakMap();
+export class NodePart {
+	documentFragment = undefined;
+	nodes = [];
 
-// if a template is unknown, perform the previous mapping, otherwise grab
-// its details such as the fragment with all nodes, and updates info.
-const mapUpdates = (strings) => {
-	let mappedTemplate = templateStrings.get(strings);
-	if (!mappedTemplate) {
-		mappedTemplate = mapTemplate(strings);
-		templateStrings.set(strings, mappedTemplate);
-	}
+	constructor(strings) {
+		const templateString = this.createTemplateString(strings, prefix);
+		this.documentFragment = convertStringToTemplate(templateString);
 
-	// clone deeply the fragment
-	const documentFragment = globalThis.document?.importNode(mappedTemplate.documentFragment, true);
-	// and relate an update handler per each node that needs one
-	const updates = mappedTemplate.nodes.map(updateHandlers, documentFragment);
-	// return the fragment and all updates to use within its nodes
-	return { documentFragment, updates };
-};
-
-/**
- * Given a template, find holes as both nodes and attributes and
- * return a string with holes as either comment nodes or named attributes.
- * @param {string[]} strings a template literal tag array
- * @param {string} prefix prefix to use per each comment/attribute
- * @returns {string} X/HTML with prefixed comments or attributes
- */
-const createTemplateString = (strings, prefix) => {
-	let index = 0;
-	return strings
-		.join('\x01')
-		.trim()
-		.replace(elements, (_, name, attrs, selfClosing) => {
-			let ml = name + attrs.replace(attributes, '\x02=$2$1').trimEnd();
-			if (selfClosing.length) ml += empty.test(name) ? ' /' : '></' + name;
-			return '<' + ml + '>';
-		})
-		.replace(holes, (hole) => (hole === '\x01' ? '<!--' + prefix + index++ + '-->' : prefix + index++));
-};
-
-// a template is instrumented to be able to retrieve where updates are needed.
-// Each unique template becomes a fragment, cloned once per each other
-// operation based on the same template, i.e. data => html`<p>${data}</p>`
-const mapTemplate = (strings) => {
-	const templateString = createTemplateString(strings, prefix);
-	const documentFragment = convertStringToTemplate(templateString);
-	// once instrumented and reproduced as fragment, it's crawled
-	// to find out where each update is in the fragment tree
-	const tw = globalThis.document?.createTreeWalker(documentFragment, 1 | 128);
-	const nodes = [];
-	const length = strings.length - 1;
-	let i = 0;
-	// updates are searched via unique names, linearly increased across the tree
-	// <div isµ0="attr" isµ1="other"><!--isµ2--><style><!--isµ3--</style></div>
-	let search = `${prefix}${i}`;
-	// TODO: are these v ChildNodeParts and AttributeParts ?!
-	while (i < length) {
-		const node = tw.nextNode();
-		// if not all updates are bound but there's nothing else to crawl
-		// it means that there is something wrong with the template.
-		if (!node) throw `bad template: ${templateString}`;
-		// if the current node is a comment, and it contains isµX
-		// it means the update should take care of any content
-		if (node.nodeType === 8) {
-			// The only comments to be considered are those
-			// which content is exactly the same as the searched one.
-			if (node.data === search) {
-				nodes.push({ type: 'node', path: getNodePath(node) });
-				search = `${prefix}${++i}`;
-			}
-		} else {
-			// if the node is not a comment, loop through all its attributes
-			// named isµX and relate attribute updates to this node and the
-			// attribute name, retrieved through node.getAttribute("isµX")
-			// the isµX attribute will be removed as irrelevant for the layout
-			// let svg = -1;
-			while (node.hasAttribute(search)) {
-				nodes.push({
-					type: 'attr',
-					path: getNodePath(node),
-					name: node.getAttribute(search),
-				});
-				node.removeAttribute(search);
-				search = `${prefix}${++i}`;
-			}
-			// if the node was a style, textarea, or others, check its content
-			// and if it is <!--isµX--> then update tex-only this node
-			if (textOnly.test(node.localName) && node.textContent.trim() === `<!--${search}-->`) {
-				node.textContent = '';
-				nodes.push({ type: 'text', path: getNodePath(node) });
-				search = `${prefix}${++i}`;
+		// once instrumented and reproduced as fragment, it's crawled
+		// to find out where each update is in the fragment tree
+		const tw = globalThis.document?.createTreeWalker(this.documentFragment, 1 | 128);
+		const nodes = [];
+		const length = strings.length - 1;
+		let i = 0;
+		// updates are searched via unique names, linearly increased across the tree
+		// <div isµ0="attr" isµ1="other"><!--isµ2--><style><!--isµ3--</style></div>
+		let search = `${prefix}${i}`;
+		// TODO: are these v ChildNodeParts and AttributeParts ?!
+		while (i < length) {
+			const node = tw.nextNode();
+			// if not all updates are bound but there's nothing else to crawl
+			// it means that there is something wrong with the template.
+			if (!node) throw `bad template: ${templateString}`;
+			// if the current node is a comment, and it contains isµX
+			// it means the update should take care of any content
+			if (node.nodeType === 8) {
+				// The only comments to be considered are those
+				// which content is exactly the same as the searched one.
+				if (node.data === search) {
+					nodes.push({ type: 'node', path: getNodePath(node) });
+					search = `${prefix}${++i}`;
+				}
+			} else {
+				// if the node is not a comment, loop through all its attributes
+				// named isµX and relate attribute updates to this node and the
+				// attribute name, retrieved through node.getAttribute("isµX")
+				// the isµX attribute will be removed as irrelevant for the layout
+				// let svg = -1;
+				while (node.hasAttribute(search)) {
+					nodes.push({
+						type: 'attr',
+						path: getNodePath(node),
+						name: node.getAttribute(search),
+					});
+					node.removeAttribute(search);
+					search = `${prefix}${++i}`;
+				}
+				// if the node was a style, textarea, or others, check its content
+				// and if it is <!--isµX--> then update tex-only this node
+				if (textOnly.test(node.localName) && node.textContent.trim() === `<!--${search}-->`) {
+					node.textContent = '';
+					nodes.push({ type: 'text', path: getNodePath(node) });
+					search = `${prefix}${++i}`;
+				}
 			}
 		}
+		// once all nodes to update, or their attributes, are known, the content
+		// will be cloned in the future to represent the template, and all updates
+		// related to such content retrieved right away without needing to re-crawl
+		// the exact same template, and its content, more than once.
+		this.nodes = nodes;
+		//return { documentFragment, nodes };
 	}
-	// once all nodes to update, or their attributes, are known, the content
-	// will be cloned in the future to represent the template, and all updates
-	// related to such content retrieved right away without needing to re-crawl
-	// the exact same template, and its content, more than once.
-	return { documentFragment, nodes };
-	/* NodePart ?! */
-};
+
+	/**
+	 * Given a template, find holes as both nodes and attributes and
+	 * return a string with holes as either comment nodes or named attributes.
+	 * @param {string[]} strings a template literal tag array
+	 * @param {string} prefix prefix to use per each comment/attribute
+	 * @returns {string} X/HTML with prefixed comments or attributes
+	 */
+	createTemplateString(strings, prefix) {
+		let index = 0;
+		return strings
+			.join('\x01')
+			.trim()
+			.replace(elements, (_, name, attrs, selfClosing) => {
+				let ml = name + attrs.replace(attributes, '\x02=$2$1').trimEnd();
+				if (selfClosing.length) ml += empty.test(name) ? ' /' : '></' + name;
+				return '<' + ml + '>';
+			})
+			.replace(holes, (hole) => (hole === '\x01' ? '<!--' + prefix + index++ + '-->' : prefix + index++));
+	}
+}
 
 // https://github.com/WebReflection/uwire
 const createWire = (fragment) => {
@@ -232,8 +230,7 @@ const createWire = (fragment) => {
 	};
 };
 
-// TODO: these are not templates but dom nodes...
-const templates = new WeakMap();
+const templateInstances = new WeakMap();
 
 /**
  * Render a template string into the given DOM node
@@ -245,10 +242,10 @@ const render = (template, domNode) => {
 	// TODO: template could be a string ?!
 	// TODO: make it possible that template could also be an html element ?!
 
-	let templateInstance = templates.get(domNode);
+	let templateInstance = templateInstances.get(domNode);
 	if (!templateInstance) {
 		templateInstance = new TemplateInstance(template);
-		templates.set(domNode, templateInstance);
+		templateInstances.set(domNode, templateInstance);
 	}
 
 	templateInstance.update(template);
