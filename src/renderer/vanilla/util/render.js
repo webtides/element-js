@@ -1,8 +1,11 @@
 import { TemplateLiteral } from './html';
 import { updateHandlers } from './update-handlers';
-import { convertStringToTemplate, ELEMENT_NODE, getNodePath } from '../../../util/DOMHelper';
-
-const nodeType = 111;
+import {
+	convertStringToTemplate,
+	PERSISTENT_DOCUMENT_FRAGMENT_NODE,
+	getNodePath,
+	ELEMENT_NODE,
+} from '../../../util/DOMHelper';
 
 // the prefix is used to identify either comments, attributes, or nodes
 // that contain the related unique id. In the attribute cases
@@ -66,7 +69,7 @@ export class TemplateInstance {
 
 			this.strings = templateLiteral.strings;
 			this.updates = updates;
-			this.wire = createWire(documentFragment);
+			this.wire = new PersistentFragment(documentFragment);
 		}
 
 		const values = this.parseValues(templateLiteral.values);
@@ -187,36 +190,50 @@ export class NodePart {
 	}
 }
 
-// https://github.com/WebReflection/uwire
-// TODO: I think that a wire is supposed to be a LiveFragment | PersistentFragment ?!
-// https://github.com/WebReflection/document-persistent-fragment
 // https://github.com/whatwg/dom/issues/736
-// Or is it NodeTemplatePart from https://github.com/WICG/webcomponents/blob/gh-pages/proposals/Template-Instantiation.md
-const createWire = (fragment) => {
-	const { childNodes } = fragment;
-	const { length } = childNodes;
-	if (length < 2) return length ? childNodes[0] : fragment;
-	const nodes = childNodes.slice(0);
-	const firstChild = nodes[0];
-	const lastChild = nodes[length - 1];
-	return {
-		ELEMENT_NODE,
-		nodeType,
-		firstChild,
-		lastChild,
-		// valueOf() simply returns the node itself, but in case it was a "wire"
-		// it will eventually re-append all nodes to its fragment so that such
-		// fragment can be re-appended many times in a meaningful way
-		// (wires are basically persistent fragments facades with special behavior)
-		valueOf() {
-			if (childNodes.length !== length) {
-				let i = 0;
-				while (i < length) fragment.appendChild(nodes[i++]);
-			}
-			return fragment;
-		},
-	};
-};
+// TODO: maybe I can actually extend the real DocumentFragment? So that I don't have to patch everything else...
+/**
+ * Keeps the references of child nodes after they have been added/inserted into a real document
+ * other than a "normal" Fragment that will be empty after such operations
+ */
+export class PersistentFragment {
+	fragment = undefined;
+	childNodes = []; // "not live" copy of childNodes
+
+	constructor(fragment) {
+		this.fragment = fragment;
+		this.childNodes = [...fragment.childNodes];
+	}
+
+	get ELEMENT_NODE() {
+		return ELEMENT_NODE;
+	}
+
+	get nodeType() {
+		return PERSISTENT_DOCUMENT_FRAGMENT_NODE;
+	}
+
+	get firstChild() {
+		return this.childNodes[0];
+	}
+
+	get lastChild() {
+		return this.childNodes[this.childNodes.length - 1];
+	}
+
+	// valueOf() simply returns the node itself, but in case it was a "wire"
+	// it will eventually re-append all nodes to its fragment so that such
+	// fragment can be re-appended many times in a meaningful way
+	// (wires are basically persistent fragments facades with special behavior)
+	// TODO: maybe rename this to "content" ?! https://developer.mozilla.org/en-US/docs/Web/API/HTMLTemplateElement#instance_properties
+	valueOf() {
+		if (this.fragment.childNodes.length !== this.childNodes.length) {
+			let i = 0;
+			while (i < this.childNodes.length) this.fragment.appendChild(this.childNodes[i++]);
+		}
+		return this.fragment;
+	}
+}
 
 /**
  * Render a template string into the given DOM node
@@ -224,14 +241,14 @@ const createWire = (fragment) => {
  * @param {Node} domNode
  */
 const render = (template, domNode) => {
-	// console.time('diff');
+	console.time('diff');
 	// TODO: template could be a string ?!
 	// TODO: make it possible that template could also be an html element ?!
 
 	template.renderInto(domNode);
 
 	// console.log('rendered');
-	// console.timeEnd('diff');
+	console.timeEnd('diff');
 };
 
 export { render };

@@ -224,7 +224,10 @@ class ExampleTemplateElement extends TemplateElement {
 					</tbody>
 				</table>
 				<div>${html`<div>Foo</div>`}</div>
-				<div>${html`<div>Bar</div><div>Baz</div>`}</div>
+				<div>
+					${html`<div>Bar</div>
+						<div>Baz</div>`}
+				</div>
 			</div>
 		`;
 	}

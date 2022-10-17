@@ -6,6 +6,10 @@ export const ATTRIBUTE_NODE = 2;
 export const TEXT_NODE = 3;
 /* A Comment node, such as <!-- … --> */
 export const COMMENT_NODE = 8;
+/* A DocumentFragment node*/
+export const DOCUMENT_FRAGMENT_NODE = 11;
+/* A PersistentDocumentFragment node*/
+export const PERSISTENT_DOCUMENT_FRAGMENT_NODE = 22;
 
 /**
  * Gets list of (childNode) indexes for the given node

@@ -1,11 +1,5 @@
 import udomdiff from './udomdiff';
-
-const nodeType = 111;
-
-const { createDocumentFragment, createElement, createElementNS, createTextNode, createTreeWalker, importNode } =
-	new Proxy(document, {
-		get: (target, method) => target[method].bind(target),
-	});
+import { DOCUMENT_FRAGMENT_NODE, PERSISTENT_DOCUMENT_FRAGMENT_NODE } from '../../../util/DOMHelper';
 
 const reducePath = ({ childNodes }, i) => childNodes[i];
 
@@ -74,7 +68,7 @@ export const attribute = (node, name) => {
 };
 
 const remove = ({ firstChild, lastChild }) => {
-	const range = document.createRange();
+	const range = globalThis.document?.createRange();
 	range.setStartAfter(firstChild);
 	range.setEndAfter(lastChild);
 	range.deleteContents();
@@ -82,7 +76,7 @@ const remove = ({ firstChild, lastChild }) => {
 };
 
 export const diffable = (node, operation) =>
-	node.nodeType === nodeType
+	node.nodeType === PERSISTENT_DOCUMENT_FRAGMENT_NODE
 		? 1 / operation < 0
 			? operation
 				? remove(node)
@@ -134,7 +128,7 @@ const handleAnything = (comment) => {
 			case 'boolean':
 				if (oldValue !== newValue) {
 					oldValue = newValue;
-					if (!text) text = createTextNode('');
+					if (!text) text = globalThis.document?.createTextNode('');
 					text.data = newValue;
 					nodes = diff(comment, nodes, [text]);
 				}
@@ -168,7 +162,11 @@ const handleAnything = (comment) => {
 				if (oldValue !== newValue) {
 					if ('ELEMENT_NODE' in newValue) {
 						oldValue = newValue;
-						nodes = diff(comment, nodes, newValue.nodeType === 11 ? [...newValue.childNodes] : [newValue]);
+						nodes = diff(
+							comment,
+							nodes,
+							newValue.nodeType === DOCUMENT_FRAGMENT_NODE ? [...newValue.childNodes] : [newValue],
+						);
 					} else {
 						const value = newValue.valueOf();
 						if (value !== newValue) anyContent(value);
