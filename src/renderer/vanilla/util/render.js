@@ -35,6 +35,7 @@ export class TemplateInstance {
 	//TODO: find a better name for wire...
 	wire = null;
 	strings = undefined;
+	templateInstances = [];
 	updates = undefined;
 
 	constructor(templateLiteral) {
@@ -68,27 +69,36 @@ export class TemplateInstance {
 			this.wire = createWire(documentFragment);
 		}
 
-		const parseValue = (value) => {
+		const values = this.parseValues(templateLiteral.values);
+		// even if the fragment and its nodes is not live yet,
+		// it is already possible to update via interpolations values.
+		for (let index = 0; index < values.length; index++) {
+			this.updates[index](values[index]);
+		}
+	}
+
+	parseValues(values) {
+		for (let index = 0; index < values.length; index++) {
+			let value = values[index];
+
 			// each TemplateLiteral gets unrolled and re-assigned as value
 			// so that domdiff will deal with a node/wire and not with a TemplateLiteral
 			if (value instanceof TemplateLiteral) {
-				// TODO: these templateInstances are not cached... :(
-				let templateInstance = new TemplateInstance(value);
-				return templateInstance.wire;
+				let templateInstance = this.templateInstances[index];
+				if (!templateInstance) {
+					templateInstance = new TemplateInstance(value);
+					this.templateInstances[index] = templateInstance;
+				} else {
+					templateInstance.update(value);
+				}
+				values[index] = templateInstance.wire;
+			} else if (Array.isArray(value)) {
+				// TODO: these nested values are not cached... :(
+				values[index] = this.parseValues(value);
 			}
-
-			if (Array.isArray(value)) {
-				return value.map((item) => parseValue(item));
-			}
-
-			return value;
-		};
-
-		// even if the fragment and its nodes is not live yet,
-		// it is already possible to update via interpolations values.
-		for (let i = 0; i < templateLiteral.values.length; i++) {
-			this.updates[i](parseValue(templateLiteral.values[i]));
 		}
+
+		return values;
 	}
 }
 
