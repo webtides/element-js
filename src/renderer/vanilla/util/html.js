@@ -64,7 +64,7 @@ export class TemplateLiteral {
 			templateInstance = new TemplateInstance(this);
 			templateInstances.set(domNode, templateInstance);
 
-			domNode.replaceChildren(templateInstance.wire.valueOf());
+			domNode.replaceChildren(templateInstance.fragment.valueOf());
 		}
 
 		templateInstance.update(this);

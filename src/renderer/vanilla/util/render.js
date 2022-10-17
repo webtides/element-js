@@ -35,8 +35,7 @@ const nodeParts = new WeakMap();
 
 // TODO: find a better name for TemplateInstance ?!
 export class TemplateInstance {
-	//TODO: find a better name for wire...
-	wire = null;
+	fragment = null; // PersistentFragment
 	strings = undefined;
 	templateInstances = [];
 	updates = undefined;
@@ -69,7 +68,7 @@ export class TemplateInstance {
 
 			this.strings = templateLiteral.strings;
 			this.updates = updates;
-			this.wire = new PersistentFragment(documentFragment);
+			this.fragment = new PersistentFragment(documentFragment);
 		}
 
 		const values = this.parseValues(templateLiteral.values);
@@ -94,7 +93,7 @@ export class TemplateInstance {
 				} else {
 					templateInstance.update(value);
 				}
-				values[index] = templateInstance.wire;
+				values[index] = templateInstance.fragment;
 			} else if (Array.isArray(value)) {
 				// TODO: these nested values are not cached... :(
 				values[index] = this.parseValues(value);
