@@ -1,5 +1,13 @@
-import udomdiff from './udomdiff';
-import { DOCUMENT_FRAGMENT_NODE, PERSISTENT_DOCUMENT_FRAGMENT_NODE } from '../../../util/DOMHelper';
+import {
+	COMMENT_NODE,
+	diffAttributes,
+	DOCUMENT_FRAGMENT_NODE,
+	ELEMENT_NODE,
+	hasChildNodes,
+	isTemplateElement,
+	PERSISTENT_DOCUMENT_FRAGMENT_NODE,
+	TEXT_NODE,
+} from '../../../util/DOMHelper';
 import { AttributePart, ChildNodePart } from './render';
 
 const processBooleanAttribute = (node, key, oldValue) => {
@@ -54,6 +62,7 @@ const processAttribute = (node, name) => {
 	};
 };
 
+// TODO: can we get rid of this stupid code?!
 const remove = ({ firstChild, lastChild }) => {
 	const range = globalThis.document?.createRange();
 	range.setStartAfter(firstChild);
@@ -62,42 +71,101 @@ const remove = ({ firstChild, lastChild }) => {
 	return firstChild;
 };
 
-export const diffable = (node, operation) =>
-	node.nodeType === PERSISTENT_DOCUMENT_FRAGMENT_NODE
-		? 1 / operation < 0
-			? operation
-				? remove(node)
-				: node.lastChild
-			: operation
-			? node.valueOf()
-			: node.firstChild
-		: node;
+const diffNodes = function (parentNode, domChildNodes, templateChildNodes, anchorNode) {
+	// Diff each node in the child node lists
+	let length = Math.max(templateChildNodes.length, domChildNodes.length);
+	for (let index = 0; index < length; index++) {
+		const domChildNode = domChildNodes[index];
+		const templateChildNode = templateChildNodes[index];
 
-// TODO: make it work with our diffing algorithm...
-// this helper avoid code bloat around handleAnything() callback
-const diff = (comment, oldNodes, newNodes) =>
-	udomdiff(
-		comment.parentNode,
-		// TODO: there is a possible edge case where a node has been
-		//       removed manually, or it was a keyed one, attached
-		//       to a shared reference between renders.
-		//       In this case udomdiff might fail at removing such node
-		//       as its parent won't be the expected one.
-		//       The best way to avoid this issue is to filter oldNodes
-		//       in search of those not live, or not in the current parent
-		//       anymore, but this would require both a change to uwire,
-		//       exposing a parentNode from the firstChild, as example,
-		//       but also a filter per each diff that should exclude nodes
-		//       that are not in there, penalizing performance quite a lot.
-		//       As this has been also a potential issue with domdiff,
-		//       and both lighterhtml and hyperHTML might fail with this
-		//       very specific edge case, I might as well document this possible
-		//       "diffing shenanigan" and call it a day.
-		oldNodes,
-		newNodes,
-		diffable,
-		comment,
-	);
+		// If the DOM node doesn't exist, append/copy the template node
+		if (!domChildNode) {
+			// operation = 1
+			parentNode.insertBefore(templateChildNode.valueOf(), anchorNode);
+			continue;
+		}
+
+		// If the template node doesn't exist, remove the node in the DOM
+		if (!templateChildNode) {
+			// operation = -1
+			parentNode.removeChild(remove(domChildNode));
+			continue;
+		}
+
+		// If DOM node is equal to the template node, don't do anything
+		// if (domChildNode.isEqualNode(templateChildNode)) {
+		if (domChildNode === templateChildNode) {
+			continue;
+		}
+
+		// the following two checks don't have to be correct, but it could bring as back to the fast path
+		// in the worst case we still have to compare and swap all the elements
+		// but in the best case we find the one element that should actually be inserted or removed
+		// and from there on, every node that comes after should be equal again
+
+		// fast path for removing DOM nodes - we delete the node now instead of at the end
+		// if (parentNode.childNodes.length > templateNode.childNodes.length) {
+		// 	domChildNodes.splice(index, 1);
+		// 	parentNode.removeChild(domChildNode);
+		// 	// because domChildNodes will get shorter by splicing it, everything moves up by one
+		// 	// so the (actual) next element will have the same index now as we currently have
+		// 	// therefore we have to adjust our counters
+		// 	length--;
+		// 	index--;
+		//
+		// 	// we might have corrected everything and the parent nodes could be equal again
+		// 	// if so, we can skip the rest of the child node checks
+		// 	if (
+		// 		parentNode.childNodes.length === templateNode.childNodes.length &&
+		// 		parentNode.isEqualNode(templateNode)
+		// 	) {
+		// 		return;
+		// 	}
+		//
+		// 	continue;
+		// }
+
+		// fast path for adding DOM nodes - we insert the node now instead of at the end
+		// but NOT if we already are at the end of the list of child nodes
+		// if (
+		// 	index !== parentNode.childNodes.length - 1 &&
+		// 	parentNode.childNodes.length < templateNode.childNodes.length
+		// ) {
+		// 	domChildNodes.splice(index, 0, templateChildNode);
+		// 	parentNode.insertBefore(templateChildNode, domChildNode);
+		//
+		// 	// we might have corrected everything and the parent nodes could be equal again
+		// 	// if so, we can skip the rest of the child node checks
+		// 	if (
+		// 		parentNode.childNodes.length === templateNode.childNodes.length &&
+		// 		parentNode.isEqualNode(templateNode)
+		// 	) {
+		// 		return;
+		// 	}
+		//
+		// 	continue;
+		// }
+
+		// If node types are not the same, replace the DOM node with the template node
+		if (templateChildNode.nodeType !== domChildNode.nodeType) {
+			parentNode.replaceChild(templateChildNode, domChildNode);
+			continue;
+		}
+
+		// If the element tag names are not the same, replace the DOM node with the template node
+		if (templateChildNode.nodeType === ELEMENT_NODE && templateChildNode.tagName !== domChildNode.tagName) {
+			parentNode.replaceChild(templateChildNode, domChildNode);
+			continue;
+		}
+
+		// If the node is an SVG element, don't even think about diffing it, just replace it
+		if (templateChildNode.nodeType === ELEMENT_NODE && templateChildNode.tagName === 'SVG') {
+			parentNode.replaceChild(templateChildNode, domChildNode);
+			continue;
+		}
+	}
+	return templateChildNodes;
+};
 
 // if an interpolation represents a comment, the whole
 // diffing will be related to such comment.
@@ -117,7 +185,14 @@ const processNodePart = (comment) => {
 					oldValue = newValue;
 					if (!text) text = globalThis.document?.createTextNode('');
 					text.data = newValue;
-					nodes = diff(comment, nodes, [text]);
+					text.$part = comment.data;
+					//nodes = diff(comment, nodes, [text]);
+					if (comment.previousSibling?.$part === comment.data) {
+						comment.previousSibling.data = newValue;
+					} else {
+						comment.parentNode.insertBefore(text, comment);
+					}
+					nodes = [text];
 				}
 				break;
 			// null, and undefined are used to cleanup previous content
@@ -126,19 +201,37 @@ const processNodePart = (comment) => {
 				if (newValue == null) {
 					if (oldValue != newValue) {
 						oldValue = newValue;
-						nodes = diff(comment, nodes, []);
+						// remove all child nodes
+						// nodes = diff(comment, nodes, []);
+						while (comment.previousSibling) {
+							comment.parentNode.removeChild(comment.previousSibling);
+						}
+						nodes = [];
 					}
 					break;
 				}
-				// arrays and nodes have a special treatment
 				if (Array.isArray(newValue)) {
-					oldValue = newValue;
-					// arrays can be used to cleanup, if empty
-					if (newValue.length === 0) nodes = diff(comment, nodes, []);
+					if (newValue.length === 0) {
+						// remove all child nodes
+						// nodes = diff(comment, nodes, []);
+						while (comment.previousSibling) {
+							comment.parentNode.removeChild(comment.previousSibling);
+						}
+						nodes = [];
+					}
+					// else if (oldValue.length === 0) {
+					// 	for (const newValueElement of newValue) {
+					// 		comment.parentNode.insertBefore(newValueElement.valueOf(), comment);
+					// 	}
+					// }
 					// or diffed, if these contains nodes or "wires"
-					else if (typeof newValue[0] === 'object') nodes = diff(comment, nodes, newValue);
+					else if (typeof newValue[0] === 'object') {
+						// nodes = diff(comment, nodes, newValue);
+						nodes = diffNodes(comment.parentNode, nodes, newValue, comment);
+					}
 					// in all other cases the content is stringified as is
 					else anyContent(String(newValue));
+					oldValue = newValue;
 					break;
 				}
 				// if the new value is a DOM node, or a wire, and it's
@@ -149,10 +242,16 @@ const processNodePart = (comment) => {
 				if (oldValue !== newValue) {
 					if ('ELEMENT_NODE' in newValue) {
 						oldValue = newValue;
-						nodes = diff(
-							comment,
+						// nodes = diff(
+						// 	comment,
+						// 	nodes,
+						// 	newValue.nodeType === DOCUMENT_FRAGMENT_NODE ? [...newValue.childNodes] : [newValue],
+						// );
+						nodes = diffNodes(
+							comment.parentNode,
 							nodes,
 							newValue.nodeType === DOCUMENT_FRAGMENT_NODE ? [...newValue.childNodes] : [newValue],
+							comment,
 						);
 					} else {
 						const value = newValue.valueOf();
