@@ -1,35 +1,22 @@
 import udomdiff from './udomdiff';
 import { DOCUMENT_FRAGMENT_NODE, PERSISTENT_DOCUMENT_FRAGMENT_NODE } from '../../../util/DOMHelper';
 
-const reducePath = ({ childNodes }, i) => childNodes[i];
-
-const getValue = (value) => (value == null ? value : value.valueOf());
-
-const boolean = (node, key, oldValue) => (newValue) => {
-	const value = !!getValue(newValue);
-	if (oldValue !== value) {
-		node.toggleAttribute(key, (oldValue = !!value));
-	}
-};
-
-const setter = (node, key) =>
-	key === 'dataset'
-		? data(node)
-		: (value) => {
-				node[key] = value;
-		  };
-
-const data =
-	({ dataset }) =>
-	(values) => {
-		for (const key in values) {
-			const value = values[key];
-			if (value == null) delete dataset[key];
-			else dataset[key] = value;
+const processBooleanAttribute = (node, key, oldValue) => {
+	return (newValue) => {
+		const value = !!newValue?.valueOf();
+		if (oldValue !== value) {
+			node.toggleAttribute(key, (oldValue = !!value));
 		}
 	};
+};
 
-export const event = (node, name) => {
+const processPropertyAttribute = (node, key) => {
+	return (value) => {
+		node[key] = value;
+	};
+};
+
+const processEventAttribute = (node, name) => {
 	let oldValue,
 		lower,
 		type = name.slice(2);
@@ -43,13 +30,12 @@ export const event = (node, name) => {
 	};
 };
 
-export const attribute = (node, name) => {
+const processAttribute = (node, name) => {
 	let oldValue,
 		orphan = true;
-	const attributeNode = document.createAttributeNS(null, name);
+	const attributeNode = globalThis.document?.createAttributeNS(null, name);
 	return (newValue) => {
-		//const value = useForeign && newValue instanceof Foreign ? newValue._(node, name) : getValue(newValue);
-		const value = getValue(newValue);
+		const value = newValue?.valueOf();
 		if (oldValue !== value) {
 			if ((oldValue = value) == null) {
 				if (!orphan) {
@@ -116,7 +102,7 @@ const diff = (comment, oldNodes, newNodes) =>
 // diffing will be related to such comment.
 // This helper is in charge of understanding how the new
 // content for such interpolation/hole should be updated
-const handleAnything = (comment) => {
+const processNodePart = (comment) => {
 	let oldValue,
 		text,
 		nodes = [];
@@ -181,45 +167,47 @@ const handleAnything = (comment) => {
 	return anyContent;
 };
 
-// attributes can be:
-//  * ref=${...}      for hooks and other purposes
-//  * aria=${...}     for aria attributes
-//  * ?boolean=${...} for boolean attributes
-//  * .dataset=${...} for dataset related attributes
-//  * .setter=${...}  for Custom Elements setters or nodes with setters
-//                    such as buttons, details, options, select, etc
-//  * @event=${...}   to explicitly handle event listeners
-//  * onevent=${...}  to automatically handle event listeners
-//  * generic=${...}  to handle an attribute just like an attribute
-const handleAttribute = (node, name /*, svg*/) => {
-	switch (name[0]) {
-		case '?':
-			return boolean(node, name.slice(1), false);
-		case '.':
-			return setter(node, name.slice(1));
-		case '@':
-			return event(node, 'on' + name.slice(1));
-		case 'o':
-			if (name[1] === 'n') return event(node, name);
+const processAttributePart = (node, name) => {
+	// boolean attribute: ?boolean=${...}
+	if (name.startsWith('?')) {
+		return processBooleanAttribute(node, name.slice(1), false);
 	}
 
-	// switch (name) {
-	// 	case 'ref':
-	// 		return ref(node);
-	// 	case 'aria':
-	// 		return aria(node);
+	// property attribute: .property=${...}
+	if (name.startsWith('.')) {
+		return processPropertyAttribute(node, name.slice(1));
+	}
+
+	// event attribute: @event=${...}
+	if (name.startsWith('@')) {
+		return processEventAttribute(node, 'on' + name.slice(1));
+	}
+
+	// "old school" event attribute: onevent=${...}
+	if (name.startsWith('on')) {
+		return processEventAttribute(node, name);
+	}
+
+	// TODO: implement refs...
+	// reference attribute: ref=${...}
+	// if (name === 'ref') {
+	// 	return ref(node);
 	// }
 
-	return attribute(node, name);
+	// normal "string" attribute: attribute=${...}
+	return processAttribute(node, name);
 };
 
-// TODO: rename to Processors ?!
-// each mapped update carries the update type and its path
-// the type is either node, attribute, or text, while
-// the path is how to retrieve the related node to update.
-// In the attribute case, the attribute name is also carried along.
-export function updateHandlers(options) {
-	const { type, path } = options;
-	const node = path.reduceRight(reducePath, this);
-	return type === 'node' ? handleAnything(node) : type === 'attr' ? handleAttribute(node, options.name) : text(node);
+export function processPart(part) {
+	const node = part.path.reduceRight(({ childNodes }, i) => childNodes[i], this);
+
+	if (part.type === 'node') {
+		return processNodePart(node);
+	}
+
+	if (part.type === 'attr') {
+		return processAttributePart(node, part.name);
+	}
+
+	return text(node);
 }

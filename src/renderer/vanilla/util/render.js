@@ -1,5 +1,5 @@
 import { TemplateLiteral } from './html';
-import { updateHandlers } from './update-handlers';
+import { processPart } from './processers';
 import {
 	convertStringToTemplate,
 	PERSISTENT_DOCUMENT_FRAGMENT_NODE,
@@ -34,6 +34,7 @@ const holes = /[\x01\x02]/g;
 const nodeParts = new WeakMap();
 
 // TODO: find a better name for TemplateInstance ?!
+// Maybe TemplatePart ?!
 export class TemplateInstance {
 	fragment = null; // PersistentFragment
 	strings = undefined;
@@ -64,7 +65,7 @@ export class TemplateInstance {
 			// clone deeply the fragment
 			const documentFragment = globalThis.document?.importNode(nodePart.documentFragment, true);
 			// and relate an update handler per each node that needs one
-			const updates = nodePart.nodes.map(updateHandlers, documentFragment);
+			const updates = nodePart.nodes.map(processPart, documentFragment);
 
 			this.strings = templateLiteral.strings;
 			this.updates = updates;
