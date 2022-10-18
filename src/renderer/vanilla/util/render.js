@@ -4,8 +4,8 @@ import {
 	convertStringToTemplate,
 	PERSISTENT_DOCUMENT_FRAGMENT_NODE,
 	getNodePath,
-	ELEMENT_NODE,
-} from '../../../util/DOMHelper';
+	ELEMENT_NODE, COMMENT_NODE
+} from "../../../util/DOMHelper";
 
 // the prefix is used to identify either comments, attributes, or nodes
 // that contain the related unique id. In the attribute cases
@@ -65,7 +65,7 @@ export class TemplateInstance {
 			// clone deeply the fragment
 			const documentFragment = globalThis.document?.importNode(nodePart.documentFragment, true);
 			// and relate an update handler per each node that needs one
-			const updates = nodePart.nodes.map(processPart, documentFragment);
+			const updates = nodePart.parts.map(processPart, documentFragment);
 
 			this.strings = templateLiteral.strings;
 			this.updates = updates;
@@ -105,9 +105,29 @@ export class TemplateInstance {
 	}
 }
 
+export class Part {
+	node = undefined;
+	path = undefined;
+
+	constructor(node) {
+		this.node = node;
+		this.path = getNodePath(node);
+	}
+}
+export class AttributePart extends Part {
+	name = undefined;
+
+	constructor(node, name) {
+		super(node);
+		this.name = name;
+	}
+}
+export class ChildNodePart extends Part {}
+export class TextNodePart extends Part {}
+
 export class NodePart {
 	documentFragment = undefined;
-	nodes = [];
+	parts = [];
 
 	constructor(strings) {
 		const templateString = this.createTemplateString(strings, prefix);
@@ -116,13 +136,12 @@ export class NodePart {
 		// once instrumented and reproduced as fragment, it's crawled
 		// to find out where each update is in the fragment tree
 		const tw = globalThis.document?.createTreeWalker(this.documentFragment, 1 | 128);
-		const nodes = [];
+		const parts = [];
 		const length = strings.length - 1;
 		let i = 0;
 		// updates are searched via unique names, linearly increased across the tree
 		// <div isµ0="attr" isµ1="other"><!--isµ2--><style><!--isµ3--</style></div>
 		let search = `${prefix}${i}`;
-		// TODO: are these v ChildNodeParts and AttributeParts ?!
 		while (i < length) {
 			const node = tw.nextNode();
 			// if not all updates are bound but there's nothing else to crawl
@@ -130,11 +149,11 @@ export class NodePart {
 			if (!node) throw `bad template: ${templateString}`;
 			// if the current node is a comment, and it contains isµX
 			// it means the update should take care of any content
-			if (node.nodeType === 8) {
+			if (node.nodeType === COMMENT_NODE) {
 				// The only comments to be considered are those
 				// which content is exactly the same as the searched one.
 				if (node.data === search) {
-					nodes.push({ type: 'node', path: getNodePath(node) });
+					parts.push(new ChildNodePart(node));
 					search = `${prefix}${++i}`;
 				}
 			} else {
@@ -144,11 +163,7 @@ export class NodePart {
 				// the isµX attribute will be removed as irrelevant for the layout
 				// let svg = -1;
 				while (node.hasAttribute(search)) {
-					nodes.push({
-						type: 'attr',
-						path: getNodePath(node),
-						name: node.getAttribute(search),
-					});
+					parts.push(new AttributePart(node, node.getAttribute(search)));
 					node.removeAttribute(search);
 					search = `${prefix}${++i}`;
 				}
@@ -156,7 +171,7 @@ export class NodePart {
 				// and if it is <!--isµX--> then update tex-only this node
 				if (textOnly.test(node.localName) && node.textContent.trim() === `<!--${search}-->`) {
 					node.textContent = '';
-					nodes.push({ type: 'text', path: getNodePath(node) });
+					parts.push(new TextNodePart(node));
 					search = `${prefix}${++i}`;
 				}
 			}
@@ -165,7 +180,7 @@ export class NodePart {
 		// will be cloned in the future to represent the template, and all updates
 		// related to such content retrieved right away without needing to re-crawl
 		// the exact same template, and its content, more than once.
-		this.nodes = nodes;
+		this.parts = parts;
 		//return { documentFragment, nodes };
 	}
 

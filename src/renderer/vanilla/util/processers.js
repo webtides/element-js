@@ -1,5 +1,6 @@
 import udomdiff from './udomdiff';
 import { DOCUMENT_FRAGMENT_NODE, PERSISTENT_DOCUMENT_FRAGMENT_NODE } from '../../../util/DOMHelper';
+import { AttributePart, ChildNodePart } from './render';
 
 const processBooleanAttribute = (node, key, oldValue) => {
 	return (newValue) => {
@@ -199,13 +200,14 @@ const processAttributePart = (node, name) => {
 };
 
 export function processPart(part) {
+	// TODO: do we really need this path reducing?! The part has a reference to the node already no?!
 	const node = part.path.reduceRight(({ childNodes }, i) => childNodes[i], this);
 
-	if (part.type === 'node') {
+	if (part instanceof ChildNodePart) {
 		return processNodePart(node);
 	}
 
-	if (part.type === 'attr') {
+	if (part instanceof AttributePart) {
 		return processAttributePart(node, part.name);
 	}
 
