@@ -4,8 +4,9 @@ import {
 	convertStringToTemplate,
 	PERSISTENT_DOCUMENT_FRAGMENT_NODE,
 	getNodePath,
-	ELEMENT_NODE, COMMENT_NODE
-} from "../../../util/DOMHelper";
+	ELEMENT_NODE,
+	COMMENT_NODE,
+} from '../../../util/DOMHelper';
 
 // the prefix is used to identify either comments, attributes, or nodes
 // that contain the related unique id. In the attribute cases
@@ -125,6 +126,7 @@ export class AttributePart extends Part {
 export class ChildNodePart extends Part {}
 export class TextNodePart extends Part {}
 
+// TODO: TemplateInstance and NodePart are kind of the same?! Or need to be switched?! Or some of their behaviour must be switched?!
 export class NodePart {
 	documentFragment = undefined;
 	parts = [];
