@@ -39,7 +39,7 @@ const nodeParts = new WeakMap();
 export class TemplateInstance {
 	fragment = null; // PersistentFragment
 	strings = undefined;
-	templateInstances = [];
+	templateInstances = {};
 	updates = undefined;
 
 	constructor(templateLiteral) {
@@ -81,24 +81,23 @@ export class TemplateInstance {
 		}
 	}
 
-	parseValues(values) {
+	parseValues(values, parentIndex = undefined) {
 		for (let index = 0; index < values.length; index++) {
 			let value = values[index];
 
 			// each TemplateLiteral gets unrolled and re-assigned as value
 			// so that domdiff will deal with a node/wire and not with a TemplateLiteral
 			if (value instanceof TemplateLiteral) {
-				let templateInstance = this.templateInstances[index];
+				let templateInstance = this.templateInstances[`${parentIndex}_${index}`];
 				if (!templateInstance) {
 					templateInstance = new TemplateInstance(value);
-					this.templateInstances[index] = templateInstance;
+					this.templateInstances[`${parentIndex}_${index}`] = templateInstance;
 				} else {
 					templateInstance.update(value);
 				}
 				values[index] = templateInstance.fragment;
 			} else if (Array.isArray(value)) {
-				// TODO: these nested values are not cached... :(
-				values[index] = this.parseValues(value);
+				values[index] = this.parseValues(value, `${parentIndex}_${index}`);
 			}
 		}
 
