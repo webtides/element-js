@@ -135,13 +135,11 @@ export class NodePart {
 		const templateString = this.createTemplateString(strings, prefix);
 		this.documentFragment = convertStringToTemplate(templateString);
 
-		// once instrumented and reproduced as fragment, it's crawled
-		// to find out where each update is in the fragment tree
 		const tw = globalThis.document?.createTreeWalker(this.documentFragment, 1 | 128);
 		const parts = [];
 		const length = strings.length - 1;
 		let i = 0;
-		// updates are searched via unique names, linearly increased across the tree
+		// parts are searched through numbered placeholders
 		// <div isµ0="attr" isµ1="other"><!--isµ2--><style><!--isµ3--</style></div>
 		let search = `${prefix}${i}`;
 		while (i < length) {
@@ -178,12 +176,7 @@ export class NodePart {
 				}
 			}
 		}
-		// once all nodes to update, or their attributes, are known, the content
-		// will be cloned in the future to represent the template, and all updates
-		// related to such content retrieved right away without needing to re-crawl
-		// the exact same template, and its content, more than once.
 		this.parts = parts;
-		//return { documentFragment, nodes };
 	}
 
 	/**
