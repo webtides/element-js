@@ -8,30 +8,23 @@ import {
 	COMMENT_NODE,
 } from '../../../util/DOMHelper';
 
-// the prefix is used to identify either comments, attributes, or nodes
-// that contain the related unique id. In the attribute cases
-// isµX="attribute-name" will be used to map current X update to that
-// attribute name, while comments will be like <!--isµX-->, to map
-// the update to that specific comment node, hence its parent.
-// style and textarea will have <!--isµX--> text content, and are handled
-// directly through text-only updates.
+// the prefix is used to tag and reference nodes and attributes to create parts with updates
+// attributes: isµ1="attribute-name"
+// nodes (as comment nodes): <!--isµ2-->
+// TODO: us a different prefix...
 const prefix = 'isµ';
 
-// a RegExp that helps checking nodes that cannot contain comments
+// match nodes|elements that cannot contain comment nodes and must be handled via text-only updates directly.
 const textOnly = /^(?:textarea|script|style|title|plaintext|xmp)$/;
-
 const empty = /^(?:area|base|br|col|embed|hr|img|input|keygen|link|menuitem|meta|param|source|track|wbr)$/i;
 const elements = /<([a-z]+[a-z0-9:._-]*)([^>]*?)(\/?)>/g;
 const attributes = /([^\s\\>"'=]+)\s*=\s*(['"]?)\x01/g;
+// TODO: find a better name for holes...
 const holes = /[\x01\x02]/g;
 
 // \x01 Node.ELEMENT_NODE
 // \x02 Node.ATTRIBUTE_NODE
 
-// Template Literals are unique per scope and static, meaning a template
-// should be parsed once, and once only, as it will always represent the same
-// content, within the exact same amount of updates each time.
-// This cache relates each template to its unique content and updates.
 const nodeParts = new WeakMap();
 
 // TODO: find a better name for TemplateInstance ?!
@@ -46,26 +39,15 @@ export class TemplateInstance {
 		this.update(templateLiteral);
 	}
 
-	// as html and svg can be nested calls, but no parent node is known
-	// until rendered somewhere, the parseTemplate operation is needed to
-	// discover what to do with each interpolation, which will result
-	// into an update operation.
 	update(templateLiteral) {
-		// if the cache entry is either null or different from the template
-		// and the type this parseTemplate should resolve, create a new entry
-		// assigning a new content fragment and the list of updates.
 		if (this.strings !== templateLiteral.strings) {
-			// if a template is unknown, perform the previous mapping, otherwise grab
-			// its details such as the fragment with all nodes, and updates info.
 			let nodePart = nodeParts.get(templateLiteral.strings);
 			if (!nodePart) {
 				nodePart = new NodePart(templateLiteral.strings);
 				nodeParts.set(templateLiteral.strings, nodePart);
 			}
 
-			// clone deeply the fragment
 			const documentFragment = globalThis.document?.importNode(nodePart.documentFragment, true);
-			// and relate an update handler per each node that needs one
 			const updates = nodePart.parts.map(processPart, documentFragment);
 
 			this.strings = templateLiteral.strings;
@@ -74,19 +56,17 @@ export class TemplateInstance {
 		}
 
 		const values = this.parseValues(templateLiteral.values);
-		// even if the fragment and its nodes is not live yet,
-		// it is already possible to update via interpolations values.
+
 		for (let index = 0; index < values.length; index++) {
 			this.updates[index](values[index]);
 		}
 	}
 
+	// nested TemplateLiterals values need to be unrolled in order for update functions to be able to process them
 	parseValues(values, parentIndex = undefined) {
 		for (let index = 0; index < values.length; index++) {
 			let value = values[index];
 
-			// each TemplateLiteral gets unrolled and re-assigned as value
-			// so that domdiff will deal with a node/wire and not with a TemplateLiteral
 			if (value instanceof TemplateLiteral) {
 				let templateInstance = this.templateInstances[`${parentIndex}_${index}`];
 				if (!templateInstance) {
@@ -114,6 +94,7 @@ export class Part {
 		this.path = getNodePath(node);
 	}
 }
+
 export class AttributePart extends Part {
 	name = undefined;
 
@@ -122,7 +103,9 @@ export class AttributePart extends Part {
 		this.name = name;
 	}
 }
+
 export class ChildNodePart extends Part {}
+
 export class TextNodePart extends Part {}
 
 // TODO: TemplateInstance and NodePart are kind of the same?! Or need to be switched?! Or some of their behaviour must be switched?!
@@ -138,40 +121,31 @@ export class NodePart {
 		const parts = [];
 		const length = strings.length - 1;
 		let i = 0;
-		// parts are searched through numbered placeholders
-		// <div isµ0="attr" isµ1="other"><!--isµ2--><style><!--isµ3--</style></div>
-		let search = `${prefix}${i}`;
+		let placeholder = `${prefix}${i}`;
+		// search for parts through numbered placeholders
+		// <div isµ0="attribute" isµ1="another-attribute"><!--isµ2--><span><!--isµ3--</span></div>
 		while (i < length) {
 			const node = tw.nextNode();
-			// if not all updates are bound but there's nothing else to crawl
-			// it means that there is something wrong with the template.
+
 			if (!node) throw `bad template: ${templateString}`;
-			// if the current node is a comment, and it contains isµX
-			// it means the update should take care of any content
+
 			if (node.nodeType === COMMENT_NODE) {
-				// The only comments to be considered are those
-				// which content is exactly the same as the searched one.
-				if (node.data === search) {
+				if (node.data === placeholder) {
 					parts.push(new ChildNodePart(node));
-					search = `${prefix}${++i}`;
+					placeholder = `${prefix}${++i}`;
 				}
 			} else {
-				// if the node is not a comment, loop through all its attributes
-				// named isµX and relate attribute updates to this node and the
-				// attribute name, retrieved through node.getAttribute("isµX")
-				// the isµX attribute will be removed as irrelevant for the layout
-				// let svg = -1;
-				while (node.hasAttribute(search)) {
-					parts.push(new AttributePart(node, node.getAttribute(search)));
-					node.removeAttribute(search);
-					search = `${prefix}${++i}`;
+				while (node.hasAttribute(placeholder)) {
+					parts.push(new AttributePart(node, node.getAttribute(placeholder)));
+					// the placeholder attribute can be removed once we have our part for processing updates
+					node.removeAttribute(placeholder);
+					placeholder = `${prefix}${++i}`;
 				}
-				// if the node was a style, textarea, or others, check its content
-				// and if it is <!--isµX--> then update tex-only this node
-				if (textOnly.test(node.localName) && node.textContent.trim() === `<!--${search}-->`) {
+				// if the node is a text-only node, check its content for a placeholder
+				if (textOnly.test(node.localName) && node.textContent.trim() === `<!--${placeholder}-->`) {
 					node.textContent = '';
 					parts.push(new TextNodePart(node));
-					search = `${prefix}${++i}`;
+					placeholder = `${prefix}${++i}`;
 				}
 			}
 		}
@@ -179,11 +153,11 @@ export class NodePart {
 	}
 
 	/**
-	 * Given a template, find holes as both nodes and attributes and
-	 * return a string with holes as either comment nodes or named attributes.
+	 * find interpolations in the given template for nodes and attributes and
+	 * return a string with placeholders as either comment nodes or named attributes.
 	 * @param {string[]} strings a template literal tag array
 	 * @param {string} prefix prefix to use per each comment/attribute
-	 * @returns {string} X/HTML with prefixed comments or attributes
+	 * @returns {string} template with tagged placeholders for values
 	 */
 	createTemplateString(strings, prefix) {
 		let index = 0;
@@ -230,11 +204,8 @@ export class PersistentFragment {
 		return this.childNodes[this.childNodes.length - 1];
 	}
 
-	// valueOf() simply returns the node itself, but in case it was a "wire"
-	// it will eventually re-append all nodes to its fragment so that such
-	// fragment can be re-appended many times in a meaningful way
-	// (wires are basically persistent fragments facades with special behavior)
-	// TODO: maybe rename this to "content" ?! https://developer.mozilla.org/en-US/docs/Web/API/HTMLTemplateElement#instance_properties
+	// appending or inserting the fragment, moves the nodes into the DOM, leaving behind an empty DocumentFragment
+	// therefore we cache the nodes and re-append them whenever the fragment is needed again.
 	valueOf() {
 		if (this.fragment.childNodes.length !== this.childNodes.length) {
 			let i = 0;
@@ -250,13 +221,12 @@ export class PersistentFragment {
  * @param {Node} domNode
  */
 const render = (template, domNode) => {
-	console.time('diff');
 	// TODO: template could be a string ?!
 	// TODO: make it possible that template could also be an html element ?!
+	console.time('diff');
 
 	template.renderInto(domNode);
 
-	// console.log('rendered');
 	console.timeEnd('diff');
 };
 

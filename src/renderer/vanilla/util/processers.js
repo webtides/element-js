@@ -10,18 +10,18 @@ import {
 } from '../../../util/DOMHelper';
 import { AttributePart, ChildNodePart } from './render';
 
-const processBooleanAttribute = (node, key, oldValue) => {
+const processBooleanAttribute = (node, name, oldValue) => {
 	return (newValue) => {
 		const value = !!newValue?.valueOf();
 		if (oldValue !== value) {
-			node.toggleAttribute(key, (oldValue = !!value));
+			node.toggleAttribute(name, (oldValue = !!value));
 		}
 	};
 };
 
-const processPropertyAttribute = (node, key) => {
+const processPropertyAttribute = (node, name) => {
 	return (value) => {
-		node[key] = value;
+		node[name] = value;
 	};
 };
 
@@ -167,14 +167,11 @@ const diffNodes = function (parentNode, domChildNodes, templateChildNodes, ancho
 	return templateChildNodes;
 };
 
-// if an interpolation represents a comment, the whole
-// diffing will be related to such comment.
-// This helper is in charge of understanding how the new
-// content for such interpolation/hole should be updated
 const processNodePart = (comment) => {
-	let oldValue,
-		text,
-		nodes = [];
+	let oldValue;
+	let text;
+	let nodes = [];
+	// TODO: rename anyContent to something meaningful?!
 	const anyContent = (newValue) => {
 		switch (typeof newValue) {
 			// primitives are handled as text content
@@ -186,7 +183,6 @@ const processNodePart = (comment) => {
 					if (!text) text = globalThis.document?.createTextNode('');
 					text.data = newValue;
 					text.$part = comment.data;
-					//nodes = diff(comment, nodes, [text]);
 					if (comment.previousSibling?.$part === comment.data) {
 						comment.previousSibling.data = newValue;
 					} else {
@@ -195,14 +191,13 @@ const processNodePart = (comment) => {
 					nodes = [text];
 				}
 				break;
-			// null, and undefined are used to cleanup previous content
+			// null (= typeof "object") and undefined are used to clean up previous content
 			case 'object':
 			case 'undefined':
 				if (newValue == null) {
 					if (oldValue != newValue) {
 						oldValue = newValue;
 						// remove all child nodes
-						// nodes = diff(comment, nodes, []);
 						while (comment.previousSibling) {
 							comment.parentNode.removeChild(comment.previousSibling);
 						}
@@ -213,7 +208,6 @@ const processNodePart = (comment) => {
 				if (Array.isArray(newValue)) {
 					if (newValue.length === 0) {
 						// remove all child nodes
-						// nodes = diff(comment, nodes, []);
 						while (comment.previousSibling) {
 							comment.parentNode.removeChild(comment.previousSibling);
 						}
@@ -224,32 +218,25 @@ const processNodePart = (comment) => {
 					// 		comment.parentNode.insertBefore(newValueElement.valueOf(), comment);
 					// 	}
 					// }
-					// or diffed, if these contains nodes or "wires"
+					// or diff if they contain nodes or fragments
+					// TODO: what if the array has mixed content?! object, primitives and functions?!
 					else if (typeof newValue[0] === 'object') {
 						// nodes = diff(comment, nodes, newValue);
 						nodes = diffNodes(comment.parentNode, nodes, newValue, comment);
 					}
-					// in all other cases the content is stringified as is
+					// in all other cases the value is stringified
 					else anyContent(String(newValue));
 					oldValue = newValue;
 					break;
 				}
-				// if the new value is a DOM node, or a wire, and it's
-				// different from the one already live, then it's diffed.
-				// if the node is a fragment, it's appended once via its childNodes
-				// There is no `else` here, meaning if the content
-				// is not expected one, nothing happens, as easy as that.
+				// if the new value is a node or a fragment, and it's different from the live node, then it's diffed.
 				if (oldValue !== newValue) {
 					if ('ELEMENT_NODE' in newValue) {
 						oldValue = newValue;
-						// nodes = diff(
-						// 	comment,
-						// 	nodes,
-						// 	newValue.nodeType === DOCUMENT_FRAGMENT_NODE ? [...newValue.childNodes] : [newValue],
-						// );
 						nodes = diffNodes(
 							comment.parentNode,
 							nodes,
+							// TODO: could we also use .valueOf() here ?!
 							newValue.nodeType === DOCUMENT_FRAGMENT_NODE ? [...newValue.childNodes] : [newValue],
 							comment,
 						);
@@ -310,5 +297,6 @@ export function processPart(part) {
 		return processAttributePart(node, part.name);
 	}
 
+	// TODO: this is not used right now right?! Find a use and implement it correctly!
 	return text(node);
 }
