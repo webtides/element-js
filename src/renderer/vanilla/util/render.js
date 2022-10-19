@@ -51,6 +51,8 @@ export class TemplateInstance {
 			const updates = nodePart.parts.map(processPart, documentFragment);
 
 			this.strings = templateLiteral.strings;
+			// TODO: I think I would rather like to only store the parts here and the parts should carry updates by them self
+			// and then recursively call the updates from/via the parts
 			this.updates = updates;
 			this.fragment = new PersistentFragment(documentFragment);
 		}
