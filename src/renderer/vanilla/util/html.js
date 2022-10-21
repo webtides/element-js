@@ -1,61 +1,73 @@
 import { camelToDash, decodeAttribute, encodeAttribute } from '../../../util/AttributeParser';
 import { TemplateInstance } from './render';
 
-class Part {
-	constructor(value) {
-		this.value = value;
-	}
+// TODO: this is the same as in render.js
+const prefix = 'isµ';
+const empty = /^(?:area|base|br|col|embed|hr|img|input|keygen|link|menuitem|meta|param|source|track|wbr)$/i;
+const elements = /<([a-z]+[a-z0-9:._-]*)([^>]*?)(\/?)>/g;
+const attributes = /([^\s\\>"'=]+)\s*=\s*(['"]?)\x01/g;
+const holes = /[\x01\x02]/g;
 
-	toString() {
-		if (typeof this.value !== 'string') {
-			return encodeAttribute(JSON.stringify(this.value));
-		}
-		return encodeAttribute(this.value);
-	}
-}
+// \x01 Node.ELEMENT_NODE
+// \x02 Node.ATTRIBUTE_NODE
 
-class TemplatePart extends Part {
-	$$templatePart = true;
+/**
+ * Given a template, find holes as both nodes and attributes and
+ * return a string with holes as either comment nodes or named attributes.
+ * @param {string[]} template a template literal tag array
+ * @param {string} prefix prefix to use per each comment/attribute
+ * @param {boolean} svg enforces self-closing tags
+ * @returns {string} X/HTML with prefixed comments or attributes
+ */
+const createTemplateString = (template, prefix) => {
+	let i = 0;
+	return template
+		.join('\x01')
+		.trim()
+		.replace(elements, (_, name, attrs, selfClosing) => {
+			let ml = name + attrs.replace(attributes, '\x02=$2$1').trimEnd();
+			if (selfClosing.length) ml += empty.test(name) ? ' /' : '></' + name;
+			return '<' + ml + '>';
+		})
+		.replace(holes, (hole) => (hole === '\x01' ? '<!--' + prefix + i++ + '-->' : prefix + i++));
+};
 
-	constructor(value) {
-		super(value?.$$templatePart ? value.value : value);
-	}
+// TODO: this is new:
+const rename = /([^\s>]+)[\s\S]*$/;
+const interpolation = new RegExp(`(<!--${prefix}(\\d+)-->|\\s*${prefix}(\\d+)=([^\\s>]))`, 'g');
 
-	toString() {
-		if (this.value === null || this.value === undefined) {
-			return '';
-		} else if (this.value === '') {
-			return '';
-		} else if (Array.isArray(this.value)) {
-			return this.value.map((row) => new TemplatePart(row).toString()).join('');
-		} else if (this.value?.$$templateLiteral) {
-			return this.value.toString();
-		} else if (typeof this.value === 'function') {
-			// A directive
-			return this.value(this);
-		}
-		return super.toString();
+const attribute = (name, quote, value) => ` ${name}=${quote}${encodeAttribute(value)}${quote}`;
+
+const getValue = (value) => {
+	switch (typeof value) {
+		case 'string':
+			return encodeAttribute(value);
+		case 'boolean':
+		case 'number':
+			return String(value);
+		case 'object':
+			switch (true) {
+				case Array.isArray(value):
+					return value.map(getValue).join('');
+				case value instanceof TemplateLiteral:
+					return value.toString();
+			}
+			break;
+		case 'function':
+			return getValue(value());
 	}
-}
+	return value == null ? '' : encodeAttribute(String(value));
+};
+
+// TODO: these are not templates?! But rather Updates?! I'm not sure uf updates is the right term either...
+const parsedTemplates = new WeakMap();
 
 const templateInstances = new WeakMap();
 
 export class TemplateLiteral {
-	$$templateLiteral = true;
-
 	constructor(strings, ...values) {
 		this.strings = strings;
 		this.values = values;
-
-		let result = [];
-		for (let i = 0; i < strings.length; i++) {
-			result.push(strings[i]);
-
-			if (i < values.length) {
-				result.push(new TemplatePart(values[i]));
-			}
-		}
-		this.result = result;
 	}
 
 	renderInto(domNode) {
@@ -70,9 +82,126 @@ export class TemplateLiteral {
 		templateInstance.update(this);
 	}
 
-	toString() {
-		return `${this.result.join('')}`;
+	parse(strings, expectedLength) {
+		const html = createTemplateString(strings, prefix);
+		const updates = [];
+		let i = 0;
+		let match = null;
+		while ((match = interpolation.exec(html))) {
+			const pre = html.slice(i, match.index);
+			i = match.index + match[0].length;
+			if (match[2]) {
+				const placeholder = `<!--${prefix}${match[2]}-->`;
+				updates.push((value) => pre + getValue(value) + placeholder);
+			} else {
+				let name = '';
+				let quote = match[4];
+				switch (quote) {
+					case '"':
+					case "'":
+						const next = html.indexOf(quote, i);
+						name = html.slice(i, next);
+						i = next + 1;
+						break;
+					default:
+						name = html.slice(--i).replace(rename, '$1');
+						i += name.length;
+						quote = '"';
+						break;
+				}
+				switch (true) {
+					// case name === 'ref':
+					// 	updates.push((value) => {
+					// 		passRef(value);
+					// 		return pre;
+					// 	});
+					// 	break;
+					// setters as boolean attributes (.disabled .contentEditable)
+					case name[0] === '?':
+						const boolean = name.slice(1).toLowerCase();
+						updates.push((value) => {
+							let result = pre;
+							if (value) result += ` ${boolean}`;
+							return result;
+						});
+						break;
+					case name[0] === '.':
+						const lower = name.slice(1).toLowerCase();
+						updates.push((value) => {
+							let result = pre;
+							// null, undefined, and false are not shown at all
+							if (value != null && value !== false) {
+								// true means boolean attribute, just show the name
+								if (value === true) result += ` ${lower}`;
+								// in all other cases, just escape it in quotes
+								else result += attribute(lower, quote, value);
+							}
+							return result;
+						});
+						break;
+					case name[0] === '@':
+						name = 'on' + name.slice(1);
+					case name[0] === 'o' && name[1] === 'n':
+						updates.push((value) => {
+							let result = pre;
+							// allow handleEvent based objects that
+							// follow the `onMethod` convention
+							// allow listeners only if passed as string,
+							// as functions with a special toString method,
+							// as objects with handleEvents and a method
+							switch (typeof value) {
+								case 'object':
+									if (!(name in value)) break;
+									value = value[name];
+									if (typeof value !== 'function') break;
+								case 'function':
+									if (value.toString === toString) break;
+								case 'string':
+									result += attribute(name, quote, value);
+									break;
+							}
+							return result;
+						});
+						break;
+					default:
+						const placeholder = ` <!--${prefix}${match[3]}=${name}-->`;
+						updates.push((value) => {
+							let result = pre;
+							if (value != null) {
+								result += placeholder;
+								result += attribute(name, quote, value);
+							}
+							return result;
+						});
+						break;
+				}
+			}
+		}
+		const { length } = updates;
+		if (length !== expectedLength) throw new Error(`invalid template ${strings}`);
+		if (length) {
+			const last = updates[length - 1];
+			const chunk = html.slice(i);
+			updates[length - 1] = (value) => last(value) + chunk;
+		} else updates.push(() => html);
+		return updates;
 	}
+
+	toString() {
+		let updates = parsedTemplates.get(this.strings);
+
+		if (!updates) {
+			updates = this.parse(this.strings, this.values.length);
+			parsedTemplates.set(this.strings, updates);
+		}
+
+		return this.values.length ? this.values.map(update, updates).join('') : updates[0]();
+	}
+}
+
+// TODO: WTF?!
+function update(value, i) {
+	return this[i](value);
 }
 
 const html = function (strings, ...values) {
@@ -87,7 +216,10 @@ const spreadAttributes = (attributes) => {
 	return () => {
 		return Object.keys(attributes)
 			.map((key) => {
-				return `${camelToDash(key)}='${new Part(attributes[key])}'`;
+				let value = attributes[key];
+				return `${camelToDash(key)}='${encodeAttribute(
+					typeof value !== 'string' ? JSON.stringify(value) : value,
+				)}'`;
 			})
 			.join(' ');
 	};

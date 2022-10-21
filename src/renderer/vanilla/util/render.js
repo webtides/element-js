@@ -227,6 +227,7 @@ const render = (template, domNode) => {
 	// TODO: make it possible that template could also be an html element ?!
 	console.time('diff');
 
+	//console.log('toString()', template.toString());
 	template.renderInto(domNode);
 
 	console.timeEnd('diff');
