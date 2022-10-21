@@ -164,7 +164,7 @@ export class TemplateLiteral {
 						});
 						break;
 					default:
-						const placeholder = ` <!--${prefix}${match[3]}=${name}-->`;
+						const placeholder = ` ${prefix}${match[3]}=${name}`;
 						updates.push((value) => {
 							let result = pre;
 							if (value != null) {
