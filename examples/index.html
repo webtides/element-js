@@ -3,11 +3,9 @@
 	<head>
 		<meta charset="UTF-8" />
 		<title>Example Elements</title>
-<!--		<script type="module" src="example-base-element.js"></script>-->
+		<!--		<script type="module" src="example-base-element.js"></script>-->
 		<script type="module" src="example-input-element.js"></script>
 		<script type="module" src="example-template-element.js"></script>
-		<script type="module" src="example-directives.js"></script>
-		<script type="module" src="example-slotted-element.js"></script>
 		<script src="https://cdn.tailwindcss.com"></script>
 		<style type="text/tailwindcss">
 			.btn {
@@ -16,11 +14,206 @@
 		</style>
 	</head>
 	<body>
-<!--		<h1>Test</h1>-->
-<!--		<example-base-element family-name="Smith"></example-base-element>-->
+		<!--		<h1>Test</h1>-->
+		<!--		<example-base-element family-name="Smith"></example-base-element>-->
 		<example-input-element></example-input-element>
-		<example-template-element name="Jane" items="1" array="[1,2,3,4]"></example-template-element>
-		<example-directives enabled="true" choose="home" items="[1,2,3]"></example-directives>
-		<example-slotted-element name="Jane"></example-slotted-element>
+		<example-template-element name="Jane" items="1" array="[1,2,3,4]">
+			<div class="container">
+				<div class="flex flex-wrap bg-gray-300 p-4 gap-4">
+					<button type="button" class="btn" id="run" data-count="10">Create 10 rows</button>
+					<button type="button" class="btn" id="run" data-count="100">Create 100 rows</button>
+					<button type="button" class="btn" id="run" data-count="1000">Create 1,000 rows</button>
+					<button type="button" class="btn" id="runlots">Create 10,000 rows</button>
+					<button type="button" class="btn" id="add">Append 1,000 rows</button>
+					<button type="button" class="btn" id="update">Update every 10th row</button>
+					<button type="button" class="btn" id="swaprows">Swap Rows</button>
+					<button type="button" class="btn" id="clear">Clear</button>
+				</div>
+				<table class="min-w-full divide-y divide-gray-300">
+					<tbody class="divide-y divide-gray-200 bg-white">
+						<tr isµ0="id" id="1" isµ1="class" class="bg-white even:bg-gray-100">
+							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">1<!--isµ2--></td>
+							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+								<a class="select block w-full hover:cursor-pointer hover:underline"
+									>big blue sandwich<!--isµ3--></a
+								>
+							</td>
+							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+								<btn
+									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"
+								>
+									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"
+										>x</span
+									>
+								</btn>
+							</td>
+						</tr>
+						<tr isµ0="id" id="2" isµ1="class" class="bg-white even:bg-gray-100">
+							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">2<!--isµ2--></td>
+							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+								<a class="select block w-full hover:cursor-pointer hover:underline"
+									>important black mouse<!--isµ3--></a
+								>
+							</td>
+							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+								<btn
+									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"
+								>
+									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"
+										>x</span
+									>
+								</btn>
+							</td>
+						</tr>
+						<tr isµ0="id" id="3" isµ1="class" class="bg-white even:bg-gray-100">
+							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">3<!--isµ2--></td>
+							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+								<a class="select block w-full hover:cursor-pointer hover:underline"
+									>angry blue desk<!--isµ3--></a
+								>
+							</td>
+							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+								<btn
+									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"
+								>
+									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"
+										>x</span
+									>
+								</btn>
+							</td>
+						</tr>
+						<tr isµ0="id" id="4" isµ1="class" class="bg-white even:bg-gray-100">
+							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">4<!--isµ2--></td>
+							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+								<a class="select block w-full hover:cursor-pointer hover:underline"
+									>fancy orange keyboard<!--isµ3--></a
+								>
+							</td>
+							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+								<btn
+									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"
+								>
+									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"
+										>x</span
+									>
+								</btn>
+							</td>
+						</tr>
+						<tr isµ0="id" id="5" isµ1="class" class="bg-white even:bg-gray-100">
+							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">5<!--isµ2--></td>
+							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+								<a class="select block w-full hover:cursor-pointer hover:underline"
+									>angry yellow pony<!--isµ3--></a
+								>
+							</td>
+							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+								<btn
+									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"
+								>
+									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"
+										>x</span
+									>
+								</btn>
+							</td>
+						</tr>
+						<tr isµ0="id" id="6" isµ1="class" class="bg-white even:bg-gray-100">
+							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">6<!--isµ2--></td>
+							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+								<a class="select block w-full hover:cursor-pointer hover:underline"
+									>angry red bbq<!--isµ3--></a
+								>
+							</td>
+							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+								<btn
+									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"
+								>
+									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"
+										>x</span
+									>
+								</btn>
+							</td>
+						</tr>
+						<tr isµ0="id" id="7" isµ1="class" class="bg-white even:bg-gray-100">
+							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">7<!--isµ2--></td>
+							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+								<a class="select block w-full hover:cursor-pointer hover:underline"
+									>cheap green table<!--isµ3--></a
+								>
+							</td>
+							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+								<btn
+									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"
+								>
+									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"
+										>x</span
+									>
+								</btn>
+							</td>
+						</tr>
+						<tr isµ0="id" id="8" isµ1="class" class="bg-white even:bg-gray-100">
+							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">8<!--isµ2--></td>
+							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+								<a class="select block w-full hover:cursor-pointer hover:underline"
+									>fancy purple desk<!--isµ3--></a
+								>
+							</td>
+							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+								<btn
+									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"
+								>
+									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"
+										>x</span
+									>
+								</btn>
+							</td>
+						</tr>
+						<tr isµ0="id" id="9" isµ1="class" class="bg-white even:bg-gray-100">
+							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">9<!--isµ2--></td>
+							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+								<a class="select block w-full hover:cursor-pointer hover:underline"
+									>handsome red bbq<!--isµ3--></a
+								>
+							</td>
+							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+								<btn
+									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"
+								>
+									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"
+										>x</span
+									>
+								</btn>
+							</td>
+						</tr>
+						<tr isµ0="id" id="10" isµ1="class" class="bg-white even:bg-gray-100">
+							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">10<!--isµ2--></td>
+							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+								<a class="select block w-full hover:cursor-pointer hover:underline"
+									>cheap blue chair<!--isµ3--></a
+								>
+							</td>
+							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+								<btn
+									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"
+								>
+									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"
+										>x</span
+									>
+								</btn>
+							</td>
+						</tr>
+						<!--isµ0-->
+					</tbody>
+				</table>
+				<div>
+					<div>Foo</div>
+					<!--isµ1-->
+				</div>
+				<div>
+					<div>Bar</div>
+					<div>Baz</div>
+					<!--isµ2-->
+				</div>
+			</div>
+		</example-template-element>
 	</body>
 </html>
