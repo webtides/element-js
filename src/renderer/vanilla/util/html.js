@@ -6,6 +6,7 @@ const prefix = 'isµ';
 const empty = /^(?:area|base|br|col|embed|hr|img|input|keygen|link|menuitem|meta|param|source|track|wbr)$/i;
 const elements = /<([a-z]+[a-z0-9:._-]*)([^>]*?)(\/?)>/g;
 const attributes = /([^\s\\>"'=]+)\s*=\s*(['"]?)\x01/g;
+// TODO: find a better name for holes...
 const holes = /[\x01\x02]/g;
 
 // \x01 Node.ELEMENT_NODE
@@ -186,6 +187,18 @@ export class TemplateResult {
 			updates[length - 1] = (value) => last(value) + chunk;
 		} else updates.push(() => html);
 		return updates;
+	}
+
+	/**
+	 * find interpolations in the given template for nodes and attributes and
+	 * return a string with placeholders as either comment nodes or named attributes.
+	 * @param {string[]} strings a template literal tag array
+	 * @param {string} prefix prefix to use per each comment/attribute
+	 * @returns {string} template with tagged placeholders for values
+	 */
+	get templateString() {
+		// TODO: this could also be cached!
+		return createTemplateString(this.strings, prefix);
 	}
 
 	toString() {

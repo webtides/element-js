@@ -16,11 +16,6 @@ const prefix = 'isµ';
 
 // match nodes|elements that cannot contain comment nodes and must be handled via text-only updates directly.
 const textOnly = /^(?:textarea|script|style|title|plaintext|xmp)$/;
-const empty = /^(?:area|base|br|col|embed|hr|img|input|keygen|link|menuitem|meta|param|source|track|wbr)$/i;
-const elements = /<([a-z]+[a-z0-9:._-]*)([^>]*?)(\/?)>/g;
-const attributes = /([^\s\\>"'=]+)\s*=\s*(['"]?)\x01/g;
-// TODO: find a better name for holes...
-const holes = /[\x01\x02]/g;
 
 // \x01 Node.ELEMENT_NODE
 // \x02 Node.ATTRIBUTE_NODE
@@ -44,7 +39,7 @@ export class TemplateInstance {
 		if (this.strings !== templateResult.strings) {
 			let nodePart = nodeParts.get(templateResult.strings);
 			if (!nodePart) {
-				nodePart = new NodePart(templateResult.strings);
+				nodePart = new NodePart(templateResult);
 				nodeParts.set(templateResult.strings, nodePart);
 			}
 
@@ -120,13 +115,13 @@ export class NodePart {
 	documentFragment = undefined;
 	parts = [];
 
-	constructor(strings) {
-		const templateString = this.createTemplateString(strings, prefix);
+	constructor(templateResult) {
+		const templateString = templateResult.templateString;
 		this.documentFragment = convertStringToTemplate(templateString);
 
 		const tw = globalThis.document?.createTreeWalker(this.documentFragment, 1 | 128);
 		const parts = [];
-		const length = strings.length - 1;
+		const length = templateResult.strings.length - 1;
 		let i = 0;
 		let placeholder = `${prefix}${i}`;
 		// search for parts through numbered placeholders
@@ -157,26 +152,6 @@ export class NodePart {
 			}
 		}
 		this.parts = parts;
-	}
-
-	/**
-	 * find interpolations in the given template for nodes and attributes and
-	 * return a string with placeholders as either comment nodes or named attributes.
-	 * @param {string[]} strings a template literal tag array
-	 * @param {string} prefix prefix to use per each comment/attribute
-	 * @returns {string} template with tagged placeholders for values
-	 */
-	createTemplateString(strings, prefix) {
-		let index = 0;
-		return strings
-			.join('\x01')
-			.trim()
-			.replace(elements, (_, name, attrs, selfClosing) => {
-				let ml = name + attrs.replace(attributes, '\x02=$2$1').trimEnd();
-				if (selfClosing.length) ml += empty.test(name) ? ' /' : '></' + name;
-				return '<' + ml + '>';
-			})
-			.replace(holes, (hole) => (hole === '\x01' ? '<!--' + prefix + index++ + '-->' : prefix + index++));
 	}
 }
 
