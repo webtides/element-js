@@ -1,4 +1,4 @@
-import { TemplateLiteral } from './html';
+import { TemplateResult } from './html';
 import { processPart } from './processers';
 import {
 	convertStringToTemplate,
@@ -36,22 +36,22 @@ export class TemplateInstance {
 	templateInstances = {}; // stack = []
 	updates = undefined;
 
-	constructor(templateLiteral) {
-		this.update(templateLiteral);
+	constructor(templateResult) {
+		this.update(templateResult);
 	}
 
-	hydrate(templateLiteral) {
-		if (this.strings !== templateLiteral.strings) {
-			let nodePart = nodeParts.get(templateLiteral.strings);
+	hydrate(templateResult) {
+		if (this.strings !== templateResult.strings) {
+			let nodePart = nodeParts.get(templateResult.strings);
 			if (!nodePart) {
-				nodePart = new NodePart(templateLiteral.strings);
-				nodeParts.set(templateLiteral.strings, nodePart);
+				nodePart = new NodePart(templateResult.strings);
+				nodeParts.set(templateResult.strings, nodePart);
 			}
 
 			const documentFragment = globalThis.document?.importNode(nodePart.documentFragment, true);
 			const updates = nodePart.parts.map(processPart, documentFragment);
 
-			this.strings = templateLiteral.strings;
+			this.strings = templateResult.strings;
 			// TODO: I think I would rather like to only store the parts here and the parts should carry updates by them self
 			// and then recursively call the updates from/via the parts
 			this.updates = updates;
@@ -59,22 +59,22 @@ export class TemplateInstance {
 		}
 	}
 
-	update(templateLiteral) {
-		this.hydrate(templateLiteral);
+	update(templateResult) {
+		this.hydrate(templateResult);
 
-		const values = this.parseValues(templateLiteral.values);
+		const values = this.parseValues(templateResult.values);
 
 		for (let index = 0; index < values.length; index++) {
 			this.updates[index](values[index]);
 		}
 	}
 
-	// nested TemplateLiterals values need to be unrolled in order for update functions to be able to process them
+	// nested TemplateResults values need to be unrolled in order for update functions to be able to process them
 	parseValues(values, parentIndex = undefined) {
 		for (let index = 0; index < values.length; index++) {
 			let value = values[index];
 
-			if (value instanceof TemplateLiteral) {
+			if (value instanceof TemplateResult) {
 				let templateInstance = this.templateInstances[`${parentIndex}_${index}`];
 				if (!templateInstance) {
 					templateInstance = new TemplateInstance(value);
@@ -224,7 +224,7 @@ export class PersistentFragment {
 
 /**
  * Render a template string into the given DOM node
- * @param {TemplateLiteral | string} template
+ * @param {TemplateResult | string} template
  * @param {Node} domNode
  */
 const render = (template, domNode) => {

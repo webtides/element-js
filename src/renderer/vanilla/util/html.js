@@ -49,7 +49,7 @@ const getValue = (value) => {
 			switch (true) {
 				case Array.isArray(value):
 					return value.map(getValue).join('');
-				case value instanceof TemplateLiteral:
+				case value instanceof TemplateResult:
 					return value.toString();
 			}
 			break;
@@ -64,7 +64,7 @@ const parsedTemplates = new WeakMap();
 
 const templateInstances = new WeakMap();
 
-export class TemplateLiteral {
+export class TemplateResult {
 	constructor(strings, ...values) {
 		this.strings = strings;
 		this.values = values;
@@ -82,6 +82,7 @@ export class TemplateLiteral {
 		templateInstance.update(this);
 	}
 
+	// TODO: this is kind of the same as in render.js/NodePart
 	parse(strings, expectedLength) {
 		const html = createTemplateString(strings, prefix);
 		const updates = [];
@@ -205,7 +206,7 @@ function update(value, i) {
 }
 
 const html = function (strings, ...values) {
-	return new TemplateLiteral(strings, ...values);
+	return new TemplateResult(strings, ...values);
 };
 
 const unsafeHTML = (string) => {
