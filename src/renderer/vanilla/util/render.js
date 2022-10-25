@@ -129,15 +129,10 @@ export class TemplatePart {
 export class Part {
 	node = undefined;
 	path = undefined;
-	processor = undefined;
 
 	constructor(node) {
 		this.node = node;
 		this.path = getNodePath(node);
-	}
-
-	update(value) {
-		return this.processor?.(value);
 	}
 }
 
