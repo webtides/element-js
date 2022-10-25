@@ -285,12 +285,9 @@ export const processAttributePart = (node, name) => {
 	return processAttribute(node, name);
 };
 
-// TODO: move this into the specific part classes?!
-export function processPart(part) {
-	// TODO: do we really need this path reducing?! The part has a reference to the node already no?!
+export function processPart(part, fragment) {
 	// We currently need the path because the fragment will be cloned via importNode and therefore the node will be a different one
-	const node = part.path.reduceRight(({ childNodes }, i) => childNodes[i], this);
-	//const node = part.node;
+	const node = part.path.reduceRight(({ childNodes }, i) => childNodes[i], fragment);
 
 	if (part instanceof ChildNodePart) {
 		return processNodePart(node);

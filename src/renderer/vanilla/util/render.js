@@ -1,5 +1,5 @@
 import { TemplateResult } from './html';
-import { processAttributePart, processNodePart, processPart } from './processers';
+import { processPart } from './processers';
 import {
 	convertStringToTemplate,
 	PERSISTENT_DOCUMENT_FRAGMENT_NODE,
@@ -45,8 +45,9 @@ export class TemplatePart {
 				partsCache.set(templateResult.strings, parts);
 			}
 
+			// TODO: for SSR I think we need to use a fragment?! from the live dom instead of the cached fragment here...
 			this.fragment = new PersistentFragment(fragment);
-			this.updates = parts.map(processPart, this.fragment.fragment);
+			this.updates = parts.map((part) => processPart(part, this.fragment.fragment));
 			this.strings = templateResult.strings;
 		}
 	}
