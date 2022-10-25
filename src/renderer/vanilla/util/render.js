@@ -50,14 +50,11 @@ export class TemplateInstance {
 				partsCache.set(templateResult.strings, parts);
 			}
 
-			const documentFragment = globalThis.document?.importNode(fragment, true);
-			const updates = parts.map(processPart, documentFragment);
-
-			this.strings = templateResult.strings;
+			this.fragment = new PersistentFragment(fragment);
 			// TODO: I think I would rather like to only store the parts here and the parts should carry updates by them self
 			// and then recursively call the updates from/via the parts
-			this.updates = updates;
-			this.fragment = new PersistentFragment(documentFragment);
+			this.updates = parts.map(processPart, this.fragment.fragment);
+			this.strings = templateResult.strings;
 		}
 	}
 
@@ -188,8 +185,8 @@ export class PersistentFragment {
 	childNodes = []; // "not live" copy of childNodes
 
 	constructor(fragment) {
-		this.fragment = fragment;
-		this.childNodes = [...fragment.childNodes];
+		this.fragment = globalThis.document?.importNode(fragment, true);
+		this.childNodes = [...this.fragment.childNodes];
 	}
 
 	get ELEMENT_NODE() {
