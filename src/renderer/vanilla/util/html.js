@@ -1,5 +1,5 @@
 import { camelToDash, decodeAttribute, encodeAttribute } from '../../../util/AttributeParser';
-import { TemplateInstance } from './render';
+import { TemplatePart } from './render';
 
 // TODO: this is the same as in render.js
 const prefix = 'isµ';
@@ -63,7 +63,7 @@ const getValue = (value) => {
 // TODO: these are not templates?! But rather Updates?! I'm not sure uf updates is the right term either...
 const parsedTemplates = new WeakMap();
 
-const templateInstances = new WeakMap();
+const templateParts = new WeakMap();
 
 export class TemplateResult {
 	constructor(strings, ...values) {
@@ -72,15 +72,15 @@ export class TemplateResult {
 	}
 
 	renderInto(domNode) {
-		let templateInstance = templateInstances.get(domNode);
-		if (!templateInstance) {
-			templateInstance = new TemplateInstance(this);
-			templateInstances.set(domNode, templateInstance);
+		let templatePart = templateParts.get(domNode);
+		if (!templatePart) {
+			templatePart = new TemplatePart(this);
+			templateParts.set(domNode, templatePart);
 
-			domNode.replaceChildren(templateInstance.fragment.valueOf());
+			domNode.replaceChildren(templatePart.fragment.valueOf());
 		}
 
-		templateInstance.update(this);
+		templatePart.update(this);
 	}
 
 	// TODO: this is kind of the same as in render.js/NodePart

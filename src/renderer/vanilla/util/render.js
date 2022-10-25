@@ -17,19 +17,14 @@ const prefix = 'isµ';
 // match nodes|elements that cannot contain comment nodes and must be handled via text-only updates directly.
 const textOnly = /^(?:textarea|script|style|title|plaintext|xmp)$/;
 
-// \x01 Node.ELEMENT_NODE
-// \x02 Node.ATTRIBUTE_NODE
-
 const partsCache = new WeakMap();
 const fragmentsCache = new WeakMap();
 
-// TODO: find a better name for TemplateInstance ?!
-// Maybe TemplatePart ?!
-export class TemplateInstance {
+export class TemplatePart {
 	fragment = null; // PersistentFragment
 	strings = undefined;
 	// Used to remember parent template state as we recurse into nested templates
-	templateInstances = {}; // stack = []
+	templateParts = {}; // stack = []
 	updates = undefined;
 
 	constructor(templateResult) {
@@ -120,10 +115,10 @@ export class TemplateInstance {
 			let value = values[index];
 
 			if (value instanceof TemplateResult) {
-				let templateInstance = this.templateInstances[`${parentIndex}_${index}`];
+				let templateInstance = this.templateParts[`${parentIndex}_${index}`];
 				if (!templateInstance) {
-					templateInstance = new TemplateInstance(value);
-					this.templateInstances[`${parentIndex}_${index}`] = templateInstance;
+					templateInstance = new TemplatePart(value);
+					this.templateParts[`${parentIndex}_${index}`] = templateInstance;
 				} else {
 					templateInstance.update(value);
 				}
