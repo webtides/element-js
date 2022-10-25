@@ -46,8 +46,6 @@ export class TemplatePart {
 			}
 
 			this.fragment = new PersistentFragment(fragment);
-			// TODO: I think I would rather like to only store the parts here and the parts should carry updates by them self
-			// and then recursively call the updates from/via the parts
 			this.updates = parts.map(processPart, this.fragment.fragment);
 			this.strings = templateResult.strings;
 		}
@@ -61,11 +59,6 @@ export class TemplatePart {
 		for (let index = 0; index < values.length; index++) {
 			this.updates[index](values[index]);
 		}
-
-		// Code by wishful thinking
-		// for (let index = 0; index < parts.length; index++) {
-		// 	this.parts[index].update(values[index]);
-		// }
 	}
 
 	parseFragment(templateResult) {
@@ -88,12 +81,12 @@ export class TemplatePart {
 
 			if (node.nodeType === COMMENT_NODE) {
 				if (node.data === placeholder) {
-					parts.push(new ChildNodePart(node, documentFragment));
+					parts.push(new ChildNodePart(node));
 					placeholder = `${prefix}${++i}`;
 				}
 			} else {
 				while (node.hasAttribute(placeholder)) {
-					parts.push(new AttributePart(node, node.getAttribute(placeholder), documentFragment));
+					parts.push(new AttributePart(node, node.getAttribute(placeholder)));
 					// the placeholder attribute can be removed once we have our part for processing updates
 					node.removeAttribute(placeholder);
 					placeholder = `${prefix}${++i}`;
@@ -101,7 +94,7 @@ export class TemplatePart {
 				// if the node is a text-only node, check its content for a placeholder
 				if (textOnly.test(node.localName) && node.textContent.trim() === `<!--${placeholder}-->`) {
 					node.textContent = '';
-					parts.push(new TextNodePart(node, documentFragment));
+					parts.push(new TextNodePart(node));
 					placeholder = `${prefix}${++i}`;
 				}
 			}
@@ -135,14 +128,11 @@ export class TemplatePart {
 export class Part {
 	node = undefined;
 	path = undefined;
-	fragment = undefined;
 	processor = undefined;
 
-	constructor(node, fragment) {
+	constructor(node) {
 		this.node = node;
-		this.fragment = fragment;
 		this.path = getNodePath(node);
-		//this.processor = processPart(this, fragment);
 	}
 
 	update(value) {
@@ -153,19 +143,13 @@ export class Part {
 export class AttributePart extends Part {
 	name = undefined;
 
-	constructor(node, name, fragment) {
-		super(node, fragment);
+	constructor(node, name) {
+		super(node);
 		this.name = name;
-		//this.processor = processAttributePart(node, name);
 	}
 }
 
-export class ChildNodePart extends Part {
-	constructor(node, fragment) {
-		super(node, fragment);
-		//this.processor = processNodePart(node);
-	}
-}
+export class ChildNodePart extends Part {}
 
 export class TextNodePart extends Part {}
 
