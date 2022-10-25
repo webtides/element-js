@@ -1,5 +1,5 @@
 import { TemplateResult } from './html';
-import { processPart } from './processers';
+import { processAttributePart, processNodePart, processPart } from './processers';
 import {
 	convertStringToTemplate,
 	PERSISTENT_DOCUMENT_FRAGMENT_NODE,
@@ -20,7 +20,8 @@ const textOnly = /^(?:textarea|script|style|title|plaintext|xmp)$/;
 // \x01 Node.ELEMENT_NODE
 // \x02 Node.ATTRIBUTE_NODE
 
-const nodeParts = new WeakMap();
+const partsCache = new WeakMap();
+const fragmentsCache = new WeakMap();
 
 // TODO: find a better name for TemplateInstance ?!
 // Maybe TemplatePart ?!
@@ -37,14 +38,20 @@ export class TemplateInstance {
 
 	hydrate(templateResult) {
 		if (this.strings !== templateResult.strings) {
-			let nodePart = nodeParts.get(templateResult.strings);
-			if (!nodePart) {
-				nodePart = new NodePart(templateResult);
-				nodeParts.set(templateResult.strings, nodePart);
+			let fragment = fragmentsCache.get(templateResult.strings);
+			if (!fragment) {
+				fragment = this.parseFragment(templateResult);
+				fragmentsCache.set(templateResult.strings, fragment);
 			}
 
-			const documentFragment = globalThis.document?.importNode(nodePart.documentFragment, true);
-			const updates = nodePart.parts.map(processPart, documentFragment);
+			let parts = partsCache.get(templateResult.strings);
+			if (!parts) {
+				parts = this.parseParts(templateResult, fragment);
+				partsCache.set(templateResult.strings, parts);
+			}
+
+			const documentFragment = globalThis.document?.importNode(fragment, true);
+			const updates = parts.map(processPart, documentFragment);
 
 			this.strings = templateResult.strings;
 			// TODO: I think I would rather like to only store the parts here and the parts should carry updates by them self
@@ -62,6 +69,52 @@ export class TemplateInstance {
 		for (let index = 0; index < values.length; index++) {
 			this.updates[index](values[index]);
 		}
+
+		// Code by wishful thinking
+		// for (let index = 0; index < parts.length; index++) {
+		// 	this.parts[index].update(values[index]);
+		// }
+	}
+
+	parseFragment(templateResult) {
+		const templateString = templateResult.templateString;
+		return convertStringToTemplate(templateString);
+	}
+
+	parseParts(templateResult, documentFragment) {
+		const tw = globalThis.document?.createTreeWalker(documentFragment, 1 | 128);
+		const parts = [];
+		const length = templateResult.strings.length - 1;
+		let i = 0;
+		let placeholder = `${prefix}${i}`;
+		// search for parts through numbered placeholders
+		// <div isµ0="attribute" isµ1="another-attribute"><!--isµ2--><span><!--isµ3--</span></div>
+		while (i < length) {
+			const node = tw.nextNode();
+
+			if (!node) throw `bad template: ${templateResult.templateString}`;
+
+			if (node.nodeType === COMMENT_NODE) {
+				if (node.data === placeholder) {
+					parts.push(new ChildNodePart(node, documentFragment));
+					placeholder = `${prefix}${++i}`;
+				}
+			} else {
+				while (node.hasAttribute(placeholder)) {
+					parts.push(new AttributePart(node, node.getAttribute(placeholder), documentFragment));
+					// the placeholder attribute can be removed once we have our part for processing updates
+					node.removeAttribute(placeholder);
+					placeholder = `${prefix}${++i}`;
+				}
+				// if the node is a text-only node, check its content for a placeholder
+				if (textOnly.test(node.localName) && node.textContent.trim() === `<!--${placeholder}-->`) {
+					node.textContent = '';
+					parts.push(new TextNodePart(node, documentFragment));
+					placeholder = `${prefix}${++i}`;
+				}
+			}
+		}
+		return parts;
 	}
 
 	// nested TemplateResults values need to be unrolled in order for update functions to be able to process them
@@ -90,70 +143,39 @@ export class TemplateInstance {
 export class Part {
 	node = undefined;
 	path = undefined;
+	fragment = undefined;
+	processor = undefined;
 
-	constructor(node) {
+	constructor(node, fragment) {
 		this.node = node;
+		this.fragment = fragment;
 		this.path = getNodePath(node);
+		//this.processor = processPart(this, fragment);
+	}
+
+	update(value) {
+		return this.processor?.(value);
 	}
 }
 
 export class AttributePart extends Part {
 	name = undefined;
 
-	constructor(node, name) {
-		super(node);
+	constructor(node, name, fragment) {
+		super(node, fragment);
 		this.name = name;
+		//this.processor = processAttributePart(node, name);
 	}
 }
 
-export class ChildNodePart extends Part {}
+export class ChildNodePart extends Part {
+	constructor(node, fragment) {
+		super(node, fragment);
+		//this.processor = processNodePart(node);
+	}
+}
 
 export class TextNodePart extends Part {}
-
-// TODO: TemplateInstance and NodePart are kind of the same?! Or need to be switched?! Or some of their behaviour must be switched?!
-export class NodePart {
-	documentFragment = undefined;
-	parts = [];
-
-	constructor(templateResult) {
-		const templateString = templateResult.templateString;
-		this.documentFragment = convertStringToTemplate(templateString);
-
-		const tw = globalThis.document?.createTreeWalker(this.documentFragment, 1 | 128);
-		const parts = [];
-		const length = templateResult.strings.length - 1;
-		let i = 0;
-		let placeholder = `${prefix}${i}`;
-		// search for parts through numbered placeholders
-		// <div isµ0="attribute" isµ1="another-attribute"><!--isµ2--><span><!--isµ3--</span></div>
-		while (i < length) {
-			const node = tw.nextNode();
-
-			if (!node) throw `bad template: ${templateString}`;
-
-			if (node.nodeType === COMMENT_NODE) {
-				if (node.data === placeholder) {
-					parts.push(new ChildNodePart(node));
-					placeholder = `${prefix}${++i}`;
-				}
-			} else {
-				while (node.hasAttribute(placeholder)) {
-					parts.push(new AttributePart(node, node.getAttribute(placeholder)));
-					// the placeholder attribute can be removed once we have our part for processing updates
-					node.removeAttribute(placeholder);
-					placeholder = `${prefix}${++i}`;
-				}
-				// if the node is a text-only node, check its content for a placeholder
-				if (textOnly.test(node.localName) && node.textContent.trim() === `<!--${placeholder}-->`) {
-					node.textContent = '';
-					parts.push(new TextNodePart(node));
-					placeholder = `${prefix}${++i}`;
-				}
-			}
-		}
-		this.parts = parts;
-	}
-}
 
 // https://github.com/whatwg/dom/issues/736
 // TODO: maybe I can actually extend the real DocumentFragment? So that I don't have to patch everything else...

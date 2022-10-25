@@ -167,7 +167,7 @@ const diffNodes = function (parentNode, domChildNodes, templateChildNodes, ancho
 	return templateChildNodes;
 };
 
-const processNodePart = (comment) => {
+export const processNodePart = (comment) => {
 	let oldValue;
 	let text;
 	let nodes = [];
@@ -254,7 +254,7 @@ const processNodePart = (comment) => {
 	return anyContent;
 };
 
-const processAttributePart = (node, name) => {
+export const processAttributePart = (node, name) => {
 	// boolean attribute: ?boolean=${...}
 	if (name.startsWith('?')) {
 		return processBooleanAttribute(node, name.slice(1), false);
@@ -285,9 +285,12 @@ const processAttributePart = (node, name) => {
 	return processAttribute(node, name);
 };
 
+// TODO: move this into the specific part classes?!
 export function processPart(part) {
 	// TODO: do we really need this path reducing?! The part has a reference to the node already no?!
+	// We currently need the path because the fragment will be cloned via importNode and therefore the node will be a different one
 	const node = part.path.reduceRight(({ childNodes }, i) => childNodes[i], this);
+	//const node = part.node;
 
 	if (part instanceof ChildNodePart) {
 		return processNodePart(node);
