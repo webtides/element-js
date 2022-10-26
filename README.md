@@ -42,8 +42,8 @@ class ExampleElement extends BaseElement {
     // reactive attributes/properties
     properties() {
         return {
-            familyName: 'Doe',
-						sharedDate
+           familyName: 'Doe',
+           sharedDate
         };
     }
 
