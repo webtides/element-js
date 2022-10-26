@@ -2,33 +2,42 @@
 
 ## Introduction
 
-_element-js_ is a collection of base classes for Custom Elements with a beautiful API for building fast and lightweight Web Components that work with any framework or without a framework at all - because they are just html and vanilla javascript.
+_element-js_ is a collection of base classes for Custom Elements with a beautiful API for building fast and lightweight
+Web Components that work with any framework or without a framework at all - because they are just html and vanilla
+javascript.
 
-_element-js_ aims to combine the best concepts of current and popular frontend frameworks and web-standard into a single toolset that will never be outdated because it is just html and javascript.
+_element-js_ aims to combine the best concepts of current and popular frontend frameworks and web-standard into a single
+toolset that will never be outdated because it is just html and javascript.
 
 ### Why Custom elements
 
-By using web-standards, developers only need to learn the standard web API once rather than custom framework APIs over and over again.
+By using web-standards, developers only need to learn the standard web API once rather than custom framework APIs over
+and over again.
 
-While popular frontend frameworks come and go, web components and custom elements will always be part of the web standard API. And since they conform to the standard web API, they work in any major frontend framework.
+While popular frontend frameworks come and go, web components and custom elements will always be part of the web
+standard API. And since they conform to the standard web API, they work in any major frontend framework.
 
-Custom elements provide a component model for the web and enable developers to define their own elements. With custom elements you get a mechanism to associate an ES class with a custom element name which then can be used in HTML alongside any other element. Inside the class you can define the public API for the custom element.
+Custom elements provide a component model for the web and enable developers to define their own elements. With custom
+elements you get a mechanism to associate an ES class with a custom element name which then can be used in HTML
+alongside any other element. Inside the class you can define the public API for the custom element.
 
 ### Why element-js
 
-Using Custom Clements directly can be quite cumbersome because the underlying API is very low level. To prevent writing a lot of boilerplate _element-js_ provides extra APIs that enable writing components fast with very little code.
+Using Custom Clements directly can be quite cumbersome because the underlying API is very low level. To prevent writing
+a lot of boilerplate _element-js_ provides extra APIs that enable writing components fast with very little code.
 
 On top of that it also brings some nice features like
 
--   async update/render cycle
--   automatic mapping of attributes to properties
--   objects, arrays, numbers and booleans as attributes (instead of just strings)
--   reflecting properties to attributes
--   abstraction for writing templates
--   mechanism for loading styles per element
--   loading global styles into Shadow Dom
+- async update/render cycle
+- automatic mapping of attributes to properties
+- objects, arrays, numbers and booleans as attributes (instead of just strings)
+- reflecting properties to attributes
+- abstraction for writing templates
+- mechanism for loading styles per element
+- loading global styles into Shadow Dom
 
-And the best thing? There is no magic! No Framework. No compiler. You only need to extend from an _element-js_ element instead of the standard `HTMLElement`.
+And the best thing? There is no magic! No Framework. No compiler. You only need to extend from an _element-js_ element
+instead of the standard `HTMLElement`.
 
 ### Browser Support
 
@@ -39,9 +48,14 @@ _element-js_ Elements are natively supported in all modern Browsers including Ch
 | ✓      | ✓      | ✓       | ✓        |
 | v. 60+ | v. 79+ | v. 63+  | v. 10.1+ |
 
-If you need to support older Browsers like IE 11 or Edge 16-18 you will have to load one or two polyfills for Custom Elements to work seamlessly. _element-js_ does not bring or load any polyfills on its own. You will have to bundle or load them yourself. For more information see [Bundling/Publishing](#bundlingpublishing).
+If you need to support older Browsers like IE 11 or Edge 16-18 you will have to load one or two polyfills for Custom
+Elements to work seamlessly. _element-js_ does not bring or load any polyfills on its own. You will have to bundle or
+load them yourself. For more information see [Bundling/Publishing](#bundlingpublishing).
 
-> _element-js_ comes unbundled, unminified and uses a few `Babel` plugins. Browser support can also be limited for any of the `Babel` plugin features, you will probably have to use a build step and run your code through something like `Babel`. For a list of `Babel` plugins that are used, see [ES6 Classes](#es6-classes). For more information on bundling and publishing your elements see [Bundling/Publishing](#bundlingpublishing).
+> _element-js_ comes unbundled, unminified and uses a few `Babel` plugins. Browser support can also be limited for any
+> of the `Babel` plugin features, you will probably have to use a build step and run your code through something
+> like `Babel`. For a list of `Babel` plugins that are used, see [ES6 Classes](#es6-classes). For more information on
+> bundling and publishing your elements see [Bundling/Publishing](#bundlingpublishing).
 
 ### Getting started
 
@@ -51,51 +65,53 @@ You can install _element-js_ into an existing project or create a new app from s
 
 ### First Element
 
-To define a custom element, create a class that extends _element-js_ and pass the class with a name to the `defineElement` helper function.
+To define a custom element, create a class that extends _element-js_ and pass the class with a name to
+the `defineElement` helper function.
 
 > By specification, a custom element's name can only have lower case letters and must contain a dash.
 
 Here is an example of what a _element-js_ element looks like:
 
 ```js
-import { BaseElement, defineElement } from '@webtides/element-js';
+import {BaseElement, defineElement} from '@webtides/element-js';
 
 class ExampleElement extends BaseElement {
-    // normal public properties
-    greeting = 'Hello';
-    name = 'John';
+	// normal public properties
+	greeting = 'Hello';
+	name = 'John';
 
-    // lifecycle hook
-    connected() {
-        this.greet();
-    }
+	// lifecycle hook
+	connected() {
+		this.greet();
+	}
 
-    // reactive attributes/properties
-    properties() {
-        return {
-            familyName: 'Doe'
-        };
-    }
+	// reactive attributes/properties
+	properties() {
+		return {
+			familyName: 'Doe'
+		};
+	}
 
-    // watchers for property changes
-    watch() {
-        return {
-            familyName: (newValue, oldValue) => {
-                console.log('familyName changed', newValue, oldValue);
-            }
-        };
-    }
+	// watchers for property changes
+	watch() {
+		return {
+			familyName: (newValue, oldValue) => {
+				console.log('familyName changed', newValue, oldValue);
+			}
+		};
+	}
 
-    // computed property
-    get computedMsg() {
-        return `${this.greeting} ${this.name} ${this.familyName}`;
-    }
+	// computed property
+	get computedMsg() {
+		return `${this.greeting} ${this.name} ${this.familyName}`;
+	}
 
-    // method
-    greet() {
-        alert('greeting: ' + this.computedMsg);
-    }
+	// method
+	greet() {
+		alert('greeting: ' + this.computedMsg);
+	}
 }
+
 defineElement('example-element', ExampleElement);
 ```
 
@@ -104,6 +120,7 @@ defineElement('example-element', ExampleElement);
 When the JS class is built, this element can be imported and used in HTML just like any other element tag.
 
 ```html
+
 <example-element family-name="Smith"></example-element>
 <script type="module" src="./example-element.js">
 ```
@@ -120,7 +137,8 @@ Most of the element API ist standard ES6 class Syntax with a few ES next proposa
 
 An _element-js_ element is nothing more than a regular JS class that extends from `HTMLElement`.
 
-> For more information on JavaScript classes see: [Classes on MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes)
+> For more information on JavaScript classes
+> see: [Classes on MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes)
 
 ### Constructor & Options
 
@@ -130,16 +148,16 @@ Optionally you can overwrite the constructor and pass an object to the super cal
 
 ```json
 {
-    "autoUpdate": true,
-    "deferUpdate": false,
-    "mutationObserverOptions": {
-        "attributes": true,
-        "childList": true,
-        "subtree": false
-    },
-    "propertyOptions": {},
-    "shadowRender": false,
-    "styles": []
+	"autoUpdate": true,
+	"deferUpdate": false,
+	"mutationObserverOptions": {
+		"attributes": true,
+		"childList": true,
+		"subtree": false
+	},
+	"propertyOptions": {},
+	"shadowRender": false,
+	"styles": []
 }
 ```
 
@@ -147,25 +165,35 @@ Optionally you can overwrite the constructor and pass an object to the super cal
 
 Type: `boolean` Default: `true`
 
-When set to `true` the element will call the `requestUpdate()` method on the instance every time a property or attribute was changed. This will re-evaluate everything on the element and trigger a re-render (if a template is provided) and trigger the watchers for the affected properties/attributes.
+When set to `true` the element will call the `requestUpdate()` method on the instance every time a property or attribute
+was changed. This will re-evaluate everything on the element and trigger a re-render (if a template is provided) and
+trigger the watchers for the affected properties/attributes.
 
 #### deferUpdate
 
 Type: `boolean` Default: `false`
 
-When set to `true` the element will not call the `requestUpdate()` method upon connecting and therefore will not render (if template was provided) initially. This might be necessary in some cases where you have to prepare and setup your element before actually rendering for the first time. You will have to call the `requestUpdate` method manually at the right lifecycle hook.
+When set to `true` the element will not call the `requestUpdate()` method upon connecting and therefore will not
+render (if template was provided) initially. This might be necessary in some cases where you have to prepare and setup
+your element before actually rendering for the first time. You will have to call the `requestUpdate` method manually at
+the right lifecycle hook.
 
 #### mutationObserverOptions
 
 Type: `object` Default: `{ "attributes": true, "childList": true, "subtree": false }`
 
-By default, the element will register a _Mutation Observer_, listen for attribute changes and call the `requestUpdate` method if `autoUpdate` is enabled. When `childList` is set to `true` the element will also call the `requestUpdate` method for childList modifications (eg. Adding or removing child elements).
-The `mutationObserverOptions` takes a dictionary in the exact same form as the [MutationObserverInit options](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserverInit).
-By setting the `subtree` option to `true` the element will also call the `requestUpdate` method for attribute changes and childList modifications on nested child elements.
+By default, the element will register a _Mutation Observer_, listen for attribute changes and call the `requestUpdate`
+method if `autoUpdate` is enabled. When `childList` is set to `true` the element will also call the `requestUpdate`
+method for childList modifications (eg. Adding or removing child elements).
+The `mutationObserverOptions` takes a dictionary in the exact same form as
+the [MutationObserverInit options](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserverInit).
+By setting the `subtree` option to `true` the element will also call the `requestUpdate` method for attribute changes
+and childList modifications on nested child elements.
 
 > Please note that observing `subtree` mutations might have performance implications and use it only if necessary.
 
 #### propertyOptions: {
+
 					parseDisabled: {
 						parse: false,
 					},
@@ -180,7 +208,9 @@ With the `propertyOptions` object you can fine tune the update behaviour for cer
 
 ```json
 {
-    "propertyA": { "reflect": true }
+	"propertyA": {
+		"reflect": true
+	}
 }
 ```
 
@@ -188,77 +218,98 @@ By default all options are `false` for all properties/attributes. Currently the 
 
 ```json
 {
-    "reflect": false ,
-    "parse": false,
-    "notify": false
+	"reflect": false,
+	"parse": false,
+	"notify": false
 }
 ```
 
-_reflect_ When set to `true` the element will reflect property changes back to attributes if the attribute was not present when connecting the element. By default all attributes that are present when connecting the element will be reflected anyway.
+_reflect_ When set to `true` the element will reflect property changes back to attributes if the attribute was not
+present when connecting the element. By default all attributes that are present when connecting the element will be
+reflected anyway.
 
-_parse_ When set to `false` the element will not automatically try to parse the attributes string value to a complex type (number, array, object).
+_parse_ When set to `false` the element will not automatically try to parse the attributes string value to a complex
+type (number, array, object).
 
-_notify_ When set to `true` the element will dispatch `CustomEvent`s for every property/attribute change. The event name will be the property name all lowercase and camel to dashes with a postfix of `-changed`. For example `propertyA` will dispatch an event with the name `property-a-changed` . The event `detail` property will be the changed property value. The event will `bubble` by default.
+_notify_ When set to `true` the element will dispatch `CustomEvent`s for every property/attribute change. The event name
+will be the property name all lowercase and camel to dashes with a postfix of `-changed`. For example `propertyA` will
+dispatch an event with the name `property-a-changed` . The event `detail` property will be the changed property value.
+The event will `bubble` by default.
 
-
-_parse_ and _reflect_ can also be provided with a callback function for total control of the parsing and/or reflection of the attributes value
+_parse_ and _reflect_ can also be provided with a callback function for total control of the parsing and/or reflection
+of the attributes value
 
 ```js 
 
 propertyOptions = {
-		parseString: {
-			parse: (value) => value.toString()
-		},
-		reflectCustom: {
-			reflect: () => 'custom',
-		},
-	}
+	parseString: {
+		parse: (value) => value.toString()
+	},
+	reflectCustom: {
+		reflect: () => 'custom',
+	},
+}
 ```
-
 
 #### shadowRender
 
 Type: `boolean` Default: `false`
 
-When set to `true` the element will render the template (if provided) in the _Shadow DOM_ and therefore encapsulate the element and styles from the rest of the document. For more information on shadow DOM see [Using shadow DOM](https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM).
+When set to `true` the element will render the template (if provided) in the _Shadow DOM_ and therefore encapsulate the
+element and styles from the rest of the document. For more information on shadow DOM
+see [Using shadow DOM](https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM).
 
 #### styles
 
 Type `array` Default: `[]`
 
-Via the `styles` option you can add multiple styles/stylesheets to your element. For more information on styling your elements see the [Styles](#styles) section.
+Via the `styles` option you can add multiple styles/stylesheets to your element. For more information on styling your
+elements see the [Styles](#styles) section.
 
 ### Lifecycle
 
-Elements have several lifecycle methods which can be used to hook into different moments. By implementing one of the following methods within the class the element will call them in the right order:
+Elements have several lifecycle methods which can be used to hook into different moments. By implementing one of the
+following methods within the class the element will call them in the right order:
 
 #### connected
 
-Called when the element is connected to the DOM and _element-js_ is done initialising. Usually this hook will only be called once for the lifetime of your element.
+Called when the element is connected to the DOM and _element-js_ is done initialising. Usually this hook will only be
+called once for the lifetime of your element.
 
-> Please note that the `connected` hook however /can/ be called more than once after the first time. It will also be invoked when the element is _attached_ or _moved_ in the DOM or to another DOM.
+> Please note that the `connected` hook however /can/ be called more than once after the first time. It will also be
+> invoked when the element is _attached_ or _moved_ in the DOM or to another DOM.
 
 Use it to initialise the element and set public or "private" properties, query for other DOM elements, etc.
 
 #### beforeUpdate
 
-Called when the element is about to be updated. Whenever a /reactive/ property changed, the element will undergo an update/render cycle. In this hook you can prepare any internal state that might be needed before the update or render actually happens.
+Called when the element is about to be updated. Whenever a /reactive/ property changed, the element will undergo an
+update/render cycle. In this hook you can prepare any internal state that might be needed before the update or render
+actually happens.
 
-> Although the element will update/render after connecting to the DOM, the `beforeUpdate` hook won't be called for the first time. Only on subsequent update cycles.
+> Although the element will update/render after connecting to the DOM, the `beforeUpdate` hook won't be called for the
+> first time. Only on subsequent update cycles.
 
-Property changes in this callback will not be applied in the current frame. They will be queued and processed in the next frame.
+Property changes in this callback will not be applied in the current frame. They will be queued and processed in the
+next frame.
 
 #### afterUpdate
 
-Called after the element was updated/rendered. Implement this hook to perform any tasks that need to be done afterwards like setting/toggling classes on child elements or invoking API methods on other elements.
+Called after the element was updated/rendered. Implement this hook to perform any tasks that need to be done afterwards
+like setting/toggling classes on child elements or invoking API methods on other elements.
 
 #### disconnected
 
-Called just before the element is about to be disconnected/removed from the DOM. Use this hook to clear or remove everything that might be heavy on the browser like expensive event listeners etc.
+Called just before the element is about to be disconnected/removed from the DOM. Use this hook to clear or remove
+everything that might be heavy on the browser like expensive event listeners etc.
 
 _DISCALIMER_
 
-The lifecycle hooks described here are custom methods provided by _element-js_. By default custom elements also have two baked in hooks. `connectedCallback()` and `disconnectedCallback()`. We would encourage you to avoid these if possible. Internally we use them of course to connect the element and trigger the `connected()` callback afterwards. We use them to initialise the elements with all the boilerplate and prepare the API that _element-js_ provides. If you absolutely must use one of them please keep in mind to call the original callback on the `super` element.
+The lifecycle hooks described here are custom methods provided by _element-js_. By default custom elements also have two
+baked in hooks. `connectedCallback()` and `disconnectedCallback()`. We would encourage you to avoid these if possible.
+Internally we use them of course to connect the element and trigger the `connected()` callback afterwards. We use them
+to initialise the elements with all the boilerplate and prepare the API that _element-js_ provides. If you absolutely
+must use one of them please keep in mind to call the original callback on the `super` element.
 
 ### Element Hierarchy
 
@@ -267,10 +318,11 @@ Pleas keep in mind that lifecycles _do not_ wait for child elements to be connec
 In the example below we have a simple hierarchy of elements.
 
 ```html
+
 <a-element>
-    <b-element>
-        <c-element></c-element>
-    </b-element>
+	<b-element>
+		<c-element></c-element>
+	</b-element>
 </a-element>
 ```
 
@@ -287,159 +339,255 @@ This loading/connecting behaviour is compliant with how other (normal) DOM eleme
 In the example we render a clock and update the time every second.
 
 ```javascript
-import { TemplateElement, defineElement, html } from '@webtides/element-js';
+import {TemplateElement, defineElement, html} from '@webtides/element-js';
 
 export class ClockElement extends TemplateElement {
-    timer = null;
+	timer = null;
 
-    properties() {
-        return {
-            time: Date.now()
-        };
-    }
+	properties() {
+		return {
+			time: Date.now()
+		};
+	}
 
-    connected() {
-        this.timer = window.setInterval(() => {
-            this.time = Date.now();
-        }, 1000);
-    }
+	connected() {
+		this.timer = window.setInterval(() => {
+			this.time = Date.now();
+		}, 1000);
+	}
 
-    disconnected() {
-        window.clearInterval(this.timer);
-    }
+	disconnected() {
+		window.clearInterval(this.timer);
+	}
 
-    get formattedTime() {
-        return new Date(this.time).toLocaleTimeString();
-    }
+	get formattedTime() {
+		return new Date(this.time).toLocaleTimeString();
+	}
 
-    template() {
-        return html` <span>${this.formattedTime}</span> `;
-    }
+	template() {
+		return html` <span>${this.formattedTime}</span> `;
+	}
 }
+
 defineElement('clock-element', ClockElement);
 ```
 
 ### Attributes/Properties
 
-With attributes and properties you can build out and define the public API of an element. _element-js_ elements can have three different types of properties.
+With attributes and properties you can build out and define the public API of an element. _element-js_ elements can have
+three different types of properties.
 
 ```javascript
 export class MyElement extends BaseElement {
-    _privatePropery = 'I am private (by convention)';
-    publicProperty = 'I am public';
+	_privatePropery = 'I am private (by convention)';
+	publicProperty = 'I am public';
 
-    properties() {
-        return {
-            reactivePublicProperty: 'I am public & reactive'
-        };
-    }
+	properties() {
+		return {
+			reactivePublicProperty: 'I am public & reactive'
+		};
+	}
 
-    log() {
-        console.log(this._privatePropery);
-        console.log(this.publicProperty);
-        console.log(this.reactivePublicProperty);
-    }
+	log() {
+		console.log(this._privatePropery);
+		console.log(this.publicProperty);
+		console.log(this.reactivePublicProperty);
+	}
 }
+
 defineElement('my-element', MyElement);
 ```
 
 #### Defining properties in JavaScript
 
-Public properties for JavaScript classes where recently added by the JavaScript standard committee. For more information see the [Class fields documentation on MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Class_fields).
+Public properties for JavaScript classes where recently added by the JavaScript standard committee. For more information
+see
+the [Class fields documentation on MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Class_fields)
+.
 
-On top of these fields _element-js_ adds another form of properties - reactive properties. By overwriting the `properties()` method on your element and returning an object of key/value pairs you can define a list of reactive public properties. Behind the scenes _element-js_ will automatically generate getters and setters for each property and trigger an update/render for the element when these properties change.
+On top of these fields _element-js_ adds another form of properties - reactive properties. By overwriting
+the `properties()` method on your element and returning an object of key/value pairs you can define a list of reactive
+public properties. Behind the scenes _element-js_ will automatically generate getters and setters for each property and
+trigger an update/render for the element when these properties change.
 
 All types of properties can be accessed via the `this` operator within the element class or the template function.
 
 #### Using attributes/properties in HTML
 
-_element-js_ will merge all attributes with the reactive properties map. Values set via attribute will always take precedence over values defined in the properties map. Attributes will still be defined as properties even when they are not set in the properties map.
+_element-js_ will merge all attributes with the reactive properties map. Values set via attribute will always take
+precedence over values defined in the properties map. Attributes will still be defined as properties even when they are
+not set in the properties map.
 
-HTML only has the concept of attributes and `string` values. _element-js_ will automatically convert attributes to their correct types of `string`, `number`, `boolean`, `array` and `object`.
+HTML only has the concept of attributes and `string` values. _element-js_ will automatically convert attributes to their
+correct types of `string`, `number`, `boolean`, `array` and `object`.
 
-> In JavaScript you will typically use camelCase for declaring properties. HTML attributes however only can be lowercase. _element-js_ will therefore convert dash-case names to camelCase variables and vice versa.
+> In JavaScript you will typically use camelCase for declaring properties. HTML attributes however only can be
+> lowercase. _element-js_ will therefore convert dash-case names to camelCase variables and vice versa.
 
 #### Property options
 
-Reactive properties can be fine-tuned further by providing options via the constructor. See `propertyOptions` in [Constructor options](#propertyoptions).
+Reactive properties can be fine-tuned further by providing options via the constructor. See `propertyOptions`
+in [Constructor options](#propertyoptions).
 
-### Computed properties
+#### PropertyStore / shared application state via reactive properties
 
-Sometimes it is necessary to compute properties out of multiple other properties. You can simply define a getter on the element and return a value.
+When a certain property in the properties map is an instance of the provided class `StoreProperty` it is treated as an
+external `Store`.
+A `Store` can be created outside of a components´ scope or in a dedicated Module to keep track of shared Application
+State.
+When a components´ property is an instance of a `StoreProperty` the instance will be added as an observer and
+automatically updated when the store ist changed.
 
-```javascript
-export class MyElement extends BaseElement {
+Instances of PropertyStore provide a way to share global state between as many components in an application as you like.
+Shared State can be something very simple as (updated) Viewport Dimensions, Media Changes or complex fetched data from a REST Endpoint.
+
+##### store.js
+
+```javascript 
+export const simpleStore = new StoreProperty({
+	value: 'simple'
+})
+
+class MoreComplexStore extends StoreProperty {
     properties() {
         return {
-            reactivePublicProperty: 'I am public & reactive'
+            storeCount: 1
+        };
+    }
+    get sum() {
+        return this.storeCount + this.argumentCount;
+    }
+}
+export const exampleStore = new MoreComplexStore({
+	argumentCount: 1
+})
+```
+
+##### MyElement.js
+
+```javascript 
+
+import { exampleStore, simpleStore } from './store.js'; 
+
+export class MyElement extends TemplateElement {
+    properties() {
+        return {
+            store: simpleStore,
+            exampleStore
         };
     }
 
-    get computedProperty() {
-        return this.reactivePublicProperty + ' & computed';
+    template() {
+        return `
+        	<div>Simple Store: ${this.store.value} == "simple" </div>
+        	<div>Complex Store: ${this.exampleStore.sum} == 2</div>
+        	`
+    }
+}
+
+export class AnotherElement extends TemplateElement {
+    properties() {
+        return {
+            store: simpleStore,
+        };
     }
 
-    log() {
-        console.log(this.computedProperty);
+    template() {
+        return `
+        	<div>Simple Store: ${this.store.value} == the same as im MyElement's template.</div>
+        	`
     }
+}
+
+```         
+
+### Computed properties
+
+Sometimes it is necessary to compute properties out of multiple other properties. You can simply define a getter on the
+element and return a value.
+
+```javascript
+export class MyElement extends BaseElement {
+	properties() {
+		return {
+			reactivePublicProperty: 'I am public & reactive'
+		};
+	}
+
+	get computedProperty() {
+		return this.reactivePublicProperty + ' & computed';
+	}
+
+	log() {
+		console.log(this.computedProperty);
+	}
 }
 ```
 
 For every subsequent update/render cycle a computed property will be evaluated again.
 
-> Keep in mind that properties (public or private) that are not declared via the `properties()` map will not trigger an update/render cycle when changed. If you use only non reactive properties to compute a property, it will not be re-evaluated automatically.
+> Keep in mind that properties (public or private) that are not declared via the `properties()` map will not trigger an
+> update/render cycle when changed. If you use only non reactive properties to compute a property, it will not be
+> re-evaluated automatically.
 
 ### Watchers
 
-Alongside defining reactive properties in the `properties()` map, you can define a watcher for every property by implementing a `watch()` map in the same manner.
+Alongside defining reactive properties in the `properties()` map, you can define a watcher for every property by
+implementing a `watch()` map in the same manner.
 
 ```javascript
 export class MyElement extends BaseElement {
-    properties() {
-        return {
-            property: 'I am public & reactive'
-        };
-    }
+	properties() {
+		return {
+			property: 'I am public & reactive'
+		};
+	}
 
-    watch() {
-        return {
-            property: (newValue, oldValue) => {
-                console.log('property changed', { newValue, oldValue });
-            }
-        };
-    }
+	watch() {
+		return {
+			property: (newValue, oldValue) => {
+				console.log('property changed', {newValue, oldValue});
+			}
+		};
+	}
 }
 ```
 
-Whenever a property is changed (either from within the element or from outside) it will trigger the callback defined in the `watch()` map if present. The callback will be invoked with the old value and the new value as parameters.
+Whenever a property is changed (either from within the element or from outside) it will trigger the callback defined in
+the `watch()` map if present. The callback will be invoked with the old value and the new value as parameters.
 
-_element-js_ compares values by stringifying them rather than by reference and will only trigger update/render cycles if the value actually changed.
+_element-js_ compares values by stringifying them rather than by reference and will only trigger update/render cycles if
+the value actually changed.
 
-> `array` or `object` data will not trigger changes if nested elements/keys are changed. Also methods like `push()` and `shift()` won't work.
+> `array` or `object` data will not trigger changes if nested elements/keys are changed. Also methods like `push()`
+> and `shift()` won't work.
 
-Non-mutable operations like `map()` and `shift()` and the spread operator will however change the value and trigger an update cycle.
+Non-mutable operations like `map()` and `shift()` and the spread operator will however change the value and trigger an
+update cycle.
 
 ```javascript
 export class MyElement extends BaseElement {
-    properties() {
-        return {
-            items: ['one', 'two']
-        };
-    }
+	properties() {
+		return {
+			items: ['one', 'two']
+		};
+	}
 
-    count() {
-        this.items = [...this.items, 'three'];
-    }
+	count() {
+		this.items = [...this.items, 'three'];
+	}
 }
 ```
 
 The spread operator works for objects and arrays.
 
-If you want to make sure that an update will be triggered you can always request it manually by calling the `requestUpdate()` method.
+If you want to make sure that an update will be triggered you can always request it manually by calling
+the `requestUpdate()` method.
 
 ### Reactivity
 
-_element-js_ elements update asynchronously when attributes or reactive properties are changed. Changes will also be batched if multiple updates occur. The update itself will always happen in the following frame.
+_element-js_ elements update asynchronously when attributes or reactive properties are changed. Changes will also be
+batched if multiple updates occur. The update itself will always happen in the following frame.
 
 An update lifecycle roughly looks like this:
 
@@ -456,50 +604,59 @@ The TemplateElement from _element-js_ can render templates using `lit-html`.
 
 For detailed information see the documentation on [lit-html.polymer-project-org](https://lit-html.polymer-project.org)
 
-> lit-html lets you write HTML templates in JavaScript, then efficiently render and re-render those templates together with data to create and update DOM
+> lit-html lets you write HTML templates in JavaScript, then efficiently render and re-render those templates together
+> with data to create and update DOM
 
 To render a template from your element just define a `template()` method and return a `tagged template literal`.
 
 ```javascript
 export class MyElement extends TemplateElement {
-    properties() {
-        return {
-            name: 'John'
-        };
-    }
+	properties() {
+		return {
+			name: 'John'
+		};
+	}
 
-    template() {
-        return html` <span>Hello ${this.name}</span> `;
-    }
+	template() {
+		return html` <span>Hello ${this.name}</span> `;
+	}
 }
 ```
 
 #### Shadow DOM vs. Light DOM
 
-By default, _element-js_ will render templates in light DOM. When rendering in light DOM all global styles will be applied to your element as well.
+By default, _element-js_ will render templates in light DOM. When rendering in light DOM all global styles will be
+applied to your element as well.
 
-As mentioned before in the constructor options you can set `shadowRender` to `true` . The element will render templates then in the shadow DOM and encapsulate the element from the rest of the document.
+As mentioned before in the constructor options you can set `shadowRender` to `true` . The element will render templates
+then in the shadow DOM and encapsulate the element from the rest of the document.
 
 #### Data binding
 
-When writing templates vor elements you will often need to access dynamic data as in properties from the element. `tagged template literals` are just enhanced `string literals`. To access variables just use `${}` anywhere inside the string.
+When writing templates vor elements you will often need to access dynamic data as in properties from the
+element. `tagged template literals` are just enhanced `string literals`. To access variables just use `${}` anywhere
+inside the string.
 
 #### Template Directives
 
 Since we use `lit-html` under the hood for rendering you can use all directives and structures provided by lit.
 
-For more information see the [Template syntax reference](https://lit-html.polymer-project.org/guide/template-reference) from the lit-html documentation.
+For more information see the [Template syntax reference](https://lit-html.polymer-project.org/guide/template-reference)
+from the lit-html documentation.
 
 #### Slots
 
-Slots are a very powerful feature when using shadow DOM. By providing slots your elements can accept child elements from the light DOM and have them placed in a specified location inside your elements tree. The slotted content will still belong to the document and therefore also be styled by the document level styles.
+Slots are a very powerful feature when using shadow DOM. By providing slots your elements can accept child elements from
+the light DOM and have them placed in a specified location inside your elements tree. The slotted content will still
+belong to the document and therefore also be styled by the document level styles.
 
-With this pattern you can build things like Modals, Dialogs, etc. where can encapsulate all the behaviour in the Shadow DOM and let the user pass any content inside the element.
+With this pattern you can build things like Modals, Dialogs, etc. where can encapsulate all the behaviour in the Shadow
+DOM and let the user pass any content inside the element.
 
 ```javascript
 export class ModalElement extends TemplateElement {
-    template() {
-        return html`
+	template() {
+		return html`
             <div class="backdrop">
                 <div class="header">
                     <slot name="header"></slot>
@@ -512,24 +669,27 @@ export class ModalElement extends TemplateElement {
                 </div>
             </div>
         `;
-    }
+	}
 }
 ```
 
-When the user (the using developer of the element) passes any content to the element it will be placed instead of the default slot inside the `div.content`.
+When the user (the using developer of the element) passes any content to the element it will be placed instead of the
+default slot inside the `div.content`.
 
 ```html
+
 <modal-element>
-    <p>I am modal content!</p>
+	<p>I am modal content!</p>
 </modal-element>
 ```
 
 Slots can also be named so that you can have multiple different slots.
 
 ```html
+
 <modal-element>
-    <p>I am modal content!</p>
-    <button slot="footer">OK</button>
+	<p>I am modal content!</p>
+	<button slot="footer">OK</button>
 </modal-element>
 ```
 
@@ -537,183 +697,200 @@ Any elements that don't have a slot name will be slotted into the default slot.
 
 #### Complex Template structures
 
-In the examples above we have only seen very simple templates. In real elements you will likely have much more complicated views and your `template()` will start to get messy and hard to read/parse.
+In the examples above we have only seen very simple templates. In real elements you will likely have much more
+complicated views and your `template()` will start to get messy and hard to read/parse.
 
 Lets look at a slightly more advanced element
 
 ```javascript
 export class FormControl extends TemplateElement {
-    properties() {
-        return {
-            label: '',
-            name: '',
-            helpMessage: ''
-        };
-    }
+	properties() {
+		return {
+			label: '',
+			name: '',
+			helpMessage: ''
+		};
+	}
 
-    template() {
-        return html`
+	template() {
+		return html`
             ${this.label
-            ? html`
+			? html`
                       <label for="input-${this.name}">
                           ${this.label}
                       </label>
                   `
-            : ''}
+			: ''}
             <div class="control">
                 <input id="input-${this.name}" name="${this.name}" aria-describedby="${this.name}-help" />
             </div>
             ${this.helpMessage
-            ? html`
+			? html`
                       <span id="${this.name}-help">
                           ${this.helpMessage}
                       </span>
                   `
-            : ''}
+			: ''}
         `;
-    }
+	}
 }
 ```
 
-Although we still left out some very important things the template starts to get complicated. To clean this up we can improve the readability by implementing parts of the template in dedicated template functions
+Although we still left out some very important things the template starts to get complicated. To clean this up we can
+improve the readability by implementing parts of the template in dedicated template functions
 
 ```javascript
 export class FormControl extends TemplateElement {
-    properties() {
-        return {
-            label: '',
-            name: '',
-            helpMessage: ''
-        };
-    }
+	properties() {
+		return {
+			label: '',
+			name: '',
+			helpMessage: ''
+		};
+	}
 
-    template() {
-        return html`
+	template() {
+		return html`
             ${this.labelTemplate()}
             <div class="control">
                 ${this.fieldTemplate()}
             </div>
             ${this.helpTemplate()}}
         `;
-    }
+	}
 
-    labelTemplate() {
-        if (!this.label) return null;
-        return html`
+	labelTemplate() {
+		if (!this.label) return null;
+		return html`
             <label for="input-${this.name}">
                 ${this.label}
             </label>
         `;
-    }
+	}
 
-    fieldTemplate() {
-        return html` <input id="input-${this.name}" name="${this.name}" aria-describedby="${this.name}-help" /> `;
-    }
+	fieldTemplate() {
+		return html` <input id="input-${this.name}" name="${this.name}" aria-describedby="${this.name}-help" /> `;
+	}
 
-    helpTemplate() {
-        if (!this.helpMessage) return null;
-        return html`
+	helpTemplate() {
+		if (!this.helpMessage) return null;
+		return html`
             <span id="${this.name}-help">
                 ${this.helpMessage}
             </span>
         `;
-    }
+	}
 }
 ```
 
 #### Global Styles
 
-More often than not you will be building elements for a specific design/layout rather than encapsulated and abstract elements. It is therefore common to style things globally - especially since the rise of utility based CSS frameworks. When elements render in shadow DOM - they will be encapsulated and won't get any styles applied to them like the rest of the document.
+More often than not you will be building elements for a specific design/layout rather than encapsulated and abstract
+elements. It is therefore common to style things globally - especially since the rise of utility based CSS frameworks.
+When elements render in shadow DOM - they will be encapsulated and won't get any styles applied to them like the rest of
+the document.
 
-There is no official and preferred way of sharing styles between documents today. _element-js_ therefore has a custom solution to this problem. The `TemplateElement` from _element-js_ has another constructor option named: `adoptGlobalStyles` which is `true` by default. When set to `true` _element-js_ will look for a style element in the global document with an `id` of "globalStyles" and apply it before any custom/element styles inside the shadow DOM.
+There is no official and preferred way of sharing styles between documents today. _element-js_ therefore has a custom
+solution to this problem. The `TemplateElement` from _element-js_ has another constructor option
+named: `adoptGlobalStyles` which is `true` by default. When set to `true` _element-js_ will look for a style element in
+the global document with an `id` of "globalStyles" and apply it before any custom/element styles inside the shadow DOM.
 
 Example:
 
 ```html
+
 <style id="globalStyles">
-    p {
-        color: red;
-    }
+	p {
+		color: red;
+	}
 </style>
 ```
 
 ```javascript
 export class ShadowElement extends TemplateElement {
-    constructor() {
-        super({ shadowRender: true, adoptGlobalStyles: true });
-    }
+	constructor() {
+		super({shadowRender: true, adoptGlobalStyles: true});
+	}
 
-    template() {
-        return html`<p>I will be red although I am in shadow DOM and my element did not provide any CSS itself :)</p>`;
-    }
+	template() {
+		return html`<p>I will be red although I am in shadow DOM and my element did not provide any CSS itself :)</p>`;
+	}
 }
 ```
 
 ### Styles
 
-Every _element-js_ element has the ability to load one or more style sheets. Either by adding them to the `styles` option in the `propertyOptions` via the constructor or by implementing a `styles()` method and returning a list of `string` values.
+Every _element-js_ element has the ability to load one or more style sheets. Either by adding them to the `styles`option
+in the `propertyOptions` via the constructor or by implementing a `styles()` method and returning a list of `string`
+values.
 
 The value of these "style sheets” must always be a `string`.
 
 ```javascript
-import { TemplateElement, defineElement, html } from '@webtides/element-js';
+import {TemplateElement, defineElement, html} from '@webtides/element-js';
+
 const style = 'my-element .element { background: blue; }';
 
 export class StyledElement extends TemplateElement {
-    constructor() {
-        super({ styles: [style] });
-    }
+	constructor() {
+		super({styles: [style]});
+	}
 
-    styles() {
-        return ['my-element .element { color: red; }'];
-    }
+	styles() {
+		return ['my-element .element { color: red; }'];
+	}
 
-    template() {
-        return html` <span class="element">I'm styled!</span> `;
-    }
+	template() {
+		return html` <span class="element">I'm styled!</span> `;
+	}
 }
 
 defineElement('styled-element', StyledElement);
 ```
 
-For a better developer experience it is also possible to import real `CSS` files and load them from a separate file instead of cluttering the element with style text.
+For a better developer experience it is also possible to import real `CSS` files and load them from a separate file
+instead of cluttering the element with style text.
 
 ```javascript
-import { StyleElement, defineElement } from '@webtides/element-js';
+import {StyleElement, defineElement} from '@webtides/element-js';
 import style from './styled-element.css';
 
 export class StyledElement extends StyleElement {
-    constructor() {
-        super({ styles: [style] });
-    }
+	constructor() {
+		super({styles: [style]});
+	}
 }
 
 defineElement('styled-element', StyledElement);
 ```
 
-> Importing `CSS` files or rather `modules` is not currently supported by browsers. It is being worked on - but for now we have to rely on build tools to handle this kind of imports. For a detailed guide on how to build/bundle your elements nicely see [Bundling/Publishing](#bundlingpublishing).
+> Importing `CSS` files or rather `modules` is not currently supported by browsers. It is being worked on - but for now
+> we have to rely on build tools to handle this kind of imports. For a detailed guide on how to build/bundle your elements
+> nicely see [Bundling/Publishing](#bundlingpublishing).
 
 #### Shadow DOM vs. Light DOM
 
-By default, _element-js_ will render in light DOM. In this case the styling will not be encapsulated, and your element styles could potentially leak out and style any global selectors.
+By default, _element-js_ will render in light DOM. In this case the styling will not be encapsulated, and your element
+styles could potentially leak out and style any global selectors.
 
 To avoid these problems we highly encourage you to always start your selectors with the element tag name.
 
 ```css
 my-element {
-    border: 1px solid blue;
+	border: 1px solid blue;
 }
 
 my-element .element {
-    color: red;
+	color: red;
 }
 ```
 
-When you render an element in Shadow DOM instead you don't have to prefix your selectors with the tag name since Shadow DOM automatically scopes the shadow tree and does not leak any styles to the outside document.
+When you render an element in Shadow DOM instead you don't have to prefix your selectors with the tag name since Shadow
+DOM automatically scopes the shadow tree and does not leak any styles to the outside document.
 
 ```css
 .element {
-    color: red;
+	color: red;
 }
 ```
 
@@ -721,7 +898,7 @@ To style the element itself in the parent document you can use the special `:hos
 
 ```css
 :host {
-    border: 1px solid blue;
+	border: 1px solid blue;
 }
 ```
 
@@ -729,34 +906,37 @@ It is also possible to combine the `:host` selector with other matching selector
 
 ```css
 :host {
-    display: none;
+	display: none;
 }
+
 :host([selected]) {
-    display: block;
+	display: block;
 }
 ```
 
 #### CSS custom properties
 
-Custom properties allow for reusing CSS values throughout a document. To read all about it, see [Using CSS custom properties (variables) - CSS: Cascading Style Sheets | MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties)
+Custom properties allow for reusing CSS values throughout a document. To read all about it,
+see [Using CSS custom properties (variables) - CSS: Cascading Style Sheets | MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties)
 
-The nice thing about custom properties is that they will also take effect inside Shadow DOM elements. They enable therefore a nice and easy way to style certain parts of your element from outside.
+The nice thing about custom properties is that they will also take effect inside Shadow DOM elements. They enable
+therefore a nice and easy way to style certain parts of your element from outside.
 
 ```javascript
-import { TemplateElement, defineElement, html } from '@webties/element-js';
+import {TemplateElement, defineElement, html} from '@webties/element-js';
 
 export class StyledElement extends TemplateElement {
-    constructor() {
-        super({ shadowRender: true });
-    }
+	constructor() {
+		super({shadowRender: true});
+	}
 
-    styles() {
-        return ['.element { color: var(—highlight-color, red); }'];
-    }
+	styles() {
+		return ['.element { color: var(—highlight-color, red); }'];
+	}
 
-    template() {
-        return html` <span class="“element”">I'm highlighted!</span> `;
-    }
+	template() {
+		return html` <span class="“element”">I'm highlighted!</span> `;
+	}
 }
 
 defineElement('styled-element', StyledElement);
@@ -766,36 +946,41 @@ Users of this element can set the value of `—highlight-color`, using the `styl
 
 ```css
 styled-element {
-    -—highlight-color: blue;
+	-—highlight-color: blue;
 }
 ```
 
 #### PostCSS & Plugins
 
-_element-js_ expects the provided CSS to be valid CSS. In recent years developers have been using preprocessing tools like `SCSS` or `LESS` to write more reusable CSS. Pre-processers can however be quite slow during development. Wouldn't it be nice if we could write “normal” CSS again. But with superpowers?
+_element-js_ expects the provided CSS to be valid CSS. In recent years developers have been using preprocessing tools
+like `SCSS` or `LESS` to write more reusable CSS. Pre-processers can however be quite slow during development. Wouldn't
+it be nice if we could write “normal” CSS again. But with superpowers?
 
-Since we would recommend to always use `PostCSS` and `autoprefixer` anyways - we suggest that you add a few more plugins.
+Since we would recommend to always use `PostCSS` and `autoprefixer` anyways - we suggest that you add a few more
+plugins.
 
--   postcss-import: [GitHub - postcss/postcss-import: PostCSS plugin to inline @import rules content](https://github.com/postcss/postcss-import)
--   postcss-nested: [GitHub - postcss/postcss-nested: PostCSS plugin to unwrap nested rules like how Sass does it.](https://github.com/postcss/postcss-nested)
+-
+postcss-import: [GitHub - postcss/postcss-import: PostCSS plugin to inline @import rules content](https://github.com/postcss/postcss-import)
+-
+postcss-nested: [GitHub - postcss/postcss-nested: PostCSS plugin to unwrap nested rules like how Sass does it.](https://github.com/postcss/postcss-nested)
 
 With these plugins, and also CSS custom properties, you will be able to write composable and reusable CSS.
 
 ```css
 :root {
-    -—highlight-color: red;
+	-—highlight-color: red;
 }
 ```
 
 ```postcss
 .btn {
-    background: white;
-    border: 1px solid grey;
-    text: var(—highlight-color);
+	background: white;
+	border: 1px solid grey;
+	text: var(—highlight-color);
 
-    &.is-active {
-        border: 2px solid black;
-    }
+	&.is-active {
+		border: 2px solid black;
+	}
 }
 ```
 
@@ -804,14 +989,14 @@ With these plugins, and also CSS custom properties, you will be able to write co
 @import './buttons.css';
 
 my-element {
-    -—highlight-color: blue;
+	-—highlight-color: blue;
 
-    .btn {
-        &:hover {
-            background: var(—highlight-color);
-            text: white;
-        }
-    }
+	.btn {
+		&:hover {
+			background: var(—highlight-color);
+			text: white;
+		}
+	}
 }
 ```
 
@@ -819,49 +1004,64 @@ To see how you can integrate PostCSS into your build tools see: [Guides and Tool
 
 ### Events
 
-In HTML you have two ways of communicating between elements. To send “information” down the tree we typically use attributes or properties on child elements. It is not advised to hold references to parent elements and communicate back up via public methods or properties. The preferred way of sending “information” up the tree is via DOM events. Do read all about them see [Introduction to events - Learn web development | MDN](https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Building_blocks/Events).
+In HTML you have two ways of communicating between elements. To send “information” down the tree we typically use
+attributes or properties on child elements. It is not advised to hold references to parent elements and communicate back
+up via public methods or properties. The preferred way of sending “information” up the tree is via DOM events. Do read
+all about them
+see [Introduction to events - Learn web development | MDN](https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Building_blocks/Events)
+.
 
-_element-js_ is nothing special or exceptional here. You can and should use DOM events and Custom DOM events like usual. We do however provide some nice APIs to make working with events a lot more streamlined.
+_element-js_ is nothing special or exceptional here. You can and should use DOM events and Custom DOM events like usual.
+We do however provide some nice APIs to make working with events a lot more streamlined.
 
 #### Events map
 
-By implementing an `events()` method in your elements class you can return an object with a list of events that should be registered on the element or its children, along with event handlers to be triggered once the event gets fired. You can use any of the native events or even custom events.
+By implementing an `events()` method in your elements class you can return an object with a list of events that should
+be registered on the element or its children, along with event handlers to be triggered once the event gets fired. You
+can use any of the native events or even custom events.
 
-The outer key value pairs let you specify regular DOM selectors as the key for the element the event listeners should be registered on. In the inner object you can define key value pairs where the key is the event to be listened for on the element and the value is the callback to be triggered once the event fires. For every event you can get the event as variable passed to the callback.
+The outer key value pairs let you specify regular DOM selectors as the key for the element the event listeners should be
+registered on. In the inner object you can define key value pairs where the key is the event to be listened for on the
+element and the value is the callback to be triggered once the event fires. For every event you can get the event as
+variable passed to the callback.
 
 ```javascript
 export class MyElement extends BaseElement {
-    events() {
-        return {
-            this: {
-                click: (e) => console.log('click', e),
-                customEvent: (e) => {
-                    console.log('customEvent', e);
-                }
-            },
-            '[data-increment]': {
-                click: () => this.count++
-            }
-        };
-    }
+	events() {
+		return {
+			this: {
+				click: (e) => console.log('click', e),
+				customEvent: (e) => {
+					console.log('customEvent', e);
+				}
+			},
+			'[data-increment]': {
+				click: () => this.count++
+			}
+		};
+	}
 }
 ```
 
-The nice thing about this pattern is that you will only have one place for all the event logic. You don't have to declare event handlers in the template and then call dedicated methods defined in the element. Everything is nice and compact in one place.
+The nice thing about this pattern is that you will only have one place for all the event logic. You don't have to
+declare event handlers in the template and then call dedicated methods defined in the element. Everything is nice and
+compact in one place.
 
-_this_ When using arrow functions as callbacks in the `events()` map you can use `this` as usual and it will belong to the element itself.
+_this_ When using arrow functions as callbacks in the `events()` map you can use `this` as usual and it will belong to
+the element itself.
 
-_context_ When binding element methods directly as callbacks you would typically have to bind the context to the element itself.
+_context_ When binding element methods directly as callbacks you would typically have to bind the context to the element
+itself.
 
 ```javascript
 export class MyElement extends BaseElement {
-    events() {
-        return {
-            this: {
-                click: (e) => this.doStuff.bind(this)
-            }
-        };
-    }
+	events() {
+		return {
+			this: {
+				click: (e) => this.doStuff.bind(this)
+			}
+		};
+	}
 }
 ```
 
@@ -869,47 +1069,49 @@ _element-js_ will do that for you automatically behind the scenes. So can omit t
 
 ```javascript
 export class MyElement extends BaseElement {
-    events() {
-        return {
-            this: {
-                click: (e) => this.doStuff
-            }
-        };
-    }
+	events() {
+		return {
+			this: {
+				click: (e) => this.doStuff
+			}
+		};
+	}
 }
 ```
 
 If you need to bind a different context however you can do that of course.
 
-_Special selectors_ Sometimes you will need to listen to more global events rather than on the element itself or its children. We therefore enable you to define the following selectors as event targets:
+_Special selectors_ Sometimes you will need to listen to more global events rather than on the element itself or its
+children. We therefore enable you to define the following selectors as event targets:
 
--   window
--   document
--   this
+- window
+- document
+- this
 
-Since most events will automatically bubble up the tree it is also possible to listen for events that are not directly related to your element.
+Since most events will automatically bubble up the tree it is also possible to listen for events that are not directly
+related to your element.
 
 ```javascript
 export class MyElement extends BaseElement {
-    events() {
-        return {
-            this: {
-                click: (e) => console.log('click', e)
-            },
-            window: {
-                scroll: (e) => console.log('scroll', e)
-            },
-            document: {
-                visibilitychange: (e) => {
-                    if (document.visibilityState === 'visible') {
-                        backgroundMusic.play();
-                    } else {
-                        backgroundMusic.pause();
-                    }
-                }
-            }
-        };
-    }
+	events() {
+		return {
+			this: {
+				click: (e) => console.log('click', e)
+			},
+			window: {
+				scroll: (e) => console.log('scroll', e)
+			},
+			document: {
+				visibilitychange: (e) => {
+					if (document.visibilityState === 'visible') {
+						backgroundMusic.play();
+					} else {
+						backgroundMusic.pause();
+					}
+				}
+			}
+		};
+	}
 }
 ```
 
@@ -917,30 +1119,36 @@ For better control Events can be bound with listener options by using the "compl
 The callback need to wrapped into an Object to pass the Options alongside.
 
 ```js
-{	
-    listener: (e) => console.log('scroll', e),
-		options: { passive : true }
+{
+	listener: (e) => console.log('scroll', e),
+		options
+:
+	{
+		passive : true
+	}
 }
 ```
+
 Naming is heavily inspired by the addEventListener signature
 https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
 
 ```javascript
 export class MyElement extends BaseElement {
-    events() {
-        return {
-            window: {
-                scroll:{ 
-                    listener: (e) => console.log('scroll', e), 
-										options : { passive : true }
-								}
-            },
-        };
-    }
+	events() {
+		return {
+			window: {
+				scroll: {
+					listener: (e) => console.log('scroll', e),
+					options: {passive: true}
+				}
+			},
+		};
+	}
 }
 ```
 
-> _element-js_ will smartly add and remove all the defined event listeners on every update/render cycle to ensure that events will always fire even though you might have changed the child DOM tree during render cycles.
+> _element-js_ will smartly add and remove all the defined event listeners on every update/render cycle to ensure that
+> events will always fire even though you might have changed the child DOM tree during render cycles.
 
 #### Dispatching events
 
@@ -948,15 +1156,15 @@ To make it easy to dispatch events from your elements itself _element-js_ implem
 
 ```javascript
 export class BaseElement {
-    dispatch(name, data, options = { bubble: true, cancelable: false, composed: false }) {
-        const event = new CustomEvent(name, {
-            bubbles: options.bubble,
-            cancelable: options.cancelable,
-            composed: options.composed,
-            detail: data
-        });
-        this.dispatchEvent(event);
-    }
+	dispatch(name, data, options = {bubble: true, cancelable: false, composed: false}) {
+		const event = new CustomEvent(name, {
+			bubbles: options.bubble,
+			cancelable: options.cancelable,
+			composed: options.composed,
+			detail: data
+		});
+		this.dispatchEvent(event);
+	}
 }
 ```
 
@@ -964,19 +1172,23 @@ You can of course still always build them yourself like above, but it is much ea
 
 ```javascript
 export class MyElement extends BaseElement {
-    someMethod() {
-        this.dispatch('customEvent', { key: 'value' });
-    }
+	someMethod() {
+		this.dispatch('customEvent', {key: 'value'});
+	}
 }
 ```
 
 ### Refs
 
-To avoid constant lookups of (child) elements from your elements _element-js_ will collect all elements with a `[ref=“id”]` attribute and make them available as an object on the element itself via the special `this.$refs` reference.
-_element-js_ also provides referencing a list of Nodes by adding a dangling `[]` to the refs id `[ref=“entries[]”]`. 
-Be aware that list references will override singular references with the same name as they are considered to be more explicit.  
+To avoid constant lookups of (child) elements from your elements _element-js_ will collect all elements with
+a `[ref=“id”]` attribute and make them available as an object on the element itself via the special `this.$refs`
+reference.
+_element-js_ also provides referencing a list of Nodes by adding a dangling `[]` to the refs id `[ref=“entries[]”]`.
+Be aware that list references will override singular references with the same name as they are considered to be more
+explicit.
 
 ```html
+
 <places-search>
 	<input type="text" ref="input"/>
 	<places-list ref="list">
@@ -988,59 +1200,60 @@ Be aware that list references will override singular references with the same na
 ```
 
 ```javascript
-import { BaseElement, defineElement, html } from '@webtides/element-js';
+import {BaseElement, defineElement, html} from '@webtides/element-js';
 
 export class PlacesSearch extends BaseElement {
-    events() {
-        return {
-            input: {
-                blur: (e) => {
-                    // fetch places...
-                    const places = [];
-                    // update singular ref
-                    this.$refs.list = places;
-                    // do something with a list reference 
-                    this.$refs.entries.forEach( entry => console.log(entry.innerText)); // A , B , C
-                }
-            }
-        };
-    }
+	events() {
+		return {
+			input: {
+				blur: (e) => {
+					// fetch places...
+					const places = [];
+					// update singular ref
+					this.$refs.list = places;
+					// do something with a list reference 
+					this.$refs.entries.forEach(entry => console.log(entry.innerText)); // A , B , C
+				}
+			}
+		};
+	}
 }
 
 defineElement('places-search', PlacesSearch);
 ```
 
-> _element-js_ will smartly add and remove all refs on every update/render cycle to ensure that they will always be correct even though you might have changed the child DOM tree during render cycles.
+> _element-js_ will smartly add and remove all refs on every update/render cycle to ensure that they will always be
+> correct even though you might have changed the child DOM tree during render cycles.
 
 ### Methods
 
 Besides public properties you can also shape the API for your element with public methods.
 
 ```javascript
-import { BaseElement, defineElement } from '@webtides/element-js';
+import {BaseElement, defineElement} from '@webtides/element-js';
 
 export class ModalElement extends BaseElement {
-    open() {
-        // do the things to actually open the modal…
-    }
+	open() {
+		// do the things to actually open the modal…
+	}
 }
 
 defineElement('modal-element', ModalElement);
 ```
 
 ```javascript
-import { BaseElement, defineElement } from '@webtides/element-js';
+import {BaseElement, defineElement} from '@webtides/element-js';
 
 export class OtherElement extends BaseElement {
-    events() {
-        return {
-            this: {
-                click: () => {
-                    this.$refs.modal.open();
-                }
-            }
-        };
-    }
+	events() {
+		return {
+			this: {
+				click: () => {
+					this.$refs.modal.open();
+				}
+			}
+		};
+	}
 }
 
 defineElement('other-element', OtherElement);
@@ -1048,11 +1261,14 @@ defineElement('other-element', OtherElement);
 
 ### Renderless elements
 
-More often than not you won't actually need to render anything from your element but rather only trigger some changes on other elements, fire events or fetch data and distribute it to related elements.
+More often than not you won't actually need to render anything from your element but rather only trigger some changes on
+other elements, fire events or fetch data and distribute it to related elements.
 
-A good example for this pattern is to use container elements for fetching data and delegating it to child elements that only take attributes/properties and simply render them.
+A good example for this pattern is to use container elements for fetching data and delegating it to child elements that
+only take attributes/properties and simply render them.
 
 ```html
+
 <places-search>
 	<input type=“text" ref=“input”/>
 	<places-list ref="list”></places-list>
@@ -1060,51 +1276,54 @@ A good example for this pattern is to use container elements for fetching data a
 ```
 
 ```javascript
-import { BaseElement, defineElement } from '@webtides/element-js';
+import {BaseElement, defineElement} from '@webtides/element-js';
 
 export class PlacesSearch extends BaseElement {
-    events() {
-        return {
-            input: {
-                blur: (e) => {
-                    // fetch places...
-                    const places = ['list of place objects…'];
-                    this.$refs.list = places;
-                }
-            }
-        };
-    }
+	events() {
+		return {
+			input: {
+				blur: (e) => {
+					// fetch places...
+					const places = ['list of place objects…'];
+					this.$refs.list = places;
+				}
+			}
+		};
+	}
 }
 
 defineElement('places-search', PlacesSearch);
 ```
 
-Another good use case for renderless elements is when you need to change some classes or styles on child elements. It is a bit like `jQuery` but much better because everything is declaratively composed of little elements instead of having a big JavaScript file full of little mutations.
+Another good use case for renderless elements is when you need to change some classes or styles on child elements. It is
+a bit like `jQuery` but much better because everything is declaratively composed of little elements instead of having a
+big JavaScript file full of little mutations.
 
 ```html
+
 <dropdown-element>
-    <button>Options</button>
-    <ul ref="“list”" class="“”hidden">
-        <li>Profile</li>
-        <li>Settings</li>
-        <li>Sign out</li>
-    </ul>
+	<button>Options</button>
+	<ul ref="“list”" class="“”hidden">
+		<li>Profile</li>
+		<li>Settings</li>
+		<li>Sign out</li>
+	</ul>
 </dropdown-element>
 ```
 
 ```javascript
-import { BaseElement, defineElement } from '@webtides/element-js';
+import {BaseElement, defineElement} from '@webtides/element-js';
 
 class DropdownElement extends BaseElement {
-    events() {
-        return {
-            button: {
-                click: () => {
-                    this.$refs.list.classList.remove('hidden');
-                }
-            }
-        };
-    }
+	events() {
+		return {
+			button: {
+				click: () => {
+					this.$refs.list.classList.remove('hidden');
+				}
+			}
+		};
+	}
 }
 
 defineElement('dropdown-element', DropdownElement);
@@ -1124,9 +1343,10 @@ This is an element style guide created and enforced for the purpose of standardi
 
 #### File structure
 
--   One element per file.
--   One element per directory. Though it may make sense to group similar elements into the same directory, we've found it's easier to consume and document elements when each one has its own directory.
--   Implementation (.js) and styles (.css) of an element should live in the same directory.
+- One element per file.
+- One element per directory. Though it may make sense to group similar elements into the same directory, we've found it'
+	s easier to consume and document elements when each one has its own directory.
+- Implementation (.js) and styles (.css) of an element should live in the same directory.
 
 Example:
 
@@ -1149,12 +1369,16 @@ Example:
 
 ##### Name
 
-Elements are not actions, they are conceptually "things". It is better to use nouns, instead of verbs, such us: "animation" instead of "animating". "input", "tab", "nav", "menu" are some examples.
+Elements are not actions, they are conceptually "things". It is better to use nouns, instead of verbs, such us: "
+animation" instead of "animating". "input", "tab", "nav", "menu" are some examples.
 
 ##### -element postfix
 
-The naming has a major role when you are creating a collection of elements intended to be used across different projects. Web Components are not scoped because they are globally declared within the page, which means a "unique" name is needed to prevent collisions.  
-Additionally, web components are required to contain a "-" dash within the tag name. When using the first section to namespace your components - everything will look the same, and it will be hard to distinguish elements.
+The naming has a major role when you are creating a collection of elements intended to be used across different
+projects. Web Components are not scoped because they are globally declared within the page, which means a "unique" name
+is needed to prevent collisions.  
+Additionally, web components are required to contain a "-" dash within the tag name. When using the first section to
+namespace your components - everything will look the same, and it will be hard to distinguish elements.
 
 DO NOT do this:
 
@@ -1178,7 +1402,8 @@ card-element
 
 ##### Modifiers
 
-When several elements are related and/or coupled, it is a good idea to share the name, and then add different modifiers, for example:
+When several elements are related and/or coupled, it is a good idea to share the name, and then add different modifiers,
+for example:
 
 ```
 menu-element
@@ -1196,10 +1421,14 @@ card-content
 The name of the ES6 class of the element should reflect the file name, and the html tag name.
 
 ```js
-export class ButtonElement extends BaseElement {}
+export class ButtonElement extends BaseElement {
+}
+
 customElements.define('button-element', ButtonElement);
 
-export class MenuElement extends BaseElement {}
+export class MenuElement extends BaseElement {
+}
+
 customElements.define('menu-element', MenuElement);
 ```
 
@@ -1207,7 +1436,10 @@ customElements.define('menu-element', MenuElement);
 
 ##### Newspaper Metaphor from The Robert C. Martin's _Clean Code_
 
-> The source file should be organized like a newspaper article, with the highest level summary at the top, and more and more details further down. Functions called from the top function come directly below it, and so on down to the lowest level, and most detailed functions at the bottom. This is a good way to organize the source code, even though IDE:s make the location of functions less important, since it is so easy to navigate in and out of them.
+> The source file should be organized like a newspaper article, with the highest level summary at the top, and more and
+> more details further down. Functions called from the top function come directly below it, and so on down to the lowest
+> level, and most detailed functions at the bottom. This is a good way to organize the source code, even though IDE:s make
+> the location of functions less important, since it is so easy to navigate in and out of them.
 
 ## Testing
 
