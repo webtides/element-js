@@ -25,7 +25,9 @@ npm install --save @webtides/element-js
 // import { BaseElement, defineElement } from 'https://unpkg.com/@webtides/element-js';
 // import { BaseElement, defineElement } from 'https://cdn.skypack.dev/@webtides/element-js';
 // or when installed via npm
-import { BaseElement, defineElement } from '@webtides/element-js';
+import { BaseElement, defineElement, StoreProperty } from '@webtides/element-js';
+
+const sharedDate = new  StoreProperty({date: Date.now()}) 
 
 class ExampleElement extends BaseElement {
     // normal public properties
@@ -40,7 +42,8 @@ class ExampleElement extends BaseElement {
     // reactive attributes/properties
     properties() {
         return {
-            familyName: 'Doe'
+            familyName: 'Doe',
+						sharedDate
         };
     }
 
@@ -55,7 +58,7 @@ class ExampleElement extends BaseElement {
 
     // computed property
     get computedMsg() {
-        return `${this.greeting} ${this.name} ${this.familyName}`;
+        return `${this.greeting} ${this.name} ${this.familyName} ${this.sharedDate.date}`;
     }
 
     // method
