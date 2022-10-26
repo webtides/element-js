@@ -494,7 +494,7 @@ export class AnotherElement extends TemplateElement {
 
     template() {
         return `
-        	<div>Simple Store: ${this.store.value} == the same as im MyElement's template.</div>
+        	<div>Simple Store: ${this.store.value} == the same as in MyElement's template.</div>
         	`
     }
 }
