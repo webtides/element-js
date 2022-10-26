@@ -14,6 +14,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Changed -->
 <!-- ### Removed -->
 <!-- ### Fixed -->
+## [0.6.0] - 2022-10-??
+
+### ADDED
+* StoreProperty for shared application state  
+
 ## [0.5.0] - 2022-09-13
 
 ### Changed

@@ -1,5 +1,6 @@
 import { parseAttribute, isNaN, dashToCamel, camelToDash, isObjectLike } from './util/AttributeParser.js';
 import { getClosestParentCustomElementNode, isOfSameNodeType } from './util/DOMHelper.js';
+import { StoreProperty } from './util/StoreProperty';
 
 export { defineElement } from './util/defineElement';
 export { toString } from './util/toString';
@@ -198,6 +199,10 @@ class BaseElement extends HTMLElement {
 	 * Will trigger update() when a property was changed
 	 */
 	defineProperty(property, value, reflectAttribute = false) {
+		if (value instanceof StoreProperty) {
+			value.registerObserver(this);
+		}
+
 		if (this._state.hasOwnProperty(property)) {
 			// property has already been defined as an attribute nothing to do here
 			return;
