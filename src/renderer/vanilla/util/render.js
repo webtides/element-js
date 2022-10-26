@@ -20,17 +20,11 @@ const textOnly = /^(?:textarea|script|style|title|plaintext|xmp)$/;
 const partsCache = new WeakMap();
 const fragmentsCache = new WeakMap();
 
-export class ArrayPart {
+// Interpolation?! Substitution?! Value?! Hole?!
+export class ValuePart {
 	// Used to remember parent template state as we recurse into nested templates
-	templateParts = []; // stack = []
-
-	constructor(values) {
-		this.values = this.parseValues(values);
-	}
-
-	update(values) {
-		this.values = this.parseValues(values);
-	}
+	stack = [];
+	values = undefined;
 
 	// nested TemplateResults values need to be unrolled in order for update functions to be able to process them
 	parseValues(values) {
@@ -38,23 +32,23 @@ export class ArrayPart {
 			let value = values[index];
 
 			if (value instanceof TemplateResult) {
-				let templatePart = this.templateParts[index];
+				let templatePart = this.stack[index];
 				if (!templatePart) {
 					templatePart = new TemplatePart(value);
-					this.templateParts[index] = templatePart;
+					this.stack[index] = templatePart;
 				}
 				templatePart.update(value);
 
 				values[index] = templatePart.fragment;
 			} else if (Array.isArray(value)) {
-				let arrayPart = this.templateParts[index];
+				let arrayPart = this.stack[index];
 				if (!arrayPart) {
 					arrayPart = new ArrayPart(value);
-					this.templateParts[index] = arrayPart;
+					this.stack[index] = arrayPart;
 				}
 				arrayPart.update(value);
 
-				values[index] = this.parseValues(value);
+				values[index] = arrayPart.values;
 			}
 		}
 
@@ -62,14 +56,24 @@ export class ArrayPart {
 	}
 }
 
-export class TemplatePart {
+export class ArrayPart extends ValuePart {
+	constructor(values) {
+		super();
+		this.values = this.parseValues(values);
+	}
+
+	update(values) {
+		this.values = this.parseValues(values);
+	}
+}
+
+export class TemplatePart extends ValuePart {
 	fragment = null; // PersistentFragment
 	strings = undefined;
-	// Used to remember parent template state as we recurse into nested templates
-	templateParts = []; // stack = []
 	updates = undefined;
 
 	constructor(templateResult) {
+		super();
 		this.hydrate(templateResult);
 	}
 
@@ -92,11 +96,12 @@ export class TemplatePart {
 			this.updates = parts.map((part) => processPart(part, this.fragment.fragment));
 			this.strings = templateResult.strings;
 		}
-		this.values = this.parseValues(templateResult.values);
 	}
 
 	update(templateResult) {
 		this.hydrate(templateResult);
+
+		this.values = this.parseValues(templateResult.values);
 
 		for (let index = 0; index < this.values.length; index++) {
 			this.updates[index](this.values[index]);
@@ -142,35 +147,6 @@ export class TemplatePart {
 			}
 		}
 		return parts;
-	}
-
-	// nested TemplateResults values need to be unrolled in order for update functions to be able to process them
-	parseValues(values) {
-		for (let index = 0; index < values.length; index++) {
-			let value = values[index];
-
-			if (value instanceof TemplateResult) {
-				let templatePart = this.templateParts[index];
-				if (!templatePart) {
-					templatePart = new TemplatePart(value);
-					this.templateParts[index] = templatePart;
-				}
-				templatePart.update(value);
-
-				values[index] = templatePart.fragment;
-			} else if (Array.isArray(value)) {
-				let arrayPart = this.templateParts[index];
-				if (!arrayPart) {
-					arrayPart = new ArrayPart(value);
-					this.templateParts[index] = arrayPart;
-				}
-				arrayPart.update(value);
-
-				values[index] = arrayPart.values;
-			}
-		}
-
-		return values;
 	}
 }
 
