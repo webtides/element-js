@@ -83,7 +83,6 @@ export class TemplateResult {
 		templatePart.update(this);
 	}
 
-	// TODO: this is kind of the same as in render.js/NodePart
 	parse(strings, expectedLength) {
 		const html = createTemplateString(strings, prefix);
 		const updates = [];
