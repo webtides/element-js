@@ -2,7 +2,7 @@ import { camelToDash, decodeAttribute, encodeAttribute } from '../../../util/Att
 import { TemplatePart } from './render';
 
 // TODO: this is the same as in render.js
-const prefix = 'isµ';
+const prefix = 'dom-part-';
 const empty = /^(?:area|base|br|col|embed|hr|img|input|keygen|link|menuitem|meta|param|source|track|wbr)$/i;
 const elements = /<([a-z]+[a-z0-9:._-]*)([^>]*?)(\/?)>/g;
 const attributes = /([^\s\\>"'=]+)\s*=\s*(['"]?)\x01/g;

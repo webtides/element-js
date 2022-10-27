@@ -201,7 +201,7 @@ export const processNodePart = (comment) => {
 						while (comment.previousSibling) {
 							if (
 								comment.previousSibling.nodeType === COMMENT_NODE &&
-								comment.previousSibling.data.includes('isµ')
+								comment.previousSibling.data.includes('dom-part-')
 							) {
 								break;
 							}
@@ -217,7 +217,7 @@ export const processNodePart = (comment) => {
 						while (comment.previousSibling) {
 							if (
 								comment.previousSibling.nodeType === COMMENT_NODE &&
-								comment.previousSibling.data.includes('isµ')
+								comment.previousSibling.data.includes('dom-part-')
 							) {
 								break;
 							}

@@ -9,10 +9,9 @@ import {
 } from '../../../util/DOMHelper';
 
 // the prefix is used to tag and reference nodes and attributes to create parts with updates
-// attributes: isµ1="attribute-name"
-// nodes (as comment nodes): <!--isµ2-->
-// TODO: us a different prefix...
-const prefix = 'isµ';
+// attributes: dom-part-1="attribute-name"
+// nodes|fragments|arrays (as comment nodes): <!--dom-part-2-->
+const prefix = 'dom-part-';
 
 // match nodes|elements that cannot contain comment nodes and must be handled via text-only updates directly.
 const textOnly = /^(?:textarea|script|style|title|plaintext|xmp)$/;
@@ -120,7 +119,7 @@ export class TemplatePart extends ValuePart {
 		let i = 0;
 		let placeholder = `${prefix}${i}`;
 		// search for parts through numbered placeholders
-		// <div isµ0="attribute" isµ1="another-attribute"><!--isµ2--><span><!--isµ3--</span></div>
+		// <div dom-part-0="attribute" dom-part-1="another-attribute"><!--dom-part-2--><span><!--dom-part-3--</span></div>
 		while (i < length) {
 			const node = tw.nextNode();
 
