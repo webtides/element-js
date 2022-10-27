@@ -1,6 +1,6 @@
 import { parseAttribute, isNaN, dashToCamel, camelToDash, isObjectLike } from './util/AttributeParser.js';
 import { getClosestParentCustomElementNode, isOfSameNodeType } from './util/DOMHelper.js';
-import { StoreProperty } from './util/StoreProperty';
+import { StoreProperty } from './util/StoreProperty.js';
 
 export { defineElement } from './util/defineElement';
 export { toString } from './util/toString';
