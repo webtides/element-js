@@ -127,7 +127,7 @@ export class TemplatePart extends ValuePart {
 			if (!node) throw `bad template: ${templateResult.templateString}`;
 
 			if (node.nodeType === COMMENT_NODE) {
-				if (node.data === placeholder) {
+				if (node.data === `/${placeholder}`) {
 					parts.push(new ChildNodePart(node));
 					placeholder = `${prefix}${++i}`;
 				}

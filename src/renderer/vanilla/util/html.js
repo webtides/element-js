@@ -30,12 +30,14 @@ const createTemplateString = (template, prefix) => {
 			if (selfClosing.length) ml += empty.test(name) ? ' /' : '></' + name;
 			return '<' + ml + '>';
 		})
-		.replace(holes, (hole) => (hole === '\x01' ? '<!--' + prefix + i++ + '-->' : prefix + i++));
+		.replace(holes, (hole) =>
+			hole === '\x01' ? '<!--' + prefix + i + '--><!--/' + prefix + i++ + '-->' : prefix + i++,
+		);
 };
 
 // TODO: this is new:
 const rename = /([^\s>]+)[\s\S]*$/;
-const interpolation = new RegExp(`(<!--${prefix}(\\d+)-->|\\s*${prefix}(\\d+)=([^\\s>]))`, 'g');
+const interpolation = new RegExp(`(<!--${prefix}(\\d+)--><!--/${prefix}(\\d+)-->|\\s*${prefix}(\\d+)=([^\\s>]))`, 'g');
 
 const attribute = (name, quote, value) => ` ${name}=${quote}${encodeAttribute(value)}${quote}`;
 
@@ -92,8 +94,10 @@ export class TemplateResult {
 			const pre = html.slice(i, match.index);
 			i = match.index + match[0].length;
 			if (match[2]) {
-				const placeholder = `<!--${prefix}${match[2]}-->`;
-				updates.push((value) => pre + getValue(value) + placeholder);
+				const index = match[2];
+				const placeholder1 = `<!--${prefix}${index}-->`;
+				const placeholder2 = `<!--/${prefix}${index}-->`;
+				updates.push((value) => pre + placeholder1 + getValue(value) + placeholder2);
 			} else {
 				let name = '';
 				let quote = match[4];
@@ -165,7 +169,7 @@ export class TemplateResult {
 						});
 						break;
 					default:
-						const placeholder = ` ${prefix}${match[3]}=${name}`;
+						const placeholder = ` ${prefix}${match[4]}=${name}`;
 						updates.push((value) => {
 							let result = pre;
 							if (value != null) {

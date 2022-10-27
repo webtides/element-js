@@ -199,6 +199,12 @@ export const processNodePart = (comment) => {
 						oldValue = newValue;
 						// remove all child nodes
 						while (comment.previousSibling) {
+							if (
+								comment.previousSibling.nodeType === COMMENT_NODE &&
+								comment.previousSibling.data.includes('isµ')
+							) {
+								break;
+							}
 							comment.parentNode.removeChild(comment.previousSibling);
 						}
 						nodes = [];
@@ -209,6 +215,12 @@ export const processNodePart = (comment) => {
 					if (newValue.length === 0) {
 						// remove all child nodes
 						while (comment.previousSibling) {
+							if (
+								comment.previousSibling.nodeType === COMMENT_NODE &&
+								comment.previousSibling.data.includes('isµ')
+							) {
+								break;
+							}
 							comment.parentNode.removeChild(comment.previousSibling);
 						}
 						nodes = [];
