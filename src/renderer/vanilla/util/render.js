@@ -22,8 +22,7 @@ const fragmentsCache = new WeakMap();
 // Interpolation?! Substitution?! Value?! Hole?!
 export class ValuePart {
 	// Used to remember parent template state as we recurse into nested templates
-	stack = [];
-	values = undefined;
+	parts = [];
 
 	// nested TemplateResults values need to be unrolled in order for update functions to be able to process them
 	parseValues(values) {
@@ -31,19 +30,19 @@ export class ValuePart {
 			let value = values[index];
 
 			if (value instanceof TemplateResult) {
-				let templatePart = this.stack[index];
+				let templatePart = this.parts[index];
 				if (!templatePart) {
 					templatePart = new TemplatePart(value);
-					this.stack[index] = templatePart;
+					this.parts[index] = templatePart;
 				}
 				templatePart.update(value);
 
 				values[index] = templatePart.fragment;
 			} else if (Array.isArray(value)) {
-				let arrayPart = this.stack[index];
+				let arrayPart = this.parts[index];
 				if (!arrayPart) {
 					arrayPart = new ArrayPart(value);
-					this.stack[index] = arrayPart;
+					this.parts[index] = arrayPart;
 				}
 				arrayPart.update(value);
 
@@ -56,6 +55,8 @@ export class ValuePart {
 }
 
 export class ArrayPart extends ValuePart {
+	values = undefined;
+
 	constructor(values) {
 		super();
 		this.prepare(values);
@@ -63,7 +64,6 @@ export class ArrayPart extends ValuePart {
 
 	prepare(values) {
 		this.values = this.parseValues(values);
-		this.parts = this.stack;
 	}
 
 	update(values) {
@@ -78,7 +78,6 @@ export class ArrayPart extends ValuePart {
 export class TemplatePart extends ValuePart {
 	fragment = null; // PersistentFragment
 	strings = undefined;
-	parts = undefined;
 
 	constructor(templateResult) {
 		super();
@@ -134,7 +133,6 @@ export class TemplatePart extends ValuePart {
 
 			if (node.nodeType === COMMENT_NODE) {
 				if (node.data === `/${placeholder}`) {
-					console.log('parseParts', i, templateResult.values[i]);
 					// TODO: this could be the place to get the fragment from the real dom
 					// TODO: maybe store the fragment inside the part
 					// TODO: also we probably need markers for parts inside arrays (like lit)
