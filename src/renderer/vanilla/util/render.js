@@ -92,14 +92,15 @@ export class TemplatePart extends ValuePart {
 				fragmentsCache.set(templateResult.strings, fragment);
 			}
 
+			// TODO: for SSR I think we need to use a fragment?! from the live dom instead of the cached fragment here...
+			this.fragment = new PersistentFragment(fragment);
+
 			let parts = partsCache.get(templateResult.strings);
 			if (!parts) {
-				parts = this.parseParts(templateResult, fragment);
+				parts = this.parseParts(templateResult, this.fragment.fragment);
 				partsCache.set(templateResult.strings, parts);
 			}
 
-			// TODO: for SSR I think we need to use a fragment?! from the live dom instead of the cached fragment here...
-			this.fragment = new PersistentFragment(fragment);
 			this.parts = parts.map((part) => part.clone(this.fragment.fragment));
 			this.strings = templateResult.strings;
 		}
