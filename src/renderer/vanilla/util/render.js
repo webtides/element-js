@@ -190,8 +190,10 @@ export class AttributePart extends Part {
 	}
 
 	clone(fragment) {
-		const clonedPart = new AttributePart(this.node, this.name);
-		clonedPart.processor = processPart(clonedPart, fragment);
+		// We currently need the path because the fragment will be cloned via importNode and therefore the node will be a different one
+		const node = this.path.reduceRight(({ childNodes }, i) => childNodes[i], fragment);
+		const clonedPart = new AttributePart(node, this.name);
+		clonedPart.processor = processPart(clonedPart);
 		return clonedPart;
 	}
 }
@@ -237,8 +239,10 @@ export class ChildNodePart extends Part {
 	}
 
 	clone(fragment) {
-		const clonedPart = new ChildNodePart(this.node, this.value);
-		clonedPart.processor = processPart(clonedPart, fragment);
+		// We currently need the path because the fragment will be cloned via importNode and therefore the node will be a different one
+		const node = this.path.reduceRight(({ childNodes }, i) => childNodes[i], fragment);
+		const clonedPart = new ChildNodePart(node, this.value);
+		clonedPart.processor = processPart(clonedPart);
 		return clonedPart;
 	}
 }

@@ -297,18 +297,15 @@ export const processAttributePart = (node, name) => {
 	return processAttribute(node, name);
 };
 
-export function processPart(part, fragment) {
-	// We currently need the path because the fragment will be cloned via importNode and therefore the node will be a different one
-	const node = part.path.reduceRight(({ childNodes }, i) => childNodes[i], fragment);
-
+export function processPart(part) {
 	if (part instanceof ChildNodePart) {
-		return processNodePart(node);
+		return processNodePart(part.node);
 	}
 
 	if (part instanceof AttributePart) {
-		return processAttributePart(node, part.name);
+		return processAttributePart(part.node, part.name);
 	}
 
 	// TODO: this is not used right now right?! Find a use and implement it correctly!
-	return text(node);
+	return text(part.node);
 }
