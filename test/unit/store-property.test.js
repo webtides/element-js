@@ -2,6 +2,8 @@
 import { fixture, defineCE, assert, nextFrame } from '@open-wc/testing';
 import { BaseElement } from '../../src/BaseElement';
 import { StoreProperty } from '../../src/util/StoreProperty';
+
+const primitiveStore = new StoreProperty(100);
 const simpleStore = new StoreProperty({ count: 0 });
 
 class ComplexStore extends StoreProperty {
@@ -15,15 +17,18 @@ class ComplexStore extends StoreProperty {
 		return this.count + this.anotherCount;
 	}
 }
+
 const complexStore = new ComplexStore({ count: 0 });
 
 class StoreElement extends BaseElement {
 	updateCount = 0;
+
 	properties() {
 		return {
 			simpleStore,
 		};
 	}
+
 	afterUpdate() {
 		super.afterUpdate();
 		this.updateCount++;
@@ -31,6 +36,7 @@ class StoreElement extends BaseElement {
 }
 
 class AnotherStoreElement extends StoreElement {}
+
 class ComplexStoreElement extends StoreElement {
 	properties() {
 		return {
@@ -39,9 +45,18 @@ class ComplexStoreElement extends StoreElement {
 	}
 }
 
+class PrimitiveStoreElement extends StoreElement {
+	properties() {
+		return {
+			primitiveStore,
+		};
+	}
+}
+
 const tagA = defineCE(StoreElement);
 const tagB = defineCE(AnotherStoreElement);
 const tagC = defineCE(ComplexStoreElement);
+const tagPrimitive = defineCE(PrimitiveStoreElement);
 
 describe('store-observer', () => {
 	it('generates reactive store properties from object as constructor argument ', async () => {
@@ -99,13 +114,44 @@ describe('store-observer', () => {
 		await nextFrame();
 		assert.equal(el.store.sum, 2);
 	});
-});
 
-// describe('store-update', () => {
-// 	it('store changes request update on all components observing', async () => {
-// 		const el = await fixture(`<${tagA}>
-//             <${tagB} ref="nestedElement"></${tagB}>
-//         </${tagA}>`);
-// 		assert.equal(el.$refs.nestedElement.name, 'NestedElement');
-// 	});
-// });
+	it('wraps primitive constructor values with a value field', async () => {
+		assert.property(primitiveStore, 'value');
+		assert.equal(primitiveStore.value, 100);
+	});
+
+	it('adds a shortcut getter to valueOf if _state contains only one value', async () => {
+		assert.equal(primitiveStore, 100);
+	});
+
+	it('does not add a value field when constructor Elements are ObjectLike', async () => {
+		assert.notProperty(complexStore, 'value');
+	});
+
+	it('does not adds a shortcut getter to valueOf if _state contains more than one value', async () => {
+		assert.isObject(complexStore.valueOf());
+	});
+
+	it('adds a setter to a primitive value via the value setter.', async () => {
+		const el = await fixture(`<${tagPrimitive}></${tagPrimitive}>`);
+		await nextFrame();
+		assert.equal(el.primitiveStore, 100);
+		// global change
+		primitiveStore.value++;
+		await nextFrame();
+
+		// updates the element
+		assert.equal(el.updateCount, 1);
+		assert.equal(el.primitiveStore, 101);
+	});
+
+	it('removes an observer when an observing  element is removed from DOM.  ', async () => {
+		const el = await fixture(`<${tagA}></${tagA}>`);
+		await nextFrame();
+		assert.equal(simpleStore._observer.has(el), true);
+		el.remove();
+		await nextFrame();
+
+		assert.equal(simpleStore._observer.has(el), false);
+	});
+});

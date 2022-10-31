@@ -99,6 +99,13 @@ class BaseElement extends HTMLElement {
 		// remove observers
 		if (this._mutationObserver) this._mutationObserver.disconnect();
 
+		// unsubscribe from stores
+		Object.values(this.properties()).forEach((prop) => {
+			if (prop instanceof StoreProperty) {
+				prop.unsubscribe(this);
+			}
+		});
+
 		this.triggerHook('disconnected');
 	}
 
@@ -200,7 +207,7 @@ class BaseElement extends HTMLElement {
 	 */
 	defineProperty(property, value, reflectAttribute = false) {
 		if (value instanceof StoreProperty) {
-			value.registerObserver(this);
+			value.subscribe(this);
 		}
 
 		if (this._state.hasOwnProperty(property)) {
