@@ -58,25 +58,34 @@ export class ValuePart {
 export class ArrayPart extends ValuePart {
 	constructor(values) {
 		super();
+		this.prepare(values);
+	}
+
+	prepare(values) {
 		this.values = this.parseValues(values);
+		this.parts = this.stack;
 	}
 
 	update(values) {
-		this.values = this.parseValues(values);
+		this.prepare(values);
+
+		// for (let index = 0; index < this.stack.length; index++) {
+		// 	this.parts[index].update(values[index]);
+		// }
 	}
 }
 
 export class TemplatePart extends ValuePart {
 	fragment = null; // PersistentFragment
 	strings = undefined;
-	updates = undefined;
+	parts = undefined;
 
 	constructor(templateResult) {
 		super();
-		this.hydrate(templateResult);
+		this.prepare(templateResult);
 	}
 
-	hydrate(templateResult) {
+	prepare(templateResult) {
 		if (this.strings !== templateResult.strings) {
 			let fragment = fragmentsCache.get(templateResult.strings);
 			if (!fragment) {
@@ -92,18 +101,16 @@ export class TemplatePart extends ValuePart {
 
 			// TODO: for SSR I think we need to use a fragment?! from the live dom instead of the cached fragment here...
 			this.fragment = new PersistentFragment(fragment);
-			this.updates = parts.map((part) => processPart(part, this.fragment.fragment));
+			this.parts = parts.map((part) => part.clone(this.fragment.fragment));
 			this.strings = templateResult.strings;
 		}
 	}
 
 	update(templateResult) {
-		this.hydrate(templateResult);
+		this.prepare(templateResult);
 
-		this.values = this.parseValues(templateResult.values);
-
-		for (let index = 0; index < this.values.length; index++) {
-			this.updates[index](this.values[index]);
+		for (let index = 0; index < this.parts.length; index++) {
+			this.parts[index].update(templateResult.values[index]);
 		}
 	}
 
@@ -127,7 +134,13 @@ export class TemplatePart extends ValuePart {
 
 			if (node.nodeType === COMMENT_NODE) {
 				if (node.data === `/${placeholder}`) {
-					parts.push(new ChildNodePart(node));
+					console.log('parseParts', i, templateResult.values[i]);
+					// TODO: this could be the place to get the fragment from the real dom
+					// TODO: maybe store the fragment inside the part
+					// TODO: also we probably need markers for parts inside arrays (like lit)
+					// TODO: then we can build up the nesting here with nested child parts
+					// https://lit.dev/playground/#sample=examples/repeating-and-conditional
+					parts.push(new ChildNodePart(node, templateResult.values[i]));
 					placeholder = `${prefix}${++i}`;
 				}
 			} else {
@@ -152,10 +165,21 @@ export class TemplatePart extends ValuePart {
 export class Part {
 	node = undefined;
 	path = undefined;
+	processor = undefined;
 
 	constructor(node) {
 		this.node = node;
 		this.path = getNodePath(node);
+	}
+
+	update(value) {
+		return this.processor?.(value);
+	}
+
+	clone(fragment) {
+		const clonedPart = new this.constructor(this.node);
+		clonedPart.processor = processPart(clonedPart, fragment);
+		return clonedPart;
 	}
 }
 
@@ -166,9 +190,60 @@ export class AttributePart extends Part {
 		super(node);
 		this.name = name;
 	}
+
+	clone(fragment) {
+		const clonedPart = new AttributePart(this.node, this.name);
+		clonedPart.processor = processPart(clonedPart, fragment);
+		return clonedPart;
+	}
 }
 
-export class ChildNodePart extends Part {}
+export class ChildNodePart extends Part {
+	value = undefined;
+	valuePart = undefined;
+
+	constructor(node, value) {
+		super(node);
+		this.value = value;
+		this.parseValue(value);
+	}
+
+	update(value) {
+		const parsedValue = this.parseValue(value);
+		this.valuePart?.update(value);
+		return super.update(parsedValue);
+	}
+
+	// nested TemplateResults values need to be unrolled in order for update functions to be able to process them
+	parseValue(value) {
+		if (value instanceof TemplateResult) {
+			let templatePart = this.valuePart;
+			if (!templatePart) {
+				templatePart = new TemplatePart(value);
+				this.valuePart = templatePart;
+			}
+			templatePart.update(value);
+
+			return templatePart.fragment;
+		} else if (Array.isArray(value)) {
+			let arrayPart = this.valuePart;
+			if (!arrayPart) {
+				arrayPart = new ArrayPart(value);
+				this.valuePart = arrayPart;
+			}
+			arrayPart.update(value);
+
+			return arrayPart.values;
+		}
+		return value;
+	}
+
+	clone(fragment) {
+		const clonedPart = new ChildNodePart(this.node, this.value);
+		clonedPart.processor = processPart(clonedPart, fragment);
+		return clonedPart;
+	}
+}
 
 export class TextNodePart extends Part {}
 
