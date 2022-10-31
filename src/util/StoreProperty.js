@@ -1,9 +1,15 @@
+import { isObjectLike } from './AttributeParser';
+
 export class StoreProperty {
 	_observer = new Set();
+	_singlePropertyMode = false;
 	_state = {};
 
 	constructor(value) {
-		this._state = { ...value, ...this.properties() };
+		// wrap primitives with a generic "value" field to generate getter and setter
+		const specificValues = isObjectLike(value) ? value : { value };
+		this._state = { ...this.properties(), ...specificValues };
+		this._singlePropertyMode = Object.keys(this._state).length === 1;
 
 		Object.entries(this._state).map(([key, value]) => {
 			Object.defineProperty(this, key, {
@@ -12,7 +18,7 @@ export class StoreProperty {
 				},
 				set: (newValue) => {
 					this._state[key] = newValue;
-					this.notifyObserver();
+					this.requestUpdate();
 				},
 			});
 		});
@@ -23,7 +29,7 @@ export class StoreProperty {
 	}
 
 	valueOf() {
-		return this._state;
+		return this._singlePropertyMode ? this._state.value : this._state;
 	}
 
 	toString() {
@@ -34,7 +40,14 @@ export class StoreProperty {
 		this._observer.add(observer);
 	}
 
-	notifyObserver() {
+	subscribe(observer) {
+		this._observer.add(observer);
+	}
+	unsubscribe(observer) {
+		this._observer.delete(observer);
+	}
+
+	requestUpdate() {
 		this._observer.forEach((observer) => observer.requestUpdate());
 	}
 }
