@@ -93,6 +93,7 @@ export class TemplatePart extends ValuePart {
 
 	prepare(templateResult) {
 		if (this.strings !== templateResult.strings) {
+			// TODO: this must only be done when there is no this.node
 			let fragment = fragmentsCache.get(templateResult.strings);
 			if (!fragment) {
 				fragment = this.parseFragment(templateResult);
@@ -190,17 +191,19 @@ export class TemplatePart extends ValuePart {
 
 export class Part {
 	node = undefined;
+	value = undefined;
 	path = undefined;
 	processor = undefined;
 
-	constructor(node) {
+	constructor(node, value) {
 		this.node = node;
+		this.value = value;
 		this.path = getNodePath(node);
 		// TODO: for real dom we need to specify a limit/end node
 	}
 
-	update(value) {
-		return this.processor?.(value);
+	update(newValue, oldValue = this.value) {
+		return this.processor?.(newValue, oldValue);
 	}
 
 	clone(fragment) {
@@ -228,21 +231,20 @@ export class AttributePart extends Part {
 }
 
 export class ChildNodePart extends Part {
-	value = undefined;
 	valuePart = undefined;
 	fragment = undefined;
 
 	constructor(node, value, fragment) {
-		super(node);
-		this.value = value;
+		super(node, value);
 		this.fragment = fragment;
 		this.parseValue(value);
 	}
 
-	update(value) {
-		const parsedValue = this.parseValue(value);
-		this.valuePart?.update(value);
-		return super.update(parsedValue);
+	update(newValue) {
+		const parsedValue = this.parseValue(newValue);
+		const parsedOldValue = this.parseValue(this.value);
+		this.valuePart?.update(newValue);
+		return super.update(parsedValue, parsedOldValue);
 	}
 
 	// nested TemplateResults values need to be unrolled in order for update functions to be able to process them

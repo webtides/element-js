@@ -172,7 +172,7 @@ export const processNodePart = (comment) => {
 	let text;
 	let nodes = [];
 	// TODO: rename anyContent to something meaningful?!
-	const anyContent = (newValue) => {
+	const anyContent = (newValue, oldValue) => {
 		switch (typeof newValue) {
 			// primitives are handled as text content
 			case 'string':
@@ -236,7 +236,10 @@ export const processNodePart = (comment) => {
 					// or diff if they contain nodes or fragments
 					// TODO: what if the array has mixed content?! object, primitives and functions?!
 					else if (typeof newValue[0] === 'object') {
+						nodes = oldValue || [];
 						// nodes = diff(comment, nodes, newValue);
+						// TODO: when rendering server side, nodes is empty :(
+						// How do we get the nodes?! WTF?!
 						nodes = diffNodes(comment.parentNode, nodes, newValue, comment);
 					}
 					// in all other cases the value is stringified
