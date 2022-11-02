@@ -104,11 +104,6 @@ export class TemplatePart extends ValuePart {
 				this.fragment = new PersistentFragment(fragment);
 			}
 
-			// TODO: for SSR I think we need to use a fragment?! from the live dom instead of the cached fragment here...
-			// this.fragment = new PersistentFragment(fragment);
-
-			console.log('fragment', this.fragment.fragment);
-
 			let parts = partsCache.get(templateResult.strings);
 			if (!parts) {
 				parts = this.parseParts(templateResult, this.fragment.fragment);
@@ -134,7 +129,6 @@ export class TemplatePart extends ValuePart {
 	}
 
 	parseParts(templateResult, documentFragment) {
-		console.log('parseparts', documentFragment);
 		const tw = globalThis.document?.createTreeWalker(documentFragment, 1 | 128);
 		const parts = [];
 		const length = templateResult.strings.length - 1;
@@ -151,10 +145,7 @@ export class TemplatePart extends ValuePart {
 
 			if (node.nodeType === COMMENT_NODE) {
 				if (node.data === `${placeholder}`) {
-					// TODO: this could be the place to get the fragment from the real dom
-					// TODO: maybe store the fragment inside the part
-					// TODO: also we probably need markers for parts inside arrays (like lit)
-					// TODO: then we can build up the nesting here with nested child parts
+					// TODO: do we need markers for parts inside arrays ?! (like lit)
 					// https://lit.dev/playground/#sample=examples/repeating-and-conditional
 
 					// TODO: maybe name it something like NodeGroup ?!
@@ -164,10 +155,6 @@ export class TemplatePart extends ValuePart {
 						childNodes.push(childNode);
 						childNode = childNode.nextSibling;
 					}
-					//const fragment = globalThis.document?.createDocumentFragment();
-					// TODO: this is a problem - because appending nodes to a new fragment will remove them from the dom :(
-					// TODO: I need a structure that behaves like a fragment but does not move the children...
-					//fragment.append(...childNodes);
 
 					parts.push(
 						new ChildNodePart(
@@ -176,7 +163,6 @@ export class TemplatePart extends ValuePart {
 							{ childNodes },
 						),
 					);
-					//parts.push(new ChildNodePart(node, templateResult.values[i], fragment));
 					placeholder = `${prefix}${++i}`;
 				}
 			} else {
@@ -312,7 +298,6 @@ export class PersistentFragment {
 			range.setEndAfter(node.lastChild);
 			this.fragment = range.cloneContents();
 		} else {
-			console.log('else', node);
 			// TODO: this does not have a name yet...
 			// just a pojo { childNodes: [] }
 			this.childNodes = [...node.childNodes];
