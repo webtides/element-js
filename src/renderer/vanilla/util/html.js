@@ -76,7 +76,7 @@ export class TemplateResult {
 	renderInto(domNode) {
 		let templatePart = templateParts.get(domNode);
 		if (!templatePart) {
-			templatePart = new TemplatePart(this);
+			templatePart = new TemplatePart(this, domNode);
 			templateParts.set(domNode, templatePart);
 
 			domNode.replaceChildren(templatePart.fragment.valueOf());

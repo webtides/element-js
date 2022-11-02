@@ -140,11 +140,12 @@ class ExampleTemplateElement extends TemplateElement {
 	constructor() {
 		super();
 		this.store = new Store();
+		this.store.run(10);
 	}
 
 	properties() {
 		return {
-			data: [],
+			data: this.store.data,
 			selected: null,
 		};
 	}
@@ -223,11 +224,6 @@ class ExampleTemplateElement extends TemplateElement {
 						)}
 					</tbody>
 				</table>
-				<div>${html`<div>Foo</div>`}</div>
-				<div>
-					${html`<div>Bar</div>
-						<div>Baz</div>`}
-				</div>
 			</div>
 		`;
 	}

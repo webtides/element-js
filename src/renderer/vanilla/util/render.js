@@ -21,18 +21,24 @@ const fragmentsCache = new WeakMap();
 
 // Interpolation?! Substitution?! Value?! Hole?!
 export class ValuePart {
+	node = undefined;
 	// Used to remember parent template state as we recurse into nested templates
 	parts = [];
+
+	constructor(node) {
+		this.node = node;
+	}
 
 	// nested TemplateResults values need to be unrolled in order for update functions to be able to process them
 	parseValues(values) {
 		for (let index = 0; index < values.length; index++) {
 			let value = values[index];
+			const node = this.node?.childNodes?.[index];
 
 			if (value instanceof TemplateResult) {
 				let templatePart = this.parts[index];
 				if (!templatePart) {
-					templatePart = new TemplatePart(value);
+					templatePart = new TemplatePart(value, { childNodes: [node] });
 					this.parts[index] = templatePart;
 				}
 				templatePart.update(value);
@@ -41,7 +47,7 @@ export class ValuePart {
 			} else if (Array.isArray(value)) {
 				let arrayPart = this.parts[index];
 				if (!arrayPart) {
-					arrayPart = new ArrayPart(value);
+					arrayPart = new ArrayPart(value, node);
 					this.parts[index] = arrayPart;
 				}
 				arrayPart.update(value);
@@ -57,8 +63,8 @@ export class ValuePart {
 export class ArrayPart extends ValuePart {
 	values = undefined;
 
-	constructor(values) {
-		super();
+	constructor(values, node) {
+		super(node);
 		this.prepare(values);
 	}
 
@@ -79,8 +85,8 @@ export class TemplatePart extends ValuePart {
 	fragment = null; // PersistentFragment
 	strings = undefined;
 
-	constructor(templateResult) {
-		super();
+	constructor(templateResult, node) {
+		super(node);
 		this.prepare(templateResult);
 	}
 
@@ -92,8 +98,16 @@ export class TemplatePart extends ValuePart {
 				fragmentsCache.set(templateResult.strings, fragment);
 			}
 
+			if (this.node) {
+				this.fragment = new PersistentFragment(this.node);
+			} else {
+				this.fragment = new PersistentFragment(fragment);
+			}
+
 			// TODO: for SSR I think we need to use a fragment?! from the live dom instead of the cached fragment here...
-			this.fragment = new PersistentFragment(fragment);
+			// this.fragment = new PersistentFragment(fragment);
+
+			console.log('fragment', this.fragment.fragment);
 
 			let parts = partsCache.get(templateResult.strings);
 			if (!parts) {
@@ -120,6 +134,7 @@ export class TemplatePart extends ValuePart {
 	}
 
 	parseParts(templateResult, documentFragment) {
+		console.log('parseparts', documentFragment);
 		const tw = globalThis.document?.createTreeWalker(documentFragment, 1 | 128);
 		const parts = [];
 		const length = templateResult.strings.length - 1;
@@ -130,23 +145,45 @@ export class TemplatePart extends ValuePart {
 		while (i < length) {
 			const node = tw.nextNode();
 
+			// TODO: this is not a good way to handle this...
+			// because the template string looks perfectly fine - it is rather not a real DocumentFragment?!
 			if (!node) throw `bad template: ${templateResult.templateString}`;
 
 			if (node.nodeType === COMMENT_NODE) {
-				if (node.data === `/${placeholder}`) {
+				if (node.data === `${placeholder}`) {
 					// TODO: this could be the place to get the fragment from the real dom
 					// TODO: maybe store the fragment inside the part
 					// TODO: also we probably need markers for parts inside arrays (like lit)
 					// TODO: then we can build up the nesting here with nested child parts
 					// https://lit.dev/playground/#sample=examples/repeating-and-conditional
-					parts.push(new ChildNodePart(node, templateResult.values[i]));
+
+					// TODO: maybe name it something like NodeGroup ?!
+					const childNodes = [];
+					let childNode = node.nextSibling;
+					while (childNode && childNode.data !== `/${placeholder}`) {
+						childNodes.push(childNode);
+						childNode = childNode.nextSibling;
+					}
+					//const fragment = globalThis.document?.createDocumentFragment();
+					// TODO: this is a problem - because appending nodes to a new fragment will remove them from the dom :(
+					// TODO: I need a structure that behaves like a fragment but does not move the children...
+					//fragment.append(...childNodes);
+
+					parts.push(
+						new ChildNodePart(
+							childNode?.data === `/${placeholder}` ? childNode : node,
+							templateResult.values[i],
+							{ childNodes },
+						),
+					);
+					//parts.push(new ChildNodePart(node, templateResult.values[i], fragment));
 					placeholder = `${prefix}${++i}`;
 				}
 			} else {
 				while (node.hasAttribute(placeholder)) {
 					parts.push(new AttributePart(node, node.getAttribute(placeholder)));
 					// the placeholder attribute can be removed once we have our part for processing updates
-					node.removeAttribute(placeholder);
+					//node.removeAttribute(placeholder);
 					placeholder = `${prefix}${++i}`;
 				}
 				// if the node is a text-only node, check its content for a placeholder
@@ -169,6 +206,7 @@ export class Part {
 	constructor(node) {
 		this.node = node;
 		this.path = getNodePath(node);
+		// TODO: for real dom we need to specify a limit/end node
 	}
 
 	update(value) {
@@ -202,10 +240,12 @@ export class AttributePart extends Part {
 export class ChildNodePart extends Part {
 	value = undefined;
 	valuePart = undefined;
+	fragment = undefined;
 
-	constructor(node, value) {
+	constructor(node, value, fragment) {
 		super(node);
 		this.value = value;
+		this.fragment = fragment;
 		this.parseValue(value);
 	}
 
@@ -220,7 +260,7 @@ export class ChildNodePart extends Part {
 		if (value instanceof TemplateResult) {
 			let templatePart = this.valuePart;
 			if (!templatePart) {
-				templatePart = new TemplatePart(value);
+				templatePart = new TemplatePart(value, this.fragment);
 				this.valuePart = templatePart;
 			}
 			templatePart.update(value);
@@ -229,7 +269,7 @@ export class ChildNodePart extends Part {
 		} else if (Array.isArray(value)) {
 			let arrayPart = this.valuePart;
 			if (!arrayPart) {
-				arrayPart = new ArrayPart(value);
+				arrayPart = new ArrayPart(value, this.fragment);
 				this.valuePart = arrayPart;
 			}
 			arrayPart.update(value);
@@ -260,9 +300,27 @@ export class PersistentFragment {
 	fragment = undefined;
 	childNodes = []; // "not live" copy of childNodes
 
-	constructor(fragment) {
-		this.fragment = globalThis.document?.importNode(fragment, true);
-		this.childNodes = [...this.fragment.childNodes];
+	constructor(node) {
+		if (node instanceof DocumentFragment) {
+			this.fragment = globalThis.document?.importNode(node, true);
+			this.childNodes = [...this.fragment.childNodes];
+		} else if (node instanceof Node) {
+			this.childNodes = [...node.childNodes];
+
+			const range = globalThis.document?.createRange();
+			range.setStartBefore(node.firstChild);
+			range.setEndAfter(node.lastChild);
+			this.fragment = range.cloneContents();
+		} else {
+			console.log('else', node);
+			// TODO: this does not have a name yet...
+			// just a pojo { childNodes: [] }
+			this.childNodes = [...node.childNodes];
+			this.fragment = globalThis.document?.createDocumentFragment();
+			for (const childNode of node.childNodes) {
+				this.fragment.append(childNode.cloneNode(true));
+			}
+		}
 	}
 
 	get ELEMENT_NODE() {
