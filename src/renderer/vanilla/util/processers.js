@@ -182,12 +182,15 @@ export const processNodePart = (comment) => {
 					oldValue = newValue;
 					if (!text) text = globalThis.document?.createTextNode('');
 					text.data = newValue;
-					text.$part = comment.data;
-					if (comment.previousSibling?.$part === comment.data) {
-						comment.previousSibling.data = newValue;
-					} else {
+
+					if (comment.previousSibling?.data === `/${comment.data}`) {
+						// the part is empty - we haven't rendered it yet
 						comment.parentNode.insertBefore(text, comment);
+					} else {
+						// the part was already rendered (either server side or on the client)
+						comment.previousSibling.data = newValue;
 					}
+
 					nodes = [text];
 				}
 				break;

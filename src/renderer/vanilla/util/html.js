@@ -79,7 +79,7 @@ export class TemplateResult {
 			templatePart = new TemplatePart(this, domNode);
 			templateParts.set(domNode, templatePart);
 
-			domNode.replaceChildren(templatePart.fragment.valueOf());
+			//domNode.replaceChildren(templatePart.fragment.valueOf());
 		}
 
 		templatePart.update(this);
