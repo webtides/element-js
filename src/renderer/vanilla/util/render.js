@@ -31,6 +31,7 @@ export class ValuePart {
 
 	// nested TemplateResults values need to be unrolled in order for update functions to be able to process them
 	parseValues(values) {
+		const parsedValues = [];
 		for (let index = 0; index < values.length; index++) {
 			let value = values[index];
 			const node = this.node?.childNodes?.[index];
@@ -41,22 +42,22 @@ export class ValuePart {
 					templatePart = new TemplatePart(value, { childNodes: [node] });
 					this.parts[index] = templatePart;
 				}
-				templatePart.update(value);
 
-				values[index] = templatePart.fragment;
+				parsedValues[index] = templatePart.fragment;
 			} else if (Array.isArray(value)) {
 				let arrayPart = this.parts[index];
 				if (!arrayPart) {
 					arrayPart = new ArrayPart(value, node);
 					this.parts[index] = arrayPart;
 				}
-				arrayPart.update(value);
 
-				values[index] = arrayPart.values;
+				parsedValues[index] = arrayPart.values;
+			} else {
+				parsedValues[index] = value;
 			}
 		}
 
-		return values;
+		return parsedValues;
 	}
 }
 
@@ -75,9 +76,9 @@ export class ArrayPart extends ValuePart {
 	update(values) {
 		this.prepare(values);
 
-		// for (let index = 0; index < this.stack.length; index++) {
-		// 	this.parts[index].update(values[index]);
-		// }
+		for (let index = 0; index < this.parts.length; index++) {
+			this.parts[index].update(values[index]);
+		}
 	}
 }
 
@@ -252,7 +253,6 @@ export class ChildNodePart extends Part {
 				templatePart = new TemplatePart(value, this.fragment);
 				this.valuePart = templatePart;
 			}
-			templatePart.update(value);
 
 			return templatePart.fragment;
 		} else if (Array.isArray(value)) {
@@ -261,7 +261,6 @@ export class ChildNodePart extends Part {
 				arrayPart = new ArrayPart(value, this.fragment);
 				this.valuePart = arrayPart;
 			}
-			arrayPart.update(value);
 
 			return arrayPart.values;
 		}
@@ -280,6 +279,7 @@ export class ChildNodePart extends Part {
 			childNodes.push(childNode);
 			childNode = childNode.previousSibling;
 		}
+		childNodes.reverse();
 
 		const clonedPart = new ChildNodePart(node, this.value, { childNodes });
 		clonedPart.processor = processPart(clonedPart);

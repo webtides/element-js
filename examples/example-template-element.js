@@ -9,10 +9,51 @@ function _random(max) {
 
 class Store {
 	constructor() {
-		this.data = [];
+		this.data = [
+			{
+				id: 1,
+				label: 'big brown sandwich 12345',
+			},
+			{
+				id: 2,
+				label: 'cheap yellow mouse',
+			},
+			{
+				id: 3,
+				label: 'tall red keyboard',
+			},
+			{
+				id: 4,
+				label: 'small white burger',
+			},
+			{
+				id: 5,
+				label: 'handsome red bbq',
+			},
+			{
+				id: 6,
+				label: 'large black pony',
+			},
+			{
+				id: 7,
+				label: 'inexpensive brown pony',
+			},
+			{
+				id: 8,
+				label: 'expensive white cookie',
+			},
+			{
+				id: 9,
+				label: 'plain brown pizza',
+			},
+			{
+				id: 10,
+				label: 'short purple sandwich',
+			},
+		];
 		this.backup = null;
 		this.selected = null;
-		this.id = 1;
+		this.id = 11;
 	}
 	buildData(count = 1000) {
 		var adjectives = [
@@ -140,7 +181,6 @@ class ExampleTemplateElement extends TemplateElement {
 	constructor() {
 		super();
 		this.store = new Store();
-		this.store.run(10);
 	}
 
 	properties() {
