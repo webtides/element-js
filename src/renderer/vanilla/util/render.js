@@ -106,11 +106,14 @@ export class TemplatePart extends ValuePart {
 
 			let parts = partsCache.get(templateResult.strings);
 			if (!parts) {
+				// TODO: here we can use (cloned) fragments
 				parts = this.parseParts(templateResult, this.fragment.fragment);
 				partsCache.set(templateResult.strings, parts);
 			}
 
-			this.parts = parts.map((part) => part.clone(this.fragment.fragment));
+			// TODO: here we need to use the real dom!
+			// TODO: and cloning must also do recursive/nested cloning
+			this.parts = parts.map((part) => part.clone(this.node || this.fragment.fragment));
 			this.strings = templateResult.strings;
 		}
 	}
@@ -268,7 +271,17 @@ export class ChildNodePart extends Part {
 	clone(fragment) {
 		// We currently need the path because the fragment will be cloned via importNode and therefore the node will be a different one
 		const node = this.path.reduceRight(({ childNodes }, i) => childNodes[i], fragment);
-		const clonedPart = new ChildNodePart(node, this.value);
+
+		const placeholder = node.data.replace('/', '');
+		// TODO: maybe name it something like NodeGroup ?!
+		const childNodes = [];
+		let childNode = node.previousSibling;
+		while (childNode && childNode.data !== placeholder) {
+			childNodes.push(childNode);
+			childNode = childNode.previousSibling;
+		}
+
+		const clonedPart = new ChildNodePart(node, this.value, { childNodes });
 		clonedPart.processor = processPart(clonedPart);
 		return clonedPart;
 	}
