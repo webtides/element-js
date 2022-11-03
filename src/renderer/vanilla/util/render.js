@@ -39,7 +39,7 @@ export class ValuePart {
 			if (value instanceof TemplateResult) {
 				let templatePart = this.parts[index];
 				if (!templatePart) {
-					templatePart = new TemplatePart(value, { childNodes: [node] });
+					templatePart = new TemplatePart(value, node ? { childNodes: [node] } : undefined);
 					this.parts[index] = templatePart;
 				}
 
