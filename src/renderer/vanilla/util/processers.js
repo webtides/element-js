@@ -183,7 +183,7 @@ export const processNodePart = (comment) => {
 					if (!text) text = globalThis.document?.createTextNode('');
 					text.data = newValue;
 
-					if (comment.previousSibling?.data === `/${comment.data}`) {
+					if (comment.previousSibling?.data === comment.data.replace('/', '')) {
 						// the part is empty - we haven't rendered it yet
 						comment.parentNode.insertBefore(text, comment);
 					} else {

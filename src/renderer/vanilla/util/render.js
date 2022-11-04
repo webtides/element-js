@@ -76,7 +76,8 @@ export class ArrayPart extends ValuePart {
 	update(values) {
 		this.prepare(values);
 
-		for (let index = 0; index < this.parts.length; index++) {
+		for (let index = 0; index < this.values.length; index++) {
+			// TODO: parts and values might have different lengths?!
 			this.parts[index].update(values[index]);
 		}
 	}
@@ -163,7 +164,8 @@ export class TemplatePart extends ValuePart {
 
 					parts.push(
 						new ChildNodePart(
-							childNode?.data === `/${placeholder}` ? childNode : node,
+							// childNode?.data === `/${placeholder}` ? childNode : node,
+							node,
 							templateResult.values[i],
 							{ childNodes },
 						),
@@ -243,6 +245,7 @@ export class ChildNodePart extends Part {
 	update(newValue) {
 		const parsedValue = this.parseValue(newValue);
 		const parsedOldValue = this.parseValue(this.value);
+		this.value = newValue;
 		this.valuePart?.update(newValue);
 		return super.update(parsedValue, parsedOldValue);
 	}
@@ -255,6 +258,7 @@ export class ChildNodePart extends Part {
 				templatePart = new TemplatePart(value, this.fragment);
 				this.valuePart = templatePart;
 			}
+			templatePart.prepare(value);
 
 			return templatePart.fragment;
 		} else if (Array.isArray(value)) {
@@ -263,6 +267,7 @@ export class ChildNodePart extends Part {
 				arrayPart = new ArrayPart(value, this.fragment);
 				this.valuePart = arrayPart;
 			}
+			arrayPart.prepare(value);
 
 			return arrayPart.values;
 		}
@@ -271,19 +276,21 @@ export class ChildNodePart extends Part {
 
 	clone(fragment) {
 		// We currently need the path because the fragment will be cloned via importNode and therefore the node will be a different one
-		const node = this.path.reduceRight(({ childNodes }, i) => childNodes[i], fragment);
+		const startCommentMarker = this.path.reduceRight(({ childNodes }, i) => childNodes[i], fragment);
 
-		const placeholder = node.data.replace('/', '');
+		const placeholder = startCommentMarker.data;
 		// TODO: maybe name it something like NodeGroup ?!
 		const childNodes = [];
-		let childNode = node.previousSibling;
-		while (childNode && childNode.data !== placeholder) {
+		let childNode = startCommentMarker.nextSibling;
+		while (childNode && childNode.data !== `/${placeholder}`) {
 			childNodes.push(childNode);
-			childNode = childNode.previousSibling;
+			childNode = childNode.nextSibling;
 		}
-		childNodes.reverse();
+		// childNodes.reverse();
 
-		const clonedPart = new ChildNodePart(node, this.value, { childNodes });
+		const endCommentMarker = childNode?.data === `/${placeholder}` ? childNode : startCommentMarker;
+
+		const clonedPart = new ChildNodePart(endCommentMarker, this.value, { childNodes });
 		clonedPart.processor = processPart(clonedPart);
 		return clonedPart;
 	}
