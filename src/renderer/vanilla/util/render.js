@@ -70,15 +70,11 @@ export class TemplatePart {
 	update(templateResult) {
 		this.prepare(templateResult);
 
-		if (Array.isArray(templateResult)) {
-			for (let index = 0; index < this.values.length; index++) {
-				// TODO: parts and values might have different lengths?!
-				this.parts[index].update(templateResult[index]);
-			}
-		} else {
-			for (let index = 0; index < this.parts.length; index++) {
-				this.parts[index].update(templateResult.values[index]);
-			}
+		const values = Array.isArray(templateResult) ? templateResult : templateResult.values;
+
+		for (let index = 0; index < values.length; index++) {
+			// TODO: parts and values might have different lengths?!
+			this.parts[index].update(values[index]);
 		}
 	}
 
@@ -135,6 +131,7 @@ export class TemplatePart {
 				// if the node is a text-only node, check its content for a placeholder
 				if (textOnly.test(node.localName) && node.textContent.trim() === `<!--${placeholder}-->`) {
 					node.textContent = '';
+					// TODO: add example to test this case...
 					parts.push(new TextNodePart(node));
 					placeholder = `${prefix}${++i}`;
 				}
@@ -150,28 +147,25 @@ export class TemplatePart {
 			let value = values[index];
 			const node = this.node?.childNodes?.[index];
 
-			if (value instanceof TemplateResult) {
+			if (value instanceof TemplateResult || Array.isArray(value)) {
 				let templatePart = this.parts[index];
 				if (!templatePart) {
 					templatePart = new TemplatePart(value, node ? { childNodes: [node] } : undefined);
 					this.parts[index] = templatePart;
 				}
 
-				parsedValues[index] = templatePart.fragment;
-			} else if (Array.isArray(value)) {
-				let arrayPart = this.parts[index];
-				if (!arrayPart) {
-					arrayPart = new ArrayPart(value, node);
-					this.parts[index] = arrayPart;
-				}
-
-				parsedValues[index] = arrayPart.values;
+				parsedValues[index] = templatePart.valueOf();
 			} else {
 				parsedValues[index] = value;
 			}
 		}
 
 		return parsedValues;
+	}
+
+	valueOf() {
+		// TemplateResult | Array
+		return this.values ? this.values : this.fragment;
 	}
 }
 
@@ -245,7 +239,7 @@ export class ChildNodePart extends Part {
 			}
 			templatePart.prepare(value);
 
-			return value instanceof TemplateResult ? templatePart.fragment : templatePart.values;
+			return templatePart.valueOf();
 		}
 		return value;
 	}
