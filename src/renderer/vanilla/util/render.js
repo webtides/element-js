@@ -336,14 +336,7 @@ const render = (template, domNode) => {
 	// TODO: make it possible that template could also be an html element ?!
 	console.time('diff');
 
-	//console.log('toString()', template.toString());
 	template.renderInto(domNode);
-
-	// TODO: hydrate instead of render...
-	// Ich hab zwei Möglichkeiten
-	// entweder ich gehe per TreeWalker über das live DOM (das muss das endgame/ ultimative Ziel sein)
-	// oder ich gehe wieder über das Fragement aus dem String (das wäre aber unnötig) und mache aber KEINE updates
-	// Das end result muss immer sein, dass ich eine Liste mit Updates bekomme und die persistent fragments die referenzen aus dem DOM enthalten
 
 	console.timeEnd('diff');
 };
