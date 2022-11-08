@@ -82,7 +82,6 @@ const diffNodes = function (parentNode, domChildNodes, templateChildNodes, ancho
 		if (!domChildNode) {
 			// operation = 1
 			if (templateChildNode instanceof PersistentFragment) {
-				console.log('templateChildNode instanceof PersistentFragment');
 				anchorNode.before(...templateChildNode.childNodes);
 			} else {
 				parentNode.insertBefore(templateChildNode, anchorNode);

@@ -78,7 +78,10 @@ export class TemplateResult {
 		if (!templatePart) {
 			// TODO: this does not have a name yet...
 			// just a pojo { childNodes: [] }
-			templatePart = new TemplatePart(this, { childNodes: domNode.childNodes });
+			templatePart = new TemplatePart(
+				this,
+				domNode.childNodes.length > 0 ? { childNodes: domNode.childNodes } : undefined,
+			);
 			templateParts.set(domNode, templatePart);
 
 			// TODO: maybe we could have a root marker and look for that?!

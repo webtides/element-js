@@ -40,14 +40,16 @@ export class TemplatePart {
 			//templateResult as values
 			this.values = this.parseValues(templateResult);
 		} else if (this.strings !== templateResult.strings) {
-			// TODO: this must only be done when there is no this.node
-			let fragment = fragmentsCache.get(templateResult.strings);
-			if (!fragment) {
-				fragment = this.parseFragment(templateResult);
-				fragmentsCache.set(templateResult.strings, fragment);
+			if (this.node) {
+				this.fragment = new PersistentFragment(this.node);
+			} else {
+				let fragment = fragmentsCache.get(templateResult.strings);
+				if (!fragment) {
+					fragment = this.parseFragment(templateResult);
+					fragmentsCache.set(templateResult.strings, fragment);
+				}
+				this.fragment = new PersistentFragment(fragment);
 			}
-
-			this.fragment = new PersistentFragment(this.node || fragment);
 
 			let parts = partsCache.get(templateResult.strings);
 			if (!parts) {
