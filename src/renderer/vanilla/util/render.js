@@ -21,17 +21,16 @@ const fragmentsCache = new WeakMap();
 
 // Interpolation?! Substitution?! Value?! Hole?!
 export class TemplatePart {
-	node = undefined;
 	// Used to remember parent template state as we recurse into nested templates
 	parts = [];
 	strings = undefined;
 
-	fragment = null; // PersistentFragment
+	fragment = undefined; // PersistentFragment
 	values = undefined;
 
 	// TemplateResult | array
-	constructor(templateResult, node) {
-		this.node = node;
+	constructor(templateResult, fragment) {
+		this.fragment = fragment;
 		this.prepare(templateResult);
 	}
 
@@ -40,9 +39,7 @@ export class TemplatePart {
 			//templateResult as values
 			this.values = this.parseValues(templateResult);
 		} else if (this.strings !== templateResult.strings) {
-			if (this.node) {
-				this.fragment = new PersistentFragment(this.node);
-			} else {
+			if (!this.fragment) {
 				let fragment = fragmentsCache.get(templateResult.strings);
 				if (!fragment) {
 					fragment = this.parseFragment(templateResult);
@@ -53,14 +50,11 @@ export class TemplatePart {
 
 			let parts = partsCache.get(templateResult.strings);
 			if (!parts) {
-				// TODO: here we can use (cloned) fragments
-				parts = this.parseParts(templateResult, { childNodes: this.fragment.childNodes });
+				parts = this.parseParts(templateResult, this.fragment);
 				partsCache.set(templateResult.strings, parts);
 			}
 
-			// TODO: here we need to use the real dom!
-			// TODO: and cloning must also do recursive/nested cloning
-			this.parts = parts.map((part) => part.clone({ childNodes: this.fragment.childNodes }));
+			this.parts = parts.map((part) => part.clone(this.fragment));
 			this.strings = templateResult.strings;
 		}
 	}
@@ -81,14 +75,16 @@ export class TemplatePart {
 		return convertStringToTemplate(templateString);
 	}
 
-	parseParts(templateResult, rootNode) {
-		// we always create a fragment so that we can start at the root for traversing the node path
-		const fragment = globalThis.document?.createDocumentFragment();
-		for (const childNode of rootNode.childNodes) {
-			fragment.append(childNode.cloneNode(true));
+	// PersistentFragment
+	parseParts(templateResult, fragment) {
+		// we always create a template fragment so that we can start at the root for traversing the node path
+		const template = globalThis.document?.createDocumentFragment();
+		for (const childNode of fragment.childNodes) {
+			// TODO: maybe use a range to create a fragment faster?!
+			template.append(childNode.cloneNode(true));
 		}
 
-		const tw = globalThis.document?.createTreeWalker(fragment, 1 | 128);
+		const tw = globalThis.document?.createTreeWalker(template, 1 | 128);
 		const parts = [];
 		const length = templateResult.strings.length - 1;
 		let i = 0;
@@ -101,7 +97,7 @@ export class TemplatePart {
 			// TODO: this is not a good way to handle this...
 			// because the template string looks perfectly fine - it is rather not a real DocumentFragment?!
 			if (!node) {
-				console.log('bad template:', templateResult, rootNode);
+				console.log('bad template:', templateResult, fragment);
 				throw `bad template: ${templateResult.templateString}`;
 			}
 
@@ -110,7 +106,6 @@ export class TemplatePart {
 					// TODO: do we need markers for parts inside arrays ?! (like lit)
 					// https://lit.dev/playground/#sample=examples/repeating-and-conditional
 
-					// TODO: maybe name it something like NodeGroup ?!
 					const childNodes = [];
 					let childNode = node.nextSibling;
 					while (childNode && childNode.data !== `/${placeholder}`) {
@@ -118,14 +113,7 @@ export class TemplatePart {
 						childNode = childNode.nextSibling;
 					}
 
-					parts.push(
-						new ChildNodePart(
-							// childNode?.data === `/${placeholder}` ? childNode : node,
-							node,
-							templateResult.values[i],
-							{ childNodes },
-						),
-					);
+					parts.push(new ChildNodePart(node, templateResult.values[i], new PersistentFragment(childNodes)));
 					placeholder = `${prefix}${++i}`;
 				}
 			} else {
@@ -152,12 +140,12 @@ export class TemplatePart {
 		const parsedValues = [];
 		for (let index = 0; index < values.length; index++) {
 			let value = values[index];
-			const node = this.node?.childNodes?.[index];
+			const node = this.fragment?.childNodes?.[index];
 
 			if (value instanceof TemplateResult || Array.isArray(value)) {
 				let templatePart = this.parts[index];
 				if (!templatePart) {
-					templatePart = new TemplatePart(value, node ? { childNodes: [node] } : undefined);
+					templatePart = new TemplatePart(value, node ? new PersistentFragment([node]) : undefined);
 					this.parts[index] = templatePart;
 				} else {
 					templatePart.update(value);
@@ -259,7 +247,7 @@ export class ChildNodePart extends Part {
 		const startCommentMarker = this.path.reduceRight(({ childNodes }, i) => childNodes[i], fragment);
 
 		const placeholder = startCommentMarker.data;
-		// TODO: maybe name it something like NodeGroup ?!
+
 		const childNodes = [];
 		let childNode = startCommentMarker.nextSibling;
 		while (childNode && childNode.data !== `/${placeholder}`) {
@@ -269,7 +257,7 @@ export class ChildNodePart extends Part {
 
 		const endCommentMarker = childNode?.data === `/${placeholder}` ? childNode : startCommentMarker;
 
-		const clonedPart = new ChildNodePart(endCommentMarker, this.value, { childNodes });
+		const clonedPart = new ChildNodePart(endCommentMarker, this.value, new PersistentFragment(childNodes));
 		clonedPart.processor = processPart(clonedPart);
 		return clonedPart;
 	}
@@ -284,14 +272,15 @@ export class TextNodePart extends Part {}
  * other than a "normal" Fragment that will be empty after such operations
  */
 export class PersistentFragment {
+	// TODO: maybe name it ^ something like NodeGroup ?!
 	childNodes = []; // "not live" copy of childNodes
 
-	// TODO: this does not have a name yet...
-	// just a pojo { childNodes: [] }
 	constructor(node) {
 		if (node instanceof DocumentFragment) {
 			const fragment = globalThis.document?.importNode(node, true);
 			this.childNodes = [...fragment.childNodes];
+		} else if (Array.isArray(node)) {
+			this.childNodes = [...node];
 		} else {
 			this.childNodes = [...node.childNodes];
 		}

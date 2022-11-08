@@ -1,5 +1,5 @@
 import { camelToDash, decodeAttribute, encodeAttribute } from '../../../util/AttributeParser';
-import { TemplatePart } from './render';
+import { PersistentFragment, TemplatePart } from './render';
 
 // TODO: this is the same as in render.js
 const prefix = 'dom-part-';
@@ -80,7 +80,7 @@ export class TemplateResult {
 			// just a pojo { childNodes: [] }
 			templatePart = new TemplatePart(
 				this,
-				domNode.childNodes.length > 0 ? { childNodes: domNode.childNodes } : undefined,
+				domNode.childNodes.length > 0 ? new PersistentFragment(domNode) : undefined,
 			);
 			templateParts.set(domNode, templatePart);
 
