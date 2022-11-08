@@ -8,7 +8,7 @@ import {
 	PERSISTENT_DOCUMENT_FRAGMENT_NODE,
 	TEXT_NODE,
 } from '../../../util/DOMHelper';
-import { AttributePart, ChildNodePart } from './render';
+import { AttributePart, ChildNodePart, PersistentFragment } from "./render";
 
 const processBooleanAttribute = (node, name, oldValue) => {
 	return (newValue) => {
@@ -81,7 +81,12 @@ const diffNodes = function (parentNode, domChildNodes, templateChildNodes, ancho
 		// If the DOM node doesn't exist, append/copy the template node
 		if (!domChildNode) {
 			// operation = 1
-			parentNode.insertBefore(templateChildNode.valueOf(), anchorNode);
+			if (templateChildNode instanceof PersistentFragment) {
+				console.log('templateChildNode instanceof PersistentFragment');
+				anchorNode.before(...templateChildNode.childNodes);
+			} else {
+				parentNode.insertBefore(templateChildNode, anchorNode);
+			}
 			continue;
 		}
 

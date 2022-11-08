@@ -47,22 +47,18 @@ export class TemplatePart {
 				fragmentsCache.set(templateResult.strings, fragment);
 			}
 
-			if (this.node) {
-				this.fragment = new PersistentFragment(this.node);
-			} else {
-				this.fragment = new PersistentFragment(fragment);
-			}
+			this.fragment = new PersistentFragment(this.node || fragment);
 
 			let parts = partsCache.get(templateResult.strings);
 			if (!parts) {
 				// TODO: here we can use (cloned) fragments
-				parts = this.parseParts(templateResult, this.fragment.fragment);
+				parts = this.parseParts(templateResult, { childNodes: this.fragment.childNodes });
 				partsCache.set(templateResult.strings, parts);
 			}
 
 			// TODO: here we need to use the real dom!
 			// TODO: and cloning must also do recursive/nested cloning
-			this.parts = parts.map((part) => part.clone(this.node || this.fragment.fragment));
+			this.parts = parts.map((part) => part.clone({ childNodes: this.fragment.childNodes }));
 			this.strings = templateResult.strings;
 		}
 	}
@@ -83,8 +79,14 @@ export class TemplatePart {
 		return convertStringToTemplate(templateString);
 	}
 
-	parseParts(templateResult, documentFragment) {
-		const tw = globalThis.document?.createTreeWalker(documentFragment, 1 | 128);
+	parseParts(templateResult, rootNode) {
+		// we always create a fragment so that we can start at the root for traversing the node path
+		const fragment = globalThis.document?.createDocumentFragment();
+		for (const childNode of rootNode.childNodes) {
+			fragment.append(childNode.cloneNode(true));
+		}
+
+		const tw = globalThis.document?.createTreeWalker(fragment, 1 | 128);
 		const parts = [];
 		const length = templateResult.strings.length - 1;
 		let i = 0;
@@ -96,7 +98,10 @@ export class TemplatePart {
 
 			// TODO: this is not a good way to handle this...
 			// because the template string looks perfectly fine - it is rather not a real DocumentFragment?!
-			if (!node) throw `bad template: ${templateResult.templateString}`;
+			if (!node) {
+				console.log('bad template:', templateResult, rootNode);
+				throw `bad template: ${templateResult.templateString}`;
+			}
 
 			if (node.nodeType === COMMENT_NODE) {
 				if (node.data === `${placeholder}`) {
@@ -152,6 +157,8 @@ export class TemplatePart {
 				if (!templatePart) {
 					templatePart = new TemplatePart(value, node ? { childNodes: [node] } : undefined);
 					this.parts[index] = templatePart;
+				} else {
+					templatePart.update(value);
 				}
 
 				parsedValues[index] = templatePart.valueOf();
@@ -236,8 +243,9 @@ export class ChildNodePart extends Part {
 			if (!templatePart) {
 				templatePart = new TemplatePart(value, this.fragment);
 				this.templatePart = templatePart;
+			} else {
+				templatePart.update(value);
 			}
-			templatePart.prepare(value);
 
 			return templatePart.valueOf();
 		}
@@ -274,28 +282,16 @@ export class TextNodePart extends Part {}
  * other than a "normal" Fragment that will be empty after such operations
  */
 export class PersistentFragment {
-	fragment = undefined;
 	childNodes = []; // "not live" copy of childNodes
 
+	// TODO: this does not have a name yet...
+	// just a pojo { childNodes: [] }
 	constructor(node) {
 		if (node instanceof DocumentFragment) {
-			this.fragment = globalThis.document?.importNode(node, true);
-			this.childNodes = [...this.fragment.childNodes];
-		} else if (node instanceof Node) {
-			this.childNodes = [...node.childNodes];
-
-			const range = globalThis.document?.createRange();
-			range.setStartBefore(node.firstChild);
-			range.setEndAfter(node.lastChild);
-			this.fragment = range.cloneContents();
+			const fragment = globalThis.document?.importNode(node, true);
+			this.childNodes = [...fragment.childNodes];
 		} else {
-			// TODO: this does not have a name yet...
-			// just a pojo { childNodes: [] }
 			this.childNodes = [...node.childNodes];
-			this.fragment = globalThis.document?.createDocumentFragment();
-			for (const childNode of node.childNodes) {
-				this.fragment.append(childNode.cloneNode(true));
-			}
 		}
 	}
 
@@ -313,16 +309,6 @@ export class PersistentFragment {
 
 	get lastChild() {
 		return this.childNodes[this.childNodes.length - 1];
-	}
-
-	// appending or inserting the fragment, moves the nodes into the DOM, leaving behind an empty DocumentFragment
-	// therefore we cache the nodes and re-append them whenever the fragment is needed again.
-	valueOf() {
-		if (this.fragment.childNodes.length !== this.childNodes.length) {
-			let i = 0;
-			while (i < this.childNodes.length) this.fragment.appendChild(this.childNodes[i++]);
-		}
-		return this.fragment;
 	}
 }
 

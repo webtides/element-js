@@ -76,10 +76,15 @@ export class TemplateResult {
 	renderInto(domNode) {
 		let templatePart = templateParts.get(domNode);
 		if (!templatePart) {
-			templatePart = new TemplatePart(this, domNode);
+			// TODO: this does not have a name yet...
+			// just a pojo { childNodes: [] }
+			templatePart = new TemplatePart(this, { childNodes: domNode.childNodes });
 			templateParts.set(domNode, templatePart);
 
-			//domNode.replaceChildren(templatePart.fragment.valueOf());
+			// TODO: maybe we could have a root marker and look for that?!
+			if (domNode.childNodes.length === 0) {
+				domNode.replaceChildren(...templatePart.fragment.childNodes);
+			}
 		}
 
 		templatePart.update(this);
