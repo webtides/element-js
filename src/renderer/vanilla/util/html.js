@@ -76,8 +76,6 @@ export class TemplateResult {
 	renderInto(domNode) {
 		let templatePart = templateParts.get(domNode);
 		if (!templatePart) {
-			// TODO: this does not have a name yet...
-			// just a pojo { childNodes: [] }
 			templatePart = new TemplatePart(
 				this,
 				domNode.childNodes.length > 0 ? new PersistentFragment(domNode) : undefined,

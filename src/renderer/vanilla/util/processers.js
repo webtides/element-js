@@ -1,14 +1,5 @@
-import {
-	COMMENT_NODE,
-	diffAttributes,
-	DOCUMENT_FRAGMENT_NODE,
-	ELEMENT_NODE,
-	hasChildNodes,
-	isTemplateElement,
-	PERSISTENT_DOCUMENT_FRAGMENT_NODE,
-	TEXT_NODE,
-} from '../../../util/DOMHelper';
-import { AttributePart, ChildNodePart, PersistentFragment } from "./render";
+import { COMMENT_NODE, DOCUMENT_FRAGMENT_NODE, ELEMENT_NODE } from '../../../util/DOMHelper';
+import { AttributePart, ChildNodePart, PersistentFragment } from './render';
 
 const processBooleanAttribute = (node, name, oldValue) => {
 	return (newValue) => {

@@ -28,7 +28,7 @@ export class TemplatePart {
 	fragment = undefined; // PersistentFragment
 	values = undefined;
 
-	// TemplateResult | array
+	// TemplateResult | array, PersistentFragment
 	constructor(templateResult, fragment) {
 		this.fragment = fragment;
 		this.prepare(templateResult);
@@ -50,10 +50,12 @@ export class TemplatePart {
 
 			let parts = partsCache.get(templateResult.strings);
 			if (!parts) {
+				// TODO: lets generate blueprints (type, path, and name) only here
 				parts = this.parseParts(templateResult, this.fragment);
 				partsCache.set(templateResult.strings, parts);
 			}
 
+			// TODO: and then instead of cloning we can create parts here...
 			this.parts = parts.map((part) => part.clone(this.fragment));
 			this.strings = templateResult.strings;
 		}
@@ -207,6 +209,7 @@ export class AttributePart extends Part {
 	}
 }
 
+// TODO: TemplatePart and ChildNodePart seem to be kind of the same?!
 export class ChildNodePart extends Part {
 	templatePart = undefined;
 	fragment = undefined;
