@@ -1,12 +1,12 @@
 /* eslint-disable no-unused-expressions */
 import { fixture, defineCE, assert, nextFrame } from '@open-wc/testing';
 import { BaseElement } from '../../src/BaseElement';
-import { StoreProperty } from '../../src/util/StoreProperty';
+import { Store } from '../../src/util/Store';
 
-const primitiveStore = new StoreProperty(100);
-const simpleStore = new StoreProperty({ count: 0 });
+const primitiveStore = new Store(100);
+const simpleStore = new Store({ count: 0 });
 
-class ComplexStore extends StoreProperty {
+class ComplexStore extends Store {
 	properties() {
 		return {
 			anotherCount: 0,
@@ -119,6 +119,8 @@ describe('store-observer', () => {
 	//TODO add a test to fn callbacks
 
 	//TODO add a test to check specificty contructor param > pre defined
+	//TODO add tests to ditch properties() in singleProperty mode
+
 	it('wraps primitive constructor values with a value field', async () => {
 		assert.property(primitiveStore, 'value');
 		assert.equal(primitiveStore.value, 100);
@@ -140,6 +142,8 @@ describe('store-observer', () => {
 		const el = await fixture(`<${tagPrimitive}></${tagPrimitive}>`);
 		await nextFrame();
 		assert.equal(el.primitiveStore, 100);
+
+		console.log('###', el.primitiveStore.toString());
 		// global change
 		primitiveStore.value++;
 		await nextFrame();

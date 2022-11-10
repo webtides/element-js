@@ -1,6 +1,6 @@
 import { parseAttribute, isNaN, dashToCamel, camelToDash, isObjectLike } from './util/AttributeParser.js';
 import { getClosestParentCustomElementNode, isOfSameNodeType } from './util/DOMHelper.js';
-import { StoreProperty } from './util/StoreProperty.js';
+import { Store } from './util/Store.js';
 
 export { defineElement } from './util/defineElement';
 export { toString } from './util/toString';
@@ -101,7 +101,7 @@ class BaseElement extends HTMLElement {
 
 		// unsubscribe from stores
 		Object.values(this.properties()).forEach((prop) => {
-			if (prop instanceof StoreProperty) {
+			if (prop instanceof Store) {
 				prop.unsubscribe(this);
 			}
 		});
@@ -206,7 +206,7 @@ class BaseElement extends HTMLElement {
 	 * Will trigger update() when a property was changed
 	 */
 	defineProperty(property, value, reflectAttribute = false) {
-		if (value instanceof StoreProperty) {
+		if (value instanceof Store) {
 			value.subscribe(this);
 		}
 
