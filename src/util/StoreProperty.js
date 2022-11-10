@@ -36,18 +36,22 @@ export class StoreProperty {
 		return `${this._state}`;
 	}
 
-	registerObserver(observer) {
-		this._observer.add(observer);
-	}
-
+	/**
+	 * @param {BaseElement|Function} observer
+	 */
 	subscribe(observer) {
 		this._observer.add(observer);
 	}
+	/**
+	 * @param {BaseElement|Function} observer
+	 */
 	unsubscribe(observer) {
 		this._observer.delete(observer);
 	}
 
 	requestUpdate() {
-		this._observer.forEach((observer) => observer.requestUpdate());
+		this._observer.forEach((observer) =>
+			typeof observer.requestUpdate === 'function' ? observer.requestUpdate() : observer(),
+		);
 	}
 }

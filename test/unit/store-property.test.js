@@ -115,6 +115,10 @@ describe('store-observer', () => {
 		assert.equal(el.store.sum, 2);
 	});
 
+	//TODO add a test to unsubscribe aka test removal
+	//TODO add a test to fn callbacks
+
+	//TODO add a test to check specificty contructor param > pre defined
 	it('wraps primitive constructor values with a value field', async () => {
 		assert.property(primitiveStore, 'value');
 		assert.equal(primitiveStore.value, 100);
