@@ -100,9 +100,9 @@ class BaseElement extends HTMLElement {
 		if (this._mutationObserver) this._mutationObserver.disconnect();
 
 		// unsubscribe from stores
-		Object.values(this.properties()).forEach((prop) => {
-			if (prop instanceof Store) {
-				prop.unsubscribe(this);
+		Object.values(this.properties()).forEach((property) => {
+			if (property instanceof Store) {
+				property.unsubscribe(this);
 			}
 		});
 
