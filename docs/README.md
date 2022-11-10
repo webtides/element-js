@@ -429,7 +429,7 @@ correct types of `string`, `number`, `boolean`, `array` and `object`.
 Reactive properties can be fine-tuned further by providing options via the constructor. See `propertyOptions`
 in [Constructor options](#propertyoptions).
 
-#### PropertyStore / shared application state via reactive properties
+#### Store / shared application state via reactive properties
 
 When a certain property in the properties map is an instance of the provided class `StoreProperty` it is treated as an
 external `Store`.
@@ -438,7 +438,7 @@ State.
 When a components´ property is an instance of a `StoreProperty` the instance will be added as an observer and
 automatically updated when the store ist changed.
 
-Instances of PropertyStore provide a way to share global state between as many components in an application as you like.
+Instances of Store provide a way to share global state between as many components in an application as you like.
 Shared State can be something very simple as (updated) Viewport Dimensions, Media Changes or complex fetched data from a REST Endpoint.
 
 ##### store.js

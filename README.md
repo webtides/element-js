@@ -25,9 +25,9 @@ npm install --save @webtides/element-js
 // import { BaseElement, defineElement } from 'https://unpkg.com/@webtides/element-js';
 // import { BaseElement, defineElement } from 'https://cdn.skypack.dev/@webtides/element-js';
 // or when installed via npm
-import { BaseElement, defineElement, StoreProperty } from '@webtides/element-js';
+import { BaseElement, defineElement, Store } from '@webtides/element-js';
 
-const sharedDate = new  StoreProperty({date: Date.now()}) 
+const sharedDate = new  Store({date: Date.now()}) 
 
 class ExampleElement extends BaseElement {
     // normal public properties

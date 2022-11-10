@@ -4,6 +4,6 @@ import { TemplateElement, html } from './src/TemplateElement';
 import { toString } from './src/util/toString';
 import { defineElement } from './src/util/defineElement';
 import { i18n } from './src/util/i18n';
-import { StoreProperty } from './src/util/StoreProperty';
+import { Store } from './src/util/Store';
 
-export { BaseElement, StyledElement, TemplateElement, StoreProperty, html, toString, defineElement, i18n };
+export { BaseElement, StyledElement, TemplateElement, Store, html, toString, defineElement, i18n };
