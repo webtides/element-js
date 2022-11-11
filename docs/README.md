@@ -441,9 +441,11 @@ automatically updated when the store ist changed.
 Instances of Store provide a way to share global state between as many components in an application as you like.
 Shared State can be something very simple as (updated) Viewport Dimensions, Media Changes or complex fetched data from a REST Endpoint.
 
+Stores can also be initialized with a primitive value (Numbers, Booleans). Such stores will switch to a single Property Mode and provide direct access tio the property value via the stores valueOf / toString Function for direct access. 
+
 ##### store.js
 
-```javascript 
+```javascript
 export const simpleStore = new Store({
 	value: 'simple'
 })
@@ -477,8 +479,14 @@ class MediaStore extends Store {
         };
     }
 }
-
 export const mediaStore = new MediaStore()
+
+export const scrollYStore = new Store(0)
+window.addEventListener('scroll', () => {
+	scrollYStore.value = window.scrollY;
+});
+
+
 ```
 
 ##### MyElement.js
@@ -492,7 +500,8 @@ export class MyElement extends TemplateElement {
         return {
             store: simpleStore,
             exampleStore,
-            mediaStore
+            mediaStore,
+            scrollYStore
         };
     }
 
@@ -501,6 +510,7 @@ export class MyElement extends TemplateElement {
         	<div>Simple Store: ${this.store.value} == "simple" </div>
         	<div>Complex Store: ${this.exampleStore.sum} == 2</div>
         	<div>Media: ${this.mediaStore.isMobile ? "MOBILE" : "DESKTOP"}</div>
+        	<div>Scoll Position: ${this.scrollYStore}</div>
         	`
     }
 }

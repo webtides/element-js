@@ -157,6 +157,13 @@ describe('store-observer', () => {
 		assert.isUndefined(complexStore.anotherCount);
 	});
 
+	it('it allows to initialize Primitive Stores with 0', async () => {
+		const primitiveStore = new Store(0);
+		assert.equal(primitiveStore, 0);
+		primitiveStore.value = 100;
+		assert.equal(primitiveStore, 100);
+	});
+
 	it('removes an observer when an observing  element is removed from DOM.  ', async () => {
 		const el = await fixture(`<${tagA}></${tagA}>`);
 		await nextFrame();
