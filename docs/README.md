@@ -461,19 +461,38 @@ class MoreComplexStore extends Store {
 export const exampleStore = new MoreComplexStore({
 	argumentCount: 1
 })
+
+
+class MediaStore extends Store {
+		constructor: () {
+			super();
+			const mql = window.matchMedia('(max-width: 600px)');
+			mql.onchange = (e) => {
+					this.isMobile = e.matches;
+			}
+		}
+    properties() {
+        return {
+            isMobile: true
+        };
+    }
+}
+
+export const mediaStore = new MediaStore()
 ```
 
 ##### MyElement.js
 
 ```javascript 
 
-import { exampleStore, simpleStore } from './store.js'; 
+import { exampleStore, simpleStore, mediaStore } from './store.js'; 
 
 export class MyElement extends TemplateElement {
     properties() {
         return {
             store: simpleStore,
-            exampleStore
+            exampleStore,
+            mediaStore
         };
     }
 
@@ -481,6 +500,7 @@ export class MyElement extends TemplateElement {
         return `
         	<div>Simple Store: ${this.store.value} == "simple" </div>
         	<div>Complex Store: ${this.exampleStore.sum} == 2</div>
+        	<div>Media: ${this.mediaStore.isMobile ? "MOBILE" : "DESKTOP"}</div>
         	`
     }
 }
