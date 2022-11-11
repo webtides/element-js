@@ -115,12 +115,6 @@ describe('store-observer', () => {
 		assert.equal(el.store.sum, 2);
 	});
 
-	//TODO add a test to unsubscribe aka test removal
-	//TODO add a test to fn callbacks
-
-	//TODO add a test to check specificty contructor param > pre defined
-	//TODO add tests to ditch properties() in singleProperty mode
-
 	it('wraps primitive constructor values with a value field', async () => {
 		assert.property(primitiveStore, 'value');
 		assert.equal(primitiveStore.value, 100);
@@ -143,7 +137,6 @@ describe('store-observer', () => {
 		await nextFrame();
 		assert.equal(el.primitiveStore, 100);
 
-		console.log('###', el.primitiveStore.toString());
 		// global change
 		primitiveStore.value++;
 		await nextFrame();
@@ -151,6 +144,17 @@ describe('store-observer', () => {
 		// updates the element
 		assert.equal(el.updateCount, 1);
 		assert.equal(el.primitiveStore, 101);
+	});
+
+	it('it considers Constructor arguments to be more specific than predefined properties', async () => {
+		const complexStore = new ComplexStore({ anotherCount: 200 });
+		assert.equal(complexStore.anotherCount, 200);
+	});
+
+	it('it switches to primitive mode when a primitive value is passed as argument even if the store has a properties() getter', async () => {
+		const complexStore = new ComplexStore(100);
+		assert.equal(complexStore, 100);
+		assert.isUndefined(complexStore.anotherCount);
 	});
 
 	it('removes an observer when an observing  element is removed from DOM.  ', async () => {
@@ -161,5 +165,29 @@ describe('store-observer', () => {
 		await nextFrame();
 
 		assert.equal(simpleStore._observer.has(el), false);
+	});
+	it('calls a callback function when provided via subscribe.', async () => {
+		let testCount = 0;
+		const callback = () => {
+			testCount++;
+		};
+		simpleStore.subscribe(callback);
+		// increment to trogger a change
+		assert.equal(testCount, 0);
+		simpleStore.count++;
+		// means callback was called
+		assert.equal(testCount, 1);
+	});
+
+	it('removes an observer callback function when unsubscribe is called.', async () => {
+		const callback = () => {
+			testCount++;
+		};
+		simpleStore.subscribe(callback);
+		// increment to trogger a change
+		assert.equal(simpleStore._observer.has(callback), true);
+		simpleStore.unsubscribe(callback);
+		// means callback was called
+		assert.equal(simpleStore._observer.has(callback), false);
 	});
 });
