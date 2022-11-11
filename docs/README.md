@@ -429,13 +429,13 @@ correct types of `string`, `number`, `boolean`, `array` and `object`.
 Reactive properties can be fine-tuned further by providing options via the constructor. See `propertyOptions`
 in [Constructor options](#propertyoptions).
 
-#### Store / shared application state via reactive properties
+#### Store / shared application state with reactive properties
 
-When a certain property in the properties map is an instance of the provided class `StoreProperty` it is treated as an
+When a certain property in the properties map is an instance of the provided class `Store` it is treated as an
 external `Store`.
 A `Store` can be created outside of a components´ scope or in a dedicated Module to keep track of shared Application
 State.
-When a components´ property is an instance of a `StoreProperty` the instance will be added as an observer and
+When a components´ property is an instance of a `Store` the instance will be added as an observer and
 automatically updated when the store ist changed.
 
 Instances of Store provide a way to share global state between as many components in an application as you like.
@@ -444,11 +444,11 @@ Shared State can be something very simple as (updated) Viewport Dimensions, Medi
 ##### store.js
 
 ```javascript 
-export const simpleStore = new StoreProperty({
+export const simpleStore = new Store({
 	value: 'simple'
 })
 
-class MoreComplexStore extends StoreProperty {
+class MoreComplexStore extends Store {
     properties() {
         return {
             storeCount: 1
