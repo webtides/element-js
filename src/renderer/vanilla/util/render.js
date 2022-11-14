@@ -1,11 +1,11 @@
 import { TemplateResult } from './html';
 import { processPart } from './processers';
 import {
-	convertStringToTemplate,
-	PERSISTENT_DOCUMENT_FRAGMENT_NODE,
-	getNodePath,
-	ELEMENT_NODE,
 	COMMENT_NODE,
+	convertStringToTemplate,
+	ELEMENT_NODE,
+	getNodePath,
+	PERSISTENT_DOCUMENT_FRAGMENT_NODE,
 } from '../../../util/DOMHelper';
 
 // the prefix is used to tag and reference nodes and attributes to create parts with updates
@@ -54,13 +54,26 @@ export class TemplatePart {
 			// But then we would still have to shim things like TreeWalker and DocumentFragment right?!
 			let parts = partsCache.get(templateResult.strings);
 			if (!parts) {
-				// TODO: lets generate blueprints (type, path, and name) only here
 				parts = this.parseParts(templateResult, this.fragment);
 				partsCache.set(templateResult.strings, parts);
 			}
 
-			// TODO: and then instead of cloning we can create parts here...
-			this.parts = parts.map((part) => part.clone(this.fragment));
+			this.parts = parts.map((part, index) => {
+				// We currently need the path because the fragment will be cloned via importNode and therefore the node will be a different one
+				const node = part.path.reduceRight(({ childNodes }, i) => childNodes[i], this.fragment);
+
+				if (part.type === 'node') {
+					return new ChildNodePart(node, templateResult.values[index]);
+				}
+				if (part.type === 'attribute') {
+					return new AttributePart(node, part.name);
+				}
+				if (part.type === 'text') {
+					return new TextNodePart(node, templateResult.values[index]);
+				}
+
+				throw `cannot map part: ${part}`;
+			});
 			this.strings = templateResult.strings;
 		}
 	}
@@ -84,6 +97,7 @@ export class TemplatePart {
 	// PersistentFragment
 	parseParts(templateResult, fragment) {
 		// we always create a template fragment so that we can start at the root for traversing the node path
+		// TODO: for real dom we need to specify a limit/end node
 		const template = globalThis.document?.createDocumentFragment();
 		for (const childNode of fragment.childNodes) {
 			// TODO: maybe use a range to create a fragment faster?!
@@ -112,21 +126,15 @@ export class TemplatePart {
 					// TODO: do we need markers for parts inside arrays ?! (like lit)
 					// https://lit.dev/playground/#sample=examples/repeating-and-conditional
 
-					const childNodes = [];
-					let childNode = node.nextSibling;
-					while (childNode && childNode.data !== `/${placeholder}`) {
-						childNodes.push(childNode);
-						childNode = childNode.nextSibling;
-					}
-
 					// TODO: instead of ChildNode, lets also create TemplateParts here?!
 					// therefore we probably need a comment/marker node around the template right?!
-					parts.push(new ChildNodePart(node, templateResult.values[i], new PersistentFragment(childNodes)));
+					parts.push({ type: 'node', path: getNodePath(node) });
+					// TODO: ^ could we also start parsing the stack recursively?!
 					placeholder = `${prefix}${++i}`;
 				}
 			} else {
 				while (node.hasAttribute(placeholder)) {
-					parts.push(new AttributePart(node, node.getAttribute(placeholder)));
+					parts.push({ type: 'attribute', path: getNodePath(node), name: node.getAttribute(placeholder) });
 					// the placeholder attribute can be removed once we have our part for processing updates
 					//node.removeAttribute(placeholder);
 					placeholder = `${prefix}${++i}`;
@@ -135,7 +143,7 @@ export class TemplatePart {
 				if (textOnly.test(node.localName) && node.textContent.trim() === `<!--${placeholder}-->`) {
 					node.textContent = '';
 					// TODO: add example to test this case...
-					parts.push(new TextNodePart(node));
+					parts.push({ type: 'text', path: getNodePath(node) });
 					placeholder = `${prefix}${++i}`;
 				}
 			}
@@ -177,41 +185,26 @@ export class TemplatePart {
 export class Part {
 	node = undefined;
 	value = undefined;
-	path = undefined;
 	processor = undefined;
 
 	constructor(node, value) {
 		this.node = node;
 		this.value = value;
-		this.path = getNodePath(node);
-		// TODO: for real dom we need to specify a limit/end node
 	}
 
 	update(newValue, oldValue = this.value) {
 		return this.processor?.(newValue, oldValue);
-	}
-
-	clone(fragment) {
-		const clonedPart = new this.constructor(this.node);
-		clonedPart.processor = processPart(clonedPart, fragment);
-		return clonedPart;
 	}
 }
 
 export class AttributePart extends Part {
 	name = undefined;
 
+	// TODO: this is the actual node
 	constructor(node, name) {
 		super(node);
 		this.name = name;
-	}
-
-	clone(fragment) {
-		// We currently need the path because the fragment will be cloned via importNode and therefore the node will be a different one
-		const node = this.path.reduceRight(({ childNodes }, i) => childNodes[i], fragment);
-		const clonedPart = new AttributePart(node, this.name);
-		clonedPart.processor = processPart(clonedPart);
-		return clonedPart;
+		this.processor = processPart(this);
 	}
 }
 
@@ -221,9 +214,22 @@ export class ChildNodePart extends Part {
 	templatePart = undefined;
 	fragment = undefined;
 
-	constructor(node, value, fragment) {
-		super(node, value);
-		this.fragment = fragment;
+	// TODO: this is the comment node
+	constructor(node, value) {
+		const placeholder = node.data;
+
+		const childNodes = [];
+		let childNode = node.nextSibling;
+		while (childNode && childNode.data !== `/${placeholder}`) {
+			childNodes.push(childNode);
+			childNode = childNode.nextSibling;
+		}
+
+		const endCommentMarker = childNode?.data === `/${placeholder}` ? childNode : node;
+
+		super(endCommentMarker, value);
+		this.fragment = new PersistentFragment(childNodes);
+		this.processor = processPart(this);
 		this.parseValue(value);
 	}
 
@@ -251,29 +257,14 @@ export class ChildNodePart extends Part {
 		}
 		return value;
 	}
-
-	clone(fragment) {
-		// We currently need the path because the fragment will be cloned via importNode and therefore the node will be a different one
-		const startCommentMarker = this.path.reduceRight(({ childNodes }, i) => childNodes[i], fragment);
-
-		const placeholder = startCommentMarker.data;
-
-		const childNodes = [];
-		let childNode = startCommentMarker.nextSibling;
-		while (childNode && childNode.data !== `/${placeholder}`) {
-			childNodes.push(childNode);
-			childNode = childNode.nextSibling;
-		}
-
-		const endCommentMarker = childNode?.data === `/${placeholder}` ? childNode : startCommentMarker;
-
-		const clonedPart = new ChildNodePart(endCommentMarker, this.value, new PersistentFragment(childNodes));
-		clonedPart.processor = processPart(clonedPart);
-		return clonedPart;
-	}
 }
 
-export class TextNodePart extends Part {}
+export class TextNodePart extends Part {
+	constructor(node, value) {
+		super(node, value);
+		this.processor = processPart(this);
+	}
+}
 
 // https://github.com/whatwg/dom/issues/736
 // TODO: maybe I can actually extend the real DocumentFragment? So that I don't have to patch everything else...
