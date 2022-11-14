@@ -48,6 +48,10 @@ export class TemplatePart {
 				this.fragment = new PersistentFragment(fragment);
 			}
 
+			// TODO: maybe we can move this into TemplateResult?!
+			// But then it would run on the server... :(
+			// Maybe we can move it there, but not run it on creation but only when requested...
+			// But then we would still have to shim things like TreeWalker and DocumentFragment right?!
 			let parts = partsCache.get(templateResult.strings);
 			if (!parts) {
 				// TODO: lets generate blueprints (type, path, and name) only here
@@ -115,6 +119,8 @@ export class TemplatePart {
 						childNode = childNode.nextSibling;
 					}
 
+					// TODO: instead of ChildNode, lets also create TemplateParts here?!
+					// therefore we probably need a comment/marker node around the template right?!
 					parts.push(new ChildNodePart(node, templateResult.values[i], new PersistentFragment(childNodes)));
 					placeholder = `${prefix}${++i}`;
 				}
@@ -210,6 +216,7 @@ export class AttributePart extends Part {
 }
 
 // TODO: TemplatePart and ChildNodePart seem to be kind of the same?!
+// after merging, lets name it NodePart ?!
 export class ChildNodePart extends Part {
 	templatePart = undefined;
 	fragment = undefined;
@@ -276,6 +283,7 @@ export class TextNodePart extends Part {}
  */
 export class PersistentFragment {
 	// TODO: maybe name it ^ something like NodeGroup ?!
+	// TODO: I think we can get rid of this ^ if we simply store childNodes[] on TemplatePart/ChildNodePart
 	childNodes = []; // "not live" copy of childNodes
 
 	constructor(node) {
