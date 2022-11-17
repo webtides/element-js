@@ -77,6 +77,7 @@ export class TemplatePart extends Part {
 				this.parts[index].update(values[index]);
 			}
 
+			// TODO: is this really doing the right thing?!
 			return super.update(parsedValue, parsedOldValue);
 		} else {
 			return super.update(value);
@@ -244,6 +245,7 @@ export class AttributePart extends Part {
 	}
 }
 
+// TODO: find a better name because normal Text nodes are handled via TemplatePart/ChildNodePart
 export class TextNodePart extends Part {
 	constructor(node, value) {
 		super(node, value);
@@ -289,6 +291,8 @@ export class PersistentFragment {
 		return this.childNodes[this.childNodes.length - 1];
 	}
 }
+
+// TODO: move dom parts to dom-parts.js file
 
 /**
  * Render a template string into the given DOM node

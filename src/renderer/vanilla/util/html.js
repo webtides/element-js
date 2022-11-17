@@ -89,6 +89,7 @@ export class TemplateResult {
 			}
 		}
 
+		// TODO: this should not be needed for SSR right?!
 		templatePart.update(this);
 	}
 
