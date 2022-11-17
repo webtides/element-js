@@ -14,10 +14,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Changed -->
 <!-- ### Removed -->
 <!-- ### Fixed -->
-## [0.6.0] - 2022-10-??
+## [0.6.0] - 2022-11-17
 
 ### ADDED
 * StoreProperty for shared application state  
+* Directives for Vanilla Renderer
 
 ## [0.5.0] - 2022-09-13
 
