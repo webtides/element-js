@@ -1,7 +1,7 @@
-import { StyledElement } from '../../StyledElement';
-import { html, spreadAttributes, unsafeHTML } from './util/html';
-import { render } from './util/render';
-export { i18n } from '../../util/i18n';
+import { StyledElement } from '../../StyledElement.js';
+import { html, spreadAttributes, unsafeHTML } from './util/html.js';
+import { render } from './util/render.js';
+export { i18n } from '../../util/i18n.js';
 
 class TemplateElement extends StyledElement {
 	static _$templateElement$ = true;

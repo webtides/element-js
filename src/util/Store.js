@@ -1,4 +1,4 @@
-import { isObjectLike } from './AttributeParser';
+import { isObjectLike } from './AttributeParser.js';
 
 export class Store {
 	_observer = new Set();

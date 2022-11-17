@@ -1,4 +1,4 @@
-import { encodeAttribute } from '../../../util/AttributeParser';
+import { encodeAttribute } from '../../../util/AttributeParser.js';
 import { unsafeHTML, spreadAttributes } from './directives.js';
 
 class Part {

@@ -1,7 +1,7 @@
-import { StyledElement } from './StyledElement';
+import { StyledElement } from './StyledElement.js';
 import { html } from 'lit-html';
 import { render } from 'lit-html/lib/shady-render.js';
-export { i18n } from './util/i18n';
+export { i18n } from './util/i18n.js';
 
 class TemplateElement extends StyledElement {
 	constructor(options) {
