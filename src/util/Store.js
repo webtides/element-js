@@ -1,4 +1,4 @@
-import { isObjectLike, isUndefined } from './AttributeParser';
+import { isObjectLike } from './AttributeParser';
 
 export class Store {
 	_observer = new Set();
@@ -7,7 +7,7 @@ export class Store {
 
 	constructor(value) {
 		// wrap primitives with a generic "value" field to generate getter and setter
-		this._singlePropertyMode = !isUndefined(value) && !isObjectLike(value);
+		this._singlePropertyMode = arguments.length > 0 && !isObjectLike(value);
 		const specificValues = this._singlePropertyMode ? { value } : value;
 		this._state = { ...(!this._singlePropertyMode && this.properties()), ...specificValues };
 
