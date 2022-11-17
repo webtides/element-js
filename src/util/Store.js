@@ -17,7 +17,12 @@ export class Store {
 					return this._state[key];
 				},
 				set: (newValue) => {
+					const oldValue = this._state[key];
 					this._state[key] = newValue;
+					const watch = this.watch();
+					if (watch.hasOwnProperty(key) && typeof watch[key] === 'function') {
+						watch[key](newValue, oldValue);
+					}
 					this.requestUpdate();
 				},
 			});
@@ -25,6 +30,16 @@ export class Store {
 	}
 
 	properties() {
+		return {};
+	}
+
+	/**
+	 * When a property as the key was changed in the store, the callback function defined as value
+	 * will be called with `newValue` and `oldValue`
+	 * eg. { property: (oldValue, newValue) => { console.log('property changed!, oldValue, newValue); } }
+	 * @return {{}}
+	 */
+	watch() {
 		return {};
 	}
 

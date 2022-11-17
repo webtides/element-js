@@ -3,7 +3,6 @@ import { fixture, defineCE, assert, nextFrame } from '@open-wc/testing';
 import { BaseElement } from '../../src/BaseElement';
 import { Store } from '../../src/util/Store';
 
-const primitiveStore = new Store(100);
 const simpleStore = new Store({ count: 0 });
 
 class ComplexStore extends Store {
@@ -45,18 +44,9 @@ class ComplexStoreElement extends StoreElement {
 	}
 }
 
-class PrimitiveStoreElement extends StoreElement {
-	properties() {
-		return {
-			primitiveStore,
-		};
-	}
-}
-
 const tagA = defineCE(StoreElement);
 const tagB = defineCE(AnotherStoreElement);
 const tagC = defineCE(ComplexStoreElement);
-const tagPrimitive = defineCE(PrimitiveStoreElement);
 
 describe('store-observer', () => {
 	it('generates reactive store properties from object as constructor argument ', async () => {
@@ -115,15 +105,6 @@ describe('store-observer', () => {
 		assert.equal(el.store.sum, 2);
 	});
 
-	it('wraps primitive constructor values with a value field', async () => {
-		assert.property(primitiveStore, 'value');
-		assert.equal(primitiveStore.value, 100);
-	});
-
-	it('adds a shortcut getter to valueOf if _state contains only one value', async () => {
-		assert.equal(primitiveStore, 100);
-	});
-
 	it('does not add a value field when constructor Elements are ObjectLike', async () => {
 		assert.notProperty(complexStore, 'value');
 	});
@@ -132,36 +113,9 @@ describe('store-observer', () => {
 		assert.isObject(complexStore.valueOf());
 	});
 
-	it('adds a setter to a primitive value via the value setter.', async () => {
-		const el = await fixture(`<${tagPrimitive}></${tagPrimitive}>`);
-		await nextFrame();
-		assert.equal(el.primitiveStore, 100);
-
-		// global change
-		primitiveStore.value++;
-		await nextFrame();
-
-		// updates the element
-		assert.equal(el.updateCount, 1);
-		assert.equal(el.primitiveStore, 101);
-	});
-
 	it('it considers Constructor arguments to be more specific than predefined properties', async () => {
 		const complexStore = new ComplexStore({ anotherCount: 200 });
 		assert.equal(complexStore.anotherCount, 200);
-	});
-
-	it('it switches to primitive mode when a primitive value is passed as argument even if the store has a properties() getter', async () => {
-		const complexStore = new ComplexStore(100);
-		assert.equal(complexStore, 100);
-		assert.isUndefined(complexStore.anotherCount);
-	});
-
-	it('it allows to initialize Primitive Stores with 0', async () => {
-		const primitiveStore = new Store(0);
-		assert.equal(primitiveStore, 0);
-		primitiveStore.value = 100;
-		assert.equal(primitiveStore, 100);
 	});
 
 	it('removes an observer when an observing  element is removed from DOM.  ', async () => {
