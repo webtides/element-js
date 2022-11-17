@@ -2,8 +2,8 @@ import { parseAttribute, isNaN, dashToCamel, camelToDash, isObjectLike } from '.
 import { getClosestParentCustomElementNode, isOfSameNodeType } from './util/DOMHelper.js';
 import { Store } from './util/Store.js';
 
-export { defineElement } from './util/defineElement';
-export { toString } from './util/toString';
+export { defineElement } from './util/defineElement.js';
+export { toString } from './util/toString.js';
 
 class BaseElement extends HTMLElement {
 	constructor(options = {}) {
@@ -17,6 +17,7 @@ class BaseElement extends HTMLElement {
 		this._options = {
 			autoUpdate: true,
 			deferUpdate: true,
+			provideContext: true,
 			mutationObserverOptions: {
 				attributes: true,
 				childList: true,
@@ -44,6 +45,9 @@ class BaseElement extends HTMLElement {
 
 		// define all computed properties to "this"
 		this.defineComputedProperties();
+
+		// define context
+		this.defineContext();
 
 		// define everything that should be observed
 		this.defineObserver();
@@ -95,6 +99,10 @@ class BaseElement extends HTMLElement {
 	disconnectedCallback() {
 		// remove events for elements in the component
 		this.removeEvents();
+
+		if (this._options.provideContext) {
+			this.removeEventListener('request-context', this.onRequestContext);
+		}
 
 		// remove observers
 		if (this._mutationObserver) this._mutationObserver.disconnect();
@@ -292,6 +300,45 @@ class BaseElement extends HTMLElement {
 			}
 			this.setAttribute(camelToDash(property), attributeValue);
 		}
+	}
+
+	/**
+	 * Context Properties to issue Context Requests and to pull contextual properties into the elements scope
+	 * @return {{}}
+	 */
+	context() {
+		return {};
+	}
+
+	/**
+	 * Defines context on the element based on keys from this.context()
+	 */
+	defineContext() {
+		Object.entries(this.context()).forEach(([key, value]) => {
+			this.dispatch('request-context', { [key]: value }, true);
+		});
+		// define context provider
+		if (this._options.provideContext) {
+			this.addEventListener('request-context', this.onRequestContext);
+		}
+	}
+
+	onRequestContext(event) {
+		const properties = this.properties();
+
+		Object.entries(event.detail ?? {}).forEach(([key, callback]) => {
+			if (properties.hasOwnProperty(key)) {
+				// found it, provide it
+				event.stopPropagation();
+				if (typeof callback === 'function') {
+					// call function with context value
+					callback(properties[key]);
+				} else {
+					// auto define as prop
+					event.target.defineProperty(key, properties[key]);
+				}
+			}
+		});
 	}
 
 	// Deprecated
