@@ -77,6 +77,7 @@ export class TemplateResult {
 		let templatePart = templateParts.get(domNode);
 		if (!templatePart) {
 			templatePart = new TemplatePart(
+				undefined, // TODO
 				this,
 				domNode.childNodes.length > 0 ? new PersistentFragment(domNode) : undefined,
 			);

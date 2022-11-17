@@ -19,8 +19,25 @@ const textOnly = /^(?:textarea|script|style|title|plaintext|xmp)$/;
 const partsCache = new WeakMap();
 const fragmentsCache = new WeakMap();
 
-// Interpolation?! Substitution?! Value?! Hole?!
-export class TemplatePart {
+export class Part {
+	node = undefined;
+	value = undefined;
+	processor = undefined;
+
+	constructor(node, value) {
+		this.node = node;
+		this.value = value;
+	}
+
+	update(newValue, oldValue = this.value) {
+		if (this.node) {
+			return this.processor?.(newValue, oldValue);
+		}
+	}
+}
+
+// TODO: after merging, lets name it NodePart ?!
+export class TemplatePart extends Part {
 	// Used to remember parent template state as we recurse into nested templates
 	parts = [];
 	strings = undefined;
@@ -28,17 +45,75 @@ export class TemplatePart {
 	fragment = undefined; // PersistentFragment
 	values = undefined;
 
-	// TemplateResult | array, PersistentFragment
-	constructor(templateResult, fragment) {
+	// commentNode, TemplateResult | array, PersistentFragment
+	constructor(node, value, fragment) {
+		super(node, value);
 		this.fragment = fragment;
-		this.prepare(templateResult);
+		this.value = this.parseValue(value);
+		if (node) this.processor = processPart(this);
 	}
 
-	prepare(templateResult) {
-		if (Array.isArray(templateResult)) {
-			//templateResult as values
-			this.values = this.parseValues(templateResult);
-		} else if (this.strings !== templateResult.strings) {
+	parseValue(value) {
+		if (Array.isArray(value)) {
+			return this.parseArray(value);
+		}
+		if (value instanceof TemplateResult) {
+			this.parseTemplateResult(value);
+			return this.fragment;
+		}
+		return value;
+	}
+
+	update(value) {
+		if (value instanceof TemplateResult || Array.isArray(value)) {
+			const parsedValue = this.parseValue(value);
+			const parsedOldValue = this.value;
+			this.value = parsedValue;
+
+			const values = Array.isArray(value) ? value : value.values;
+
+			for (let index = 0; index < values.length; index++) {
+				// TODO: parts and values might have different lengths?!
+				this.parts[index].update(values[index]);
+			}
+
+			return super.update(parsedValue, parsedOldValue);
+		} else {
+			return super.update(value);
+		}
+	}
+
+	// nested TemplateResults values need to be unrolled in order for update functions to be able to process them
+	parseArray(values) {
+		const parsedValues = [];
+		for (let index = 0; index < values.length; index++) {
+			let value = values[index];
+			const node = this.fragment?.childNodes?.[index];
+
+			if (value instanceof TemplateResult || Array.isArray(value)) {
+				let templatePart = this.parts[index];
+				if (!templatePart) {
+					templatePart = new TemplatePart(
+						undefined, // TODO
+						value,
+						node ? new PersistentFragment([node]) : undefined,
+					);
+					this.parts[index] = templatePart;
+				} else {
+					templatePart.update(value);
+				}
+
+				parsedValues[index] = templatePart.valueOf();
+			} else {
+				parsedValues[index] = value;
+			}
+		}
+
+		return parsedValues;
+	}
+
+	parseTemplateResult(templateResult) {
+		if (this.strings !== templateResult.strings) {
 			if (!this.fragment) {
 				let fragment = fragmentsCache.get(templateResult.strings);
 				if (!fragment) {
@@ -63,7 +138,19 @@ export class TemplatePart {
 				const node = part.path.reduceRight(({ childNodes }, i) => childNodes[i], this.fragment);
 
 				if (part.type === 'node') {
-					return new ChildNodePart(node, templateResult.values[index]);
+					const placeholder = node.data;
+
+					const childNodes = [];
+					let childNode = node.nextSibling;
+					while (childNode && childNode.data !== `/${placeholder}`) {
+						childNodes.push(childNode);
+						childNode = childNode.nextSibling;
+					}
+
+					const endCommentMarker = childNode?.data === `/${placeholder}` ? childNode : node;
+
+					const fragment = new PersistentFragment(childNodes);
+					return new TemplatePart(endCommentMarker, templateResult.values[index], fragment);
 				}
 				if (part.type === 'attribute') {
 					return new AttributePart(node, part.name);
@@ -75,17 +162,6 @@ export class TemplatePart {
 				throw `cannot map part: ${part}`;
 			});
 			this.strings = templateResult.strings;
-		}
-	}
-
-	update(templateResult) {
-		this.prepare(templateResult);
-
-		const values = Array.isArray(templateResult) ? templateResult : templateResult.values;
-
-		for (let index = 0; index < values.length; index++) {
-			// TODO: parts and values might have different lengths?!
-			this.parts[index].update(values[index]);
 		}
 	}
 
@@ -151,49 +227,9 @@ export class TemplatePart {
 		return parts;
 	}
 
-	// nested TemplateResults values need to be unrolled in order for update functions to be able to process them
-	parseValues(values) {
-		const parsedValues = [];
-		for (let index = 0; index < values.length; index++) {
-			let value = values[index];
-			const node = this.fragment?.childNodes?.[index];
-
-			if (value instanceof TemplateResult || Array.isArray(value)) {
-				let templatePart = this.parts[index];
-				if (!templatePart) {
-					templatePart = new TemplatePart(value, node ? new PersistentFragment([node]) : undefined);
-					this.parts[index] = templatePart;
-				} else {
-					templatePart.update(value);
-				}
-
-				parsedValues[index] = templatePart.valueOf();
-			} else {
-				parsedValues[index] = value;
-			}
-		}
-
-		return parsedValues;
-	}
-
 	valueOf() {
 		// TemplateResult | Array
 		return this.values ? this.values : this.fragment;
-	}
-}
-
-export class Part {
-	node = undefined;
-	value = undefined;
-	processor = undefined;
-
-	constructor(node, value) {
-		this.node = node;
-		this.value = value;
-	}
-
-	update(newValue, oldValue = this.value) {
-		return this.processor?.(newValue, oldValue);
 	}
 }
 
@@ -205,57 +241,6 @@ export class AttributePart extends Part {
 		super(node);
 		this.name = name;
 		this.processor = processPart(this);
-	}
-}
-
-// TODO: TemplatePart and ChildNodePart seem to be kind of the same?!
-// after merging, lets name it NodePart ?!
-export class ChildNodePart extends Part {
-	templatePart = undefined;
-	fragment = undefined;
-
-	// TODO: this is the comment node
-	constructor(node, value) {
-		const placeholder = node.data;
-
-		const childNodes = [];
-		let childNode = node.nextSibling;
-		while (childNode && childNode.data !== `/${placeholder}`) {
-			childNodes.push(childNode);
-			childNode = childNode.nextSibling;
-		}
-
-		const endCommentMarker = childNode?.data === `/${placeholder}` ? childNode : node;
-
-		super(endCommentMarker, value);
-		this.fragment = new PersistentFragment(childNodes);
-		this.processor = processPart(this);
-		this.parseValue(value);
-	}
-
-	update(newValue) {
-		const parsedValue = this.parseValue(newValue);
-		const parsedOldValue = this.parseValue(this.value);
-		this.value = newValue;
-		this.templatePart?.update(newValue);
-		return super.update(parsedValue, parsedOldValue);
-	}
-
-	// nested TemplateResults values need to be unrolled in order for update functions to be able to process them
-	// TODO: I don't like that we do parse values here and in TemplatePart/ValuePart...
-	parseValue(value) {
-		if (value instanceof TemplateResult || Array.isArray(value)) {
-			let templatePart = this.templatePart;
-			if (!templatePart) {
-				templatePart = new TemplatePart(value, this.fragment);
-				this.templatePart = templatePart;
-			} else {
-				templatePart.update(value);
-			}
-
-			return templatePart.valueOf();
-		}
-		return value;
 	}
 }
 

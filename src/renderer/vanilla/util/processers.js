@@ -1,5 +1,5 @@
 import { COMMENT_NODE, DOCUMENT_FRAGMENT_NODE, ELEMENT_NODE } from '../../../util/DOMHelper';
-import { AttributePart, ChildNodePart, PersistentFragment } from './render';
+import { AttributePart, PersistentFragment, TemplatePart } from './render';
 
 const processBooleanAttribute = (node, name, oldValue) => {
 	return (newValue) => {
@@ -299,7 +299,7 @@ export const processAttributePart = (node, name) => {
 };
 
 export function processPart(part) {
-	if (part instanceof ChildNodePart) {
+	if (part instanceof TemplatePart) {
 		return processNodePart(part.node);
 	}
 
