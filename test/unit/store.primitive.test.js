@@ -17,7 +17,7 @@ class ComplexStore extends Store {
 	}
 }
 
-const complexStore = new ComplexStore({ count: 0 });
+const complexStoreWithoutParam = new ComplexStore();
 
 class StoreElement extends BaseElement {
 	updateCount = 0;
@@ -79,5 +79,9 @@ describe('store-observer', () => {
 		assert.equal(primitiveStore, 0);
 		primitiveStore.value = 100;
 		assert.equal(primitiveStore, 100);
+	});
+
+	it('does not enter singlePropertyMode if no argument is passed to constructor', async () => {
+		assert.equal(complexStoreWithoutParam.anotherCount, 0);
 	});
 });

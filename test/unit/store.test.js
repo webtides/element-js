@@ -11,15 +11,12 @@ class ComplexStore extends Store {
 			anotherCount: 0,
 		};
 	}
-
 	get sum() {
 		return this.count + this.anotherCount;
 	}
 }
 
 const complexStore = new ComplexStore({ count: 0 });
-
-const complexStoreWithoutParam = new ComplexStore();
 
 class StoreElement extends BaseElement {
 	updateCount = 0;
@@ -113,10 +110,6 @@ describe('store-observer', () => {
 
 	it('does not adds a shortcut getter to valueOf if _state contains more than one value', async () => {
 		assert.isObject(complexStore.valueOf());
-	});
-
-	it('does not enter singlePropertyMode if no argument is passed to constructor', async () => {
-		assert.equal(complexStoreWithoutParam.anotherCount, 0);
 	});
 
 	it('it considers Constructor arguments to be more specific than predefined properties', async () => {
