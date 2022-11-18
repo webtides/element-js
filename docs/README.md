@@ -427,12 +427,14 @@ correct types of `string`, `number`, `boolean`, `array` and `object`.
 #### Property options
 
 Reactive properties can be fine-tuned further by providing options via the constructor. See `propertyOptions`
-in [Constructor options](#propertyoptions).
+in [Constructor options](#property-options).
 
 #### Store / shared application state with reactive properties
 
 When a certain property in the properties map is an instance of the provided class `Store` it is treated as an
 external `Store`.
+Store Properties can also be [watched](#watchers) to build some Logic on Top of Property Changes like sending values to a REST Service and update the internal state / other properties.
+
 A `Store` can be created outside of a components´ scope or in a dedicated Module to keep track of shared Application
 State.
 When a components´ property is an instance of a `Store` the instance will be added as an observer and
@@ -441,7 +443,7 @@ automatically updated when the store ist changed.
 Instances of Store provide a way to share global state between as many components in an application as you like.
 Shared State can be something very simple as (updated) Viewport Dimensions, Media Changes or complex fetched data from a REST Endpoint.
 
-Stores can also be initialized with a primitive value (Numbers, Booleans). Such stores will switch to a single Property Mode and provide direct access tio the property value via the stores valueOf / toString Function for direct access. 
+Stores can also be initialized with a primitive value (Numbers, Booleans). Such stores will switch to a single Property Mode and provide direct access tio the property value via the stores valueOf / toString Function for direct access.
 
 ##### store.js
 
@@ -453,9 +455,21 @@ export const simpleStore = new Store({
 class MoreComplexStore extends Store {
     properties() {
         return {
-            storeCount: 1
+            storeCount: 1,
+						oldStoreCount: null,
+						doubleStoreCount: null
         };
     }
+		watch() {
+			return {
+				storeCount: (newValue, oldValue) => {
+					console.log('Store Property changed', {newValue, oldValue});
+          // do sth fancy with the newValue            
+          this.doubleStoreCount = this.storeCount * 2;          
+          this.oldStoreCount = oldValue;          
+				}
+			};
+		}
     get sum() {
         return this.storeCount + this.argumentCount;
     }
