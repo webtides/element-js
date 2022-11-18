@@ -17,7 +17,14 @@ class CounterStore extends Store {
 class ProvideContext extends TemplateElement {
 	// reactive attributes/properties
 	constructor() {
-		super({ shadowRender: true });
+		super({
+			shadowRender: true,
+			propertyOptions: {
+				counterStore: {
+					provide: true,
+				},
+			},
+		});
 	}
 	properties() {
 		return {
@@ -26,7 +33,7 @@ class ProvideContext extends TemplateElement {
 	}
 	template() {
 		return html`
-			<div>Provider: ${this.counterStore.count}</div>
+			<div>Store Provider: ${this.counterStore.count}</div>
 			<slot></slot>
 		`;
 	}

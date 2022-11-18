@@ -24,7 +24,8 @@
 					callback(vanillaContext);
 				} else {
 					// auto define as prop
-					event.target.defineProperty('vanillaContext', vanillaContext);
+					//event.target.defineProperty('vanillaContext', vanillaContext);
+					event.target['vanillaContext'] = vanillaContext;
 				}
 			}
 		} )

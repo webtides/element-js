@@ -246,6 +246,10 @@ class BaseElement extends HTMLElement {
 				if (JSON.stringify(oldValue) !== newValueString) {
 					this._state[property] = newValue;
 
+					if (newValue instanceof Store) {
+						newValue.subscribe(this);
+					}
+
 					if (reflectAttribute || this._options.propertyOptions[property]?.reflect) {
 						this.reflectProperty({ property, newValue, newValueString });
 					}
@@ -314,28 +318,34 @@ class BaseElement extends HTMLElement {
 	 * Defines context on the element based on keys from this.context()
 	 */
 	defineContext() {
-		Object.entries(this.context()).forEach(([key, value]) => {
-			this.dispatch('request-context', { [key]: value }, true);
+		Object.entries(this.properties()).forEach(([key, value]) => {
+			if (this._options.propertyOptions[key]?.inject === true) {
+				this.requestContext(key, value);
+			}
 		});
 		// define context provider
-		if (this._options.provideContext) {
+		if (Object.values(this._options.propertyOptions).find((option) => option.provide === true)) {
 			this.addEventListener('request-context', this.onRequestContext);
 		}
+	}
+
+	requestContext(property, callback) {
+		this.dispatch('request-context', { [property]: callback }, true);
 	}
 
 	onRequestContext(event) {
 		const properties = this.properties();
 
 		Object.entries(event.detail ?? {}).forEach(([key, callback]) => {
-			if (properties.hasOwnProperty(key)) {
+			if (this._options.propertyOptions[key]?.provide === true && properties.hasOwnProperty(key)) {
 				// found it, provide it
 				event.stopPropagation();
 				if (typeof callback === 'function') {
 					// call function with context value
 					callback(properties[key]);
 				} else {
-					// auto define as prop
-					event.target.defineProperty(key, properties[key]);
+					// set property via setter
+					event.target[key] = properties[key];
 				}
 			}
 		});

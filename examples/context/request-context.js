@@ -1,28 +1,40 @@
 import { defineElement, html, TemplateElement } from '../../src/renderer/vanilla/index.js';
 
 class RequestContext extends TemplateElement {
+	constructor() {
+		super({
+			propertyOptions: {
+				counterStore: {
+					inject: true,
+				},
+				vanillaContext: {
+					inject: true,
+				},
+			},
+		});
+	}
+
 	properties() {
 		return {
+			counterStore: undefined,
+			vanillaContext: '',
 			callBackCalled: '',
 		};
 	}
-	// reactive attributes/properties
-	context() {
-		return {
-			counterStore: {},
-			otherContext: (context) => {
-				this.callBackCalled = context;
-			},
-			vanillaContext: '',
-		};
+
+	connected() {
+		this.requestContext('otherContext', (context) => {
+			this.callBackCalled = context;
+		});
 	}
+
 	template() {
 		return html`<div>
-			Context Count: ${this.counterStore?.count ?? 0}
+			VIA PROP / STOREContext Count: ${this.counterStore?.count ?? 0}
 			<br />
-			Callback: ${this.callBackCalled}
+			VIA Callback: ${this.callBackCalled}
 			<br />
-			Vanilla: ${this.vanillaContext}
+			VIA Vanilla: ${this.vanillaContext}
 		</div>`;
 	}
 }
