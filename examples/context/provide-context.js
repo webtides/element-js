@@ -34,7 +34,7 @@ class ProvideContext extends TemplateElement {
 
 	template() {
 		return html`
-			<div>Provider: ${this.counterStore.count}</div>
+			<div>Store Provider: ${this.counterStore.count}</div>
 			<slot></slot>
 		`;
 	}

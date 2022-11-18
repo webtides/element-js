@@ -14,7 +14,7 @@ class OtherProvideContext extends TemplateElement {
 	}
 	properties() {
 		return {
-			otherContext: 'i am a callback context',
+			otherContext: 'i am a other context',
 		};
 	}
 

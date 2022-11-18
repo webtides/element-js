@@ -24,7 +24,7 @@
 					callback(vanillaContext);
 				} else {
 					// auto define as prop
-					event.target.defineProperty('vanillaContext', vanillaContext);
+					event.target['vanillaContext'] = vanillaContext;
 				}
 			}
 		} )
@@ -41,7 +41,7 @@
 			<request-context class="block p-4 border-2 border-red-500"></request-context>
 		</other-provide-context>
 
-		<h1>NO CONTEXT</h1>
+		<h1>VANILLA CONTEXT</h1>
 		<request-context class="block p-4 border-2 border-red-500"></request-context>
 	</body>
 </html>

@@ -284,7 +284,7 @@ class BaseElement extends HTMLElement {
 
 		// shall property bei provided to context requests
 		if (this._options.propertyOptions[property]?.requestContext) {
-			this.dispatch('request-context', { [property]: value }, true);
+			this.doRequestContext(property, value);
 		}
 	}
 
@@ -316,6 +316,13 @@ class BaseElement extends HTMLElement {
 		}
 	}
 
+	doRequestContext(property, callback) {
+		this.dispatch('request-context', { [property]: callback }, true);
+	}
+
+	/**
+	 * catch context requests and provide data if there is some
+	 * */
 	onRequestContext(event) {
 		const properties = this.properties();
 
@@ -327,13 +334,11 @@ class BaseElement extends HTMLElement {
 					// call function with context value
 					callback(properties[key]);
 				} else {
-					// auto define as prop
-
-					// TODO NO! DO NOT! CHANGE!
-					delete event.target._state['key'];
-					console.log(event.target, event.target[key], properties[key]);
-					event.target.defineProperty(key, properties[key]);
-					console.log(event.target, event.target[key]);
+					const property = properties[key];
+					event.target[key] = property;
+					if (property instanceof Store) {
+						property.subscribe(event.target);
+					}
 				}
 			}
 		});

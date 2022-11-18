@@ -10,29 +10,35 @@ class RequestContext extends TemplateElement {
 				vanillaContext: {
 					requestContext: true,
 				},
-				otherContext: {
-					requestContext: (context) => {
-						this.callBackCalled = context;
-					},
-				},
 			},
 		});
 	}
+
 	properties() {
 		return {
 			callBackCalled: '',
+			vanillaContext: '',
 			counterStore: {},
 		};
 	}
+
+	connected() {
+		super.connected();
+
+		this.doRequestContext('otherContext', (context) => {
+			this.callBackCalled = context;
+		});
+	}
+
 	// reactive attributes/properties
 
 	template() {
 		return html`<div>
-			Context Count: ${this.counterStore?.count ?? 0}
+			VIA PROP / STOREContext Count: ${this.counterStore?.count ?? 0}
 			<br />
-			Callback: ${this.callBackCalled}
+			VIA Callback: ${this.callBackCalled}
 			<br />
-			Vanilla: ${this.vanillaContext}
+			VIA Vanilla: ${this.vanillaContext}
 		</div>`;
 	}
 }
