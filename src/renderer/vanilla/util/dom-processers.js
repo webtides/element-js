@@ -1,5 +1,5 @@
 import { COMMENT_NODE, DOCUMENT_FRAGMENT_NODE, ELEMENT_NODE } from '../../../util/DOMHelper';
-import { AttributePart, PersistentFragment, TemplatePart } from './render';
+import { AttributePart, PersistentFragment, TemplatePart } from './dom-parts';
 
 const processBooleanAttribute = (node, name, oldValue) => {
 	return (newValue) => {
