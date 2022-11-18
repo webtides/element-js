@@ -3,13 +3,21 @@ import { TemplateElement, defineElement, html } from '../../src/renderer/vanilla
 class OtherProvideContext extends TemplateElement {
 	// reactive attributes/properties
 	constructor() {
-		super({ shadowRender: true });
+		super({
+			shadowRender: true,
+			propertyOptions: {
+				otherContext: {
+					provideContext: true,
+				},
+			},
+		});
 	}
 	properties() {
 		return {
 			otherContext: 'i am a callback context',
 		};
 	}
+
 	template() {
 		return html`
 			<div>Other Provider: ${this.otherContext}</div>

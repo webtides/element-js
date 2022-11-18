@@ -100,9 +100,7 @@ class BaseElement extends HTMLElement {
 		// remove events for elements in the component
 		this.removeEvents();
 
-		if (this._options.provideContext) {
-			this.removeEventListener('request-context', this.onRequestContext);
-		}
+		this.removeEventListener('request-context', this.onRequestContext);
 
 		// remove observers
 		if (this._mutationObserver) this._mutationObserver.disconnect();
@@ -283,6 +281,11 @@ class BaseElement extends HTMLElement {
 				return this;
 			},
 		});
+
+		// shall property bei provided to context requests
+		if (this._options.propertyOptions[property]?.requestContext) {
+			this.dispatch('request-context', { [property]: value }, true);
+		}
 	}
 
 	reflectProperty(options) {
@@ -303,22 +306,12 @@ class BaseElement extends HTMLElement {
 	}
 
 	/**
-	 * Context Properties to issue Context Requests and to pull contextual properties into the elements scope
-	 * @return {{}}
-	 */
-	context() {
-		return {};
-	}
-
-	/**
 	 * Defines context on the element based on keys from this.context()
 	 */
 	defineContext() {
-		Object.entries(this.context()).forEach(([key, value]) => {
-			this.dispatch('request-context', { [key]: value }, true);
-		});
 		// define context provider
-		if (this._options.provideContext) {
+		if (Object.values(this._options.propertyOptions).find((option) => option.provideContext === true)) {
+			// at least one property that provides Context
 			this.addEventListener('request-context', this.onRequestContext);
 		}
 	}
@@ -327,7 +320,7 @@ class BaseElement extends HTMLElement {
 		const properties = this.properties();
 
 		Object.entries(event.detail ?? {}).forEach(([key, callback]) => {
-			if (properties.hasOwnProperty(key)) {
+			if (this._options.propertyOptions[key]?.provideContext === true && properties.hasOwnProperty(key)) {
 				// found it, provide it
 				event.stopPropagation();
 				if (typeof callback === 'function') {
@@ -335,7 +328,12 @@ class BaseElement extends HTMLElement {
 					callback(properties[key]);
 				} else {
 					// auto define as prop
+
+					// TODO NO! DO NOT! CHANGE!
+					delete event.target._state['key'];
+					console.log(event.target, event.target[key], properties[key]);
 					event.target.defineProperty(key, properties[key]);
+					console.log(event.target, event.target[key]);
 				}
 			}
 		});
