@@ -18,9 +18,7 @@ const textOnly = /^(?:textarea|script|style|title|plaintext|xmp)$/;
 const empty = /^(?:area|base|br|col|embed|hr|img|input|keygen|link|menuitem|meta|param|source|track|wbr)$/i;
 const elements = /<([a-z]+[a-z0-9:._-]*)([^>]*?)(\/?)>/g;
 const attributes = /([^\s\\>"'=]+)\s*=\s*(['"]?)\x01/g;
-// TODO: find a better name for holes...
-const holes = /[\x01\x02]/g;
-
+const partPositions = /[\x01\x02]/g;
 // \x01 Node.ELEMENT_NODE
 // \x02 Node.ATTRIBUTE_NODE
 
@@ -28,8 +26,8 @@ const rename = /([^\s>]+)[\s\S]*$/;
 const interpolation = new RegExp(`(<!--${prefix}(\\d+)--><!--/${prefix}(\\d+)-->|\\s*${prefix}(\\d+)=([^\\s>]))`, 'g');
 
 /**
- * Given a template, find holes as both nodes and attributes and
- * return a string with holes as either comment nodes or named attributes.
+ * Given a template, find part positions as both nodes and attributes and
+ * return a string with placeholders as either comment nodes or named attributes.
  * @param {string[]} template a template literal tag array
  * @param {string} prefix prefix to use per each comment/attribute
  * @param {boolean} svg enforces self-closing tags
@@ -45,8 +43,8 @@ const createTemplateString = (template, prefix) => {
 			if (selfClosing.length) ml += empty.test(name) ? ' /' : '></' + name;
 			return '<' + ml + '>';
 		})
-		.replace(holes, (hole) =>
-			hole === '\x01' ? '<!--' + prefix + i + '--><!--/' + prefix + i++ + '-->' : prefix + i++,
+		.replace(partPositions, (partPosition) =>
+			partPosition === '\x01' ? '<!--' + prefix + i + '--><!--/' + prefix + i++ + '-->' : prefix + i++,
 		);
 };
 
@@ -70,8 +68,18 @@ export class Part {
 	}
 }
 
-// TODO: after merging, lets name it NodePart ?!
-export class TemplatePart extends Part {
+export class AttributePart extends Part {
+	name = undefined;
+
+	// TODO: this is the actual node
+	constructor(node, name) {
+		super(node);
+		this.name = name;
+		this.processor = processPart(this);
+	}
+}
+
+export class ChildNodePart extends Part {
 	// Used to remember parent template state as we recurse into nested templates
 	parts = [];
 	strings = undefined;
@@ -126,19 +134,19 @@ export class TemplatePart extends Part {
 			const node = this.fragment?.childNodes?.[index];
 
 			if (value instanceof TemplateResult || Array.isArray(value)) {
-				let templatePart = this.parts[index];
-				if (!templatePart) {
-					templatePart = new TemplatePart(
+				let childNodePart = this.parts[index];
+				if (!childNodePart) {
+					childNodePart = new ChildNodePart(
 						undefined, // TODO
 						value,
 						node ? new PersistentFragment([node]) : undefined,
 					);
-					this.parts[index] = templatePart;
+					this.parts[index] = childNodePart;
 				} else {
-					templatePart.update(value);
+					childNodePart.update(value);
 				}
 
-				parsedValues[index] = templatePart.valueOf();
+				parsedValues[index] = childNodePart.valueOf();
 			} else {
 				parsedValues[index] = value;
 			}
@@ -185,13 +193,13 @@ export class TemplatePart extends Part {
 					const endCommentMarker = childNode?.data === `/${placeholder}` ? childNode : node;
 
 					const fragment = new PersistentFragment(childNodes);
-					return new TemplatePart(endCommentMarker, templateResult.values[index], fragment);
+					return new ChildNodePart(endCommentMarker, templateResult.values[index], fragment);
 				}
 				if (part.type === 'attribute') {
 					return new AttributePart(node, part.name);
 				}
 				if (part.type === 'text') {
-					return new TextNodePart(node, templateResult.values[index]);
+					return new TextOnlyNodePart(node, templateResult.values[index]);
 				}
 
 				throw `cannot map part: ${part}`;
@@ -237,7 +245,6 @@ export class TemplatePart extends Part {
 					// TODO: do we need markers for parts inside arrays ?! (like lit)
 					// https://lit.dev/playground/#sample=examples/repeating-and-conditional
 
-					// TODO: instead of ChildNode, lets also create TemplateParts here?!
 					// therefore we probably need a comment/marker node around the template right?!
 					parts.push({ type: 'node', path: getNodePath(node) });
 					// TODO: ^ could we also start parsing the stack recursively?!
@@ -268,19 +275,7 @@ export class TemplatePart extends Part {
 	}
 }
 
-export class AttributePart extends Part {
-	name = undefined;
-
-	// TODO: this is the actual node
-	constructor(node, name) {
-		super(node);
-		this.name = name;
-		this.processor = processPart(this);
-	}
-}
-
-// TODO: find a better name because normal Text nodes are handled via TemplatePart/ChildNodePart
-export class TextNodePart extends Part {
+export class TextOnlyNodePart extends Part {
 	constructor(node, value) {
 		super(node, value);
 		this.processor = processPart(this);
@@ -288,15 +283,13 @@ export class TextNodePart extends Part {
 }
 
 // https://github.com/whatwg/dom/issues/736
-// TODO: maybe I can actually extend the real DocumentFragment? So that I don't have to patch everything else...
 /**
  * Keeps the references of child nodes after they have been added/inserted into a real document
  * other than a "normal" Fragment that will be empty after such operations
  */
 export class PersistentFragment {
-	// TODO: maybe name it ^ something like NodeGroup ?!
-	// TODO: I think we can get rid of this ^ if we simply store childNodes[] on TemplatePart/ChildNodePart
-	childNodes = []; // "not live" copy of childNodes
+	// TODO: I think we can get rid of this ^ if we simply store childNodes[] on ChildNodePart
+	childNodes = [];
 
 	constructor(node) {
 		if (node instanceof DocumentFragment) {
@@ -349,9 +342,8 @@ const getValue = (value) => {
 	return value == null ? '' : encodeAttribute(String(value));
 };
 
-// TODO: these are not templates?! But rather Updates?! I'm not sure uf updates is the right term either...
-const parsedTemplates = new WeakMap();
-const templateParts = new WeakMap();
+const parsedUpdates = new WeakMap();
+const childNodeParts = new WeakMap();
 
 export class TemplateResult {
 	constructor(strings, ...values) {
@@ -360,23 +352,23 @@ export class TemplateResult {
 	}
 
 	renderInto(domNode) {
-		let templatePart = templateParts.get(domNode);
-		if (!templatePart) {
-			templatePart = new TemplatePart(
+		let childNodePart = childNodeParts.get(domNode);
+		if (!childNodePart) {
+			childNodePart = new ChildNodePart(
 				undefined, // TODO
 				this,
 				domNode.childNodes.length > 0 ? new PersistentFragment(domNode) : undefined,
 			);
-			templateParts.set(domNode, templatePart);
+			childNodeParts.set(domNode, childNodePart);
 
 			// TODO: maybe we could have a root marker and look for that?!
 			if (domNode.childNodes.length === 0) {
-				domNode.replaceChildren(...templatePart.fragment.childNodes);
+				domNode.replaceChildren(...childNodePart.fragment.childNodes);
 			}
 		}
 
 		// TODO: this should not be needed for SSR right?!
-		templatePart.update(this);
+		childNodePart.update(this);
 	}
 
 	parse(strings, expectedLength) {
@@ -499,18 +491,13 @@ export class TemplateResult {
 	}
 
 	toString() {
-		let updates = parsedTemplates.get(this.strings);
+		let updates = parsedUpdates.get(this.strings);
 
 		if (!updates) {
 			updates = this.parse(this.strings, this.values.length);
-			parsedTemplates.set(this.strings, updates);
+			parsedUpdates.set(this.strings, updates);
 		}
 
-		return this.values.length ? this.values.map(update, updates).join('') : updates[0]();
+		return this.values.length ? this.values.map((value, index) => updates[index](value)).join('') : updates[0]();
 	}
-}
-
-// TODO: WTF?!
-function update(value, i) {
-	return this[i](value);
 }

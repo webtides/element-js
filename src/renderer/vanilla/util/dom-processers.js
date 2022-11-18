@@ -1,5 +1,5 @@
 import { COMMENT_NODE, DOCUMENT_FRAGMENT_NODE, ELEMENT_NODE } from '../../../util/DOMHelper';
-import { AttributePart, PersistentFragment, TemplatePart } from './dom-parts';
+import { AttributePart, PersistentFragment, ChildNodePart } from './dom-parts';
 
 const processBooleanAttribute = (node, name, oldValue) => {
 	return (newValue) => {
@@ -53,13 +53,12 @@ const processAttribute = (node, name) => {
 	};
 };
 
-// TODO: can we get rid of this stupid code?!
-const remove = ({ firstChild, lastChild }) => {
+const remove = (node) => {
 	const range = globalThis.document?.createRange();
-	range.setStartAfter(firstChild);
-	range.setEndAfter(lastChild);
+	range.setStartAfter(node.firstChild);
+	range.setEndAfter(node.lastChild);
 	range.deleteContents();
-	return firstChild;
+	return node.firstChild;
 };
 
 const diffNodes = function (parentNode, domChildNodes, templateChildNodes, anchorNode) {
@@ -299,7 +298,7 @@ export const processAttributePart = (node, name) => {
 };
 
 export function processPart(part) {
-	if (part instanceof TemplatePart) {
+	if (part instanceof ChildNodePart) {
 		return processNodePart(part.node);
 	}
 
