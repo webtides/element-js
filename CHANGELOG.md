@@ -14,6 +14,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Changed -->
 <!-- ### Removed -->
 <!-- ### Fixed -->
+## [0.6.1] - 2022-11-18
+
+### FIXED
+* Store always switching to singleProperty Mode if constructed without any arguments.    
+
+### ADDED
+* Store watch() map to control internal store state scope
+
 ## [0.6.0] - 2022-11-17
 
 ### ADDED

@@ -1,6 +1,6 @@
 {
 	"name": "@webtides/element-js",
-	"version": "0.6.0",
+	"version": "0.6.1",
 	"module": "index.js",
 	"main": "dist/index.js",
 	"files": [
