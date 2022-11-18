@@ -13,6 +13,7 @@ class RequestContext extends TemplateElement {
 			otherContext: (context) => {
 				this.callBackCalled = context;
 			},
+			vanillaContext: '',
 		};
 	}
 	template() {
@@ -20,6 +21,8 @@ class RequestContext extends TemplateElement {
 			Context Count: ${this.counterStore?.count ?? 0}
 			<br />
 			Callback: ${this.callBackCalled}
+			<br />
+			Vanilla: ${this.vanillaContext}
 		</div>`;
 	}
 }
