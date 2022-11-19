@@ -244,7 +244,7 @@ export class Part {
 		this.value = value;
 	}
 
-	update(newValue, oldValue = this.value) {
+	update(newValue, oldValue) {
 		if (this.node) {
 			return this.processor?.(newValue, oldValue);
 		}
@@ -326,7 +326,7 @@ export class ChildNodePart extends Part {
 					);
 					this.parts[index] = childNodePart;
 				} else {
-					childNodePart.update(value);
+					childNodePart.parseValue(value);
 				}
 
 				parsedValues[index] = childNodePart.valueOf();
