@@ -25,7 +25,7 @@ class RequestContext extends TemplateElement {
 	connected() {
 		super.connected();
 
-		this.doRequestContext('otherContext', (context) => {
+		this.requestContext('otherContext', (context) => {
 			this.callBackCalled = context;
 		});
 	}

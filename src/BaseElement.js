@@ -17,7 +17,6 @@ class BaseElement extends HTMLElement {
 		this._options = {
 			autoUpdate: true,
 			deferUpdate: true,
-			provideContext: true,
 			mutationObserverOptions: {
 				attributes: true,
 				childList: true,
@@ -244,6 +243,10 @@ class BaseElement extends HTMLElement {
 				if (JSON.stringify(oldValue) !== newValueString) {
 					this._state[property] = newValue;
 
+					if (newValue instanceof Store) {
+						newValue.subscribe(this);
+					}
+
 					if (reflectAttribute || this._options.propertyOptions[property]?.reflect) {
 						this.reflectProperty({ property, newValue, newValueString });
 					}
@@ -284,7 +287,7 @@ class BaseElement extends HTMLElement {
 
 		// shall property bei provided to context requests
 		if (this._options.propertyOptions[property]?.requestContext) {
-			this.doRequestContext(property, value);
+			this.requestContext(property, value);
 		}
 	}
 
@@ -316,13 +319,10 @@ class BaseElement extends HTMLElement {
 		}
 	}
 
-	doRequestContext(property, callback) {
+	requestContext(property, callback) {
 		this.dispatch('request-context', { [property]: callback }, true);
 	}
 
-	/**
-	 * catch context requests and provide data if there is some
-	 * */
 	onRequestContext(event) {
 		const properties = this.properties();
 
@@ -334,11 +334,8 @@ class BaseElement extends HTMLElement {
 					// call function with context value
 					callback(properties[key]);
 				} else {
-					const property = properties[key];
-					event.target[key] = property;
-					if (property instanceof Store) {
-						property.subscribe(event.target);
-					}
+					// set property via setter
+					event.target[key] = properties[key];
 				}
 			}
 		});
