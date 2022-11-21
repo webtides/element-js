@@ -1,6 +1,6 @@
 import { COMMENT_NODE, convertStringToTemplate, getNodePath } from '../../../util/DOMHelper.js';
 import { Part } from './Part.js';
-import { processPart } from './dom-processers.js';
+import { processNodePart } from './dom-processers.js';
 import { prefix, TemplateResult, textOnly } from './TemplateResult.js';
 import { PersistentFragment } from './PersistentFragment.js';
 import { AttributePart } from './AttributePart.js';
@@ -22,7 +22,7 @@ export class ChildNodePart extends Part {
 		super(node, value);
 		this.fragment = fragment;
 		this.value = this.parseValue(value);
-		if (node) this.processor = processPart(this);
+		if (node) this.processor = processNodePart(this.node);
 	}
 
 	parseValue(value) {

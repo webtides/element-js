@@ -298,17 +298,3 @@ export const processAttributePart = (node, name) => {
 	// normal "string" attribute: attribute=${...}
 	return processAttribute(node, name);
 };
-
-// TODO: this can be done in the parts classes directly!
-export function processPart(part) {
-	if (part instanceof ChildNodePart) {
-		return processNodePart(part.node);
-	}
-
-	if (part instanceof AttributePart) {
-		return processAttributePart(part.node, part.name);
-	}
-
-	// TODO: this is not used right now right?! Find a use and implement it correctly!
-	return text(part.node);
-}

@@ -1,4 +1,4 @@
-import { processPart } from './dom-processers.js';
+import { processAttributePart } from './dom-processers.js';
 import { Part } from './Part.js';
 
 export class AttributePart extends Part {
@@ -8,6 +8,6 @@ export class AttributePart extends Part {
 	constructor(node, name) {
 		super(node);
 		this.name = name;
-		this.processor = processPart(this);
+		this.processor = processAttributePart(this.node, this.name);
 	}
 }
