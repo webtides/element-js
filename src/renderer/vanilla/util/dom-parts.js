@@ -81,8 +81,11 @@ export class TemplateResult {
 	}
 
 	renderInto(domNode) {
+		let serverSideRendered = false;
 		let childNodePart = childNodeParts.get(domNode);
 		if (!childNodePart) {
+			// TODO: find a better way to get the comment node here...
+			serverSideRendered = domNode.innerHTML.trim().startsWith('<!--template-result-->');
 			childNodePart = new ChildNodePart(
 				undefined, // TODO
 				this,
@@ -96,8 +99,10 @@ export class TemplateResult {
 			}
 		}
 
-		// TODO: this should not be needed for SSR right?!
-		childNodePart.update(this);
+		// TODO; if this is expensive - performance wise - we could have a hydrate only method instead of calling renderInto for all the cases?!
+		if (!serverSideRendered) {
+			childNodePart.update(this);
+		}
 	}
 
 	parse(strings, expectedLength) {
