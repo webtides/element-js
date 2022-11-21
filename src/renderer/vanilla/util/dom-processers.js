@@ -1,7 +1,5 @@
 import { COMMENT_NODE, DOCUMENT_FRAGMENT_NODE, ELEMENT_NODE } from '../../../util/DOMHelper.js';
 import { PersistentFragment } from './PersistentFragment.js';
-import { ChildNodePart } from './ChildNodePart.js';
-import { AttributePart } from './AttributePart.js';
 
 const processBooleanAttribute = (node, name, oldValue) => {
 	return (newValue) => {
