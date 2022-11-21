@@ -17,7 +17,6 @@ class BaseElement extends HTMLElement {
 		this._options = {
 			autoUpdate: true,
 			deferUpdate: true,
-			provideContext: true,
 			mutationObserverOptions: {
 				attributes: true,
 				childList: true,
@@ -100,7 +99,7 @@ class BaseElement extends HTMLElement {
 		// remove events for elements in the component
 		this.removeEvents();
 
-		if (this._options.provideContext) {
+		if (Object.keys(this.provideProperties()).length > 0) {
 			this.removeEventListener('request-context', this.onRequestContext);
 		}
 
