@@ -1,5 +1,5 @@
 import { camelToDash, decodeAttribute, encodeAttribute } from '../../../util/AttributeParser';
-import { TemplateResult } from './dom-parts';
+import { TemplateResult } from './TemplateResult';
 
 const html = function (strings, ...values) {
 	return new TemplateResult(strings, ...values);

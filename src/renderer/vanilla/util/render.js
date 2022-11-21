@@ -1,5 +1,3 @@
-import { TemplateResult } from './dom-parts';
-
 /**
  * Render a template string into the given DOM node
  * @param {TemplateResult | string} template

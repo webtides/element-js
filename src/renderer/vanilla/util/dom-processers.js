@@ -1,5 +1,7 @@
-import { COMMENT_NODE, DOCUMENT_FRAGMENT_NODE, ELEMENT_NODE } from '../../../util/DOMHelper';
-import { AttributePart, PersistentFragment, ChildNodePart } from './dom-parts';
+import { COMMENT_NODE, DOCUMENT_FRAGMENT_NODE, ELEMENT_NODE } from '../../../util/DOMHelper.js';
+import { PersistentFragment } from './PersistentFragment.js';
+import { ChildNodePart } from './ChildNodePart.js';
+import { AttributePart } from './AttributePart.js';
 
 const processBooleanAttribute = (node, name, oldValue) => {
 	return (newValue) => {
@@ -297,6 +299,7 @@ export const processAttributePart = (node, name) => {
 	return processAttribute(node, name);
 };
 
+// TODO: this can be done in the parts classes directly!
 export function processPart(part) {
 	if (part instanceof ChildNodePart) {
 		return processNodePart(part.node);
