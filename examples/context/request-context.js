@@ -5,10 +5,10 @@ class RequestContext extends TemplateElement {
 		super({
 			propertyOptions: {
 				counterStore: {
-					requestContext: true,
+					inject: true,
 				},
 				vanillaContext: {
-					requestContext: true,
+					inject: true,
 				},
 			},
 		});

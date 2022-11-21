@@ -286,7 +286,7 @@ class BaseElement extends HTMLElement {
 		});
 
 		// shall property bei provided to context requests
-		if (this._options.propertyOptions[property]?.requestContext) {
+		if (this._options.propertyOptions[property]?.inject) {
 			this.requestContext(property, value);
 		}
 	}
@@ -313,7 +313,7 @@ class BaseElement extends HTMLElement {
 	 */
 	defineContext() {
 		// define context provider
-		if (Object.values(this._options.propertyOptions).find((option) => option.provideContext === true)) {
+		if (Object.values(this._options.propertyOptions).find((option) => option.provide === true)) {
 			// at least one property that provides Context
 			this.addEventListener('request-context', this.onRequestContext);
 		}
@@ -327,7 +327,7 @@ class BaseElement extends HTMLElement {
 		const properties = this.properties();
 
 		Object.entries(event.detail ?? {}).forEach(([key, callback]) => {
-			if (this._options.propertyOptions[key]?.provideContext === true && properties.hasOwnProperty(key)) {
+			if (this._options.propertyOptions[key]?.provide === true && properties.hasOwnProperty(key)) {
 				// found it, provide it
 				event.stopPropagation();
 				if (typeof callback === 'function') {

@@ -7,7 +7,7 @@ class OtherProvideContext extends TemplateElement {
 			shadowRender: true,
 			propertyOptions: {
 				otherContext: {
-					provideContext: true,
+					provide: true,
 				},
 			},
 		});

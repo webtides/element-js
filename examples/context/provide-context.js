@@ -21,7 +21,7 @@ class ProvideContext extends TemplateElement {
 			shadowRender: true,
 			propertyOptions: {
 				counterStore: {
-					provideContext: true,
+					provide: true,
 				},
 			},
 		});
