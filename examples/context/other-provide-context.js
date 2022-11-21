@@ -10,6 +10,11 @@ class OtherProvideContext extends TemplateElement {
 			otherContext: 'i am a callback context',
 		};
 	}
+	provideProperties() {
+		return {
+			otherContext: this.otherContext,
+		};
+	}
 	template() {
 		return html`
 			<div>Other Provider: ${this.otherContext}</div>

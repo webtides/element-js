@@ -6,15 +6,21 @@ class RequestContext extends TemplateElement {
 			callBackCalled: '',
 		};
 	}
+
 	// reactive attributes/properties
-	context() {
+	injectProperties() {
 		return {
 			counterStore: {},
-			otherContext: (context) => {
-				this.callBackCalled = context;
-			},
 			vanillaContext: '',
 		};
+	}
+
+	connected() {
+		super.connected();
+		// make callback requests implicit
+		this.requestContext('otherContext', (context) => {
+			this.callBackCalled = context;
+		});
 	}
 	template() {
 		return html`<div>

@@ -47,7 +47,7 @@ class BaseElement extends HTMLElement {
 		this.defineComputedProperties();
 
 		// define context
-		this.defineContext();
+		this.definePropertyInjection();
 
 		// define everything that should be observed
 		this.defineObserver();
@@ -197,7 +197,7 @@ class BaseElement extends HTMLElement {
 	 * Will trigger update() when a property was changed
 	 */
 	defineProperties() {
-		Object.keys(this.properties()).forEach((prop) => {
+		Object.keys({ ...this.injectProperties(), ...this.properties() }).forEach((prop) => {
 			// when mixing shadow dom elements with light dom elements and nesting custom elements
 			// it might occur that properties where set on an element before it was
 			// registered or connected. To avoid such timing issues we check
@@ -245,6 +245,10 @@ class BaseElement extends HTMLElement {
 
 				if (JSON.stringify(oldValue) !== newValueString) {
 					this._state[property] = newValue;
+
+					if (newValue instanceof Store) {
+						newValue.subscribe(this);
+					}
 
 					if (reflectAttribute || this._options.propertyOptions[property]?.reflect) {
 						this.reflectProperty({ property, newValue, newValueString });
@@ -306,36 +310,49 @@ class BaseElement extends HTMLElement {
 	 * Context Properties to issue Context Requests and to pull contextual properties into the elements scope
 	 * @return {{}}
 	 */
-	context() {
+	injectProperties() {
+		return {};
+	}
+
+	/**
+	 * Define which properties that can be provided to children
+	 * @return {{}}
+	 */
+	provideProperties() {
 		return {};
 	}
 
 	/**
 	 * Defines context on the element based on keys from this.context()
 	 */
-	defineContext() {
-		Object.entries(this.context()).forEach(([key, value]) => {
-			this.dispatch('request-context', { [key]: value }, true);
+	definePropertyInjection() {
+		Object.entries(this.injectProperties()).forEach(([key, value]) => {
+			this.requestContext(key, value);
 		});
 		// define context provider
-		if (this._options.provideContext) {
+		if (Object.keys(this.provideProperties()).length > 0) {
 			this.addEventListener('request-context', this.onRequestContext);
 		}
 	}
 
+	requestContext(propertyName, valueOrCallback) {
+		this.dispatch('request-context', { [propertyName]: valueOrCallback }, true);
+	}
+
 	onRequestContext(event) {
 		const properties = this.properties();
+		const provideProperties = this.provideProperties();
 
-		Object.entries(event.detail ?? {}).forEach(([key, callback]) => {
-			if (properties.hasOwnProperty(key)) {
+		Object.entries(event.detail ?? {}).forEach(([key, valueOrCallback]) => {
+			if (provideProperties.hasOwnProperty(key) && this.hasOwnProperty(key)) {
 				// found it, provide it
 				event.stopPropagation();
-				if (typeof callback === 'function') {
+				if (typeof valueOrCallback === 'function') {
 					// call function with context value
-					callback(properties[key]);
+					valueOrCallback(properties[key]);
 				} else {
-					// auto define as prop
-					event.target.defineProperty(key, properties[key]);
+					// assign to prop
+					event.target[key] = properties[key];
 				}
 			}
 		});
