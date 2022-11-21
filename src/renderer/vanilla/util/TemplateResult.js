@@ -25,7 +25,6 @@ const interpolation = new RegExp(`(<!--${prefix}(\\d+)--><!--/${prefix}(\\d+)-->
  * return a string with placeholders as either comment nodes or named attributes.
  * @param {string[]} template a template literal tag array
  * @param {string} prefix prefix to use per each comment/attribute
- * @param {boolean} svg enforces self-closing tags
  * @returns {string} X/HTML with prefixed comments or attributes
  */
 const createTemplateString = (template, prefix) => {
