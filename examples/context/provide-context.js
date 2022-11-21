@@ -24,6 +24,9 @@ class ProvideContext extends TemplateElement {
 			counterStore: new CounterStore({ count: 1 }),
 		};
 	}
+	provideProperties() {
+		return { counterStore: this.counterStore };
+	}
 	template() {
 		return html`
 			<div>Provider: ${this.counterStore.count}</div>
