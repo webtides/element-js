@@ -1,7 +1,7 @@
 /**
  * Render a template string into the given DOM node
  * @param {TemplateResult | string} template
- * @param {Node} domNode
+ * @param {Element} domNode
  */
 const render = (template, domNode) => {
 	// TODO: template could be a string ?!

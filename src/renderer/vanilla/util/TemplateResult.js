@@ -70,11 +70,18 @@ const parsedUpdates = new WeakMap();
 const childNodeParts = new WeakMap();
 
 export class TemplateResult {
+	/**
+	 * @param {TemplateStringsArray} strings
+	 * @param {any[]} values
+	 */
 	constructor(strings, ...values) {
 		this.strings = strings;
 		this.values = values;
 	}
 
+	/**
+	 * @param {Element} domNode
+	 */
 	renderInto(domNode) {
 		let serverSideRendered = false;
 		let childNodePart = childNodeParts.get(domNode);
@@ -100,6 +107,11 @@ export class TemplateResult {
 		}
 	}
 
+	/**
+	 * @param {String[]} strings
+	 * @param {Number} expectedLength
+	 * @return {*[]}
+	 */
 	parse(strings, expectedLength) {
 		const html = createTemplateString(strings, prefix);
 		const updates = [];
@@ -270,8 +282,6 @@ export class TemplateResult {
 	/**
 	 * find interpolations in the given template for nodes and attributes and
 	 * return a string with placeholders as either comment nodes or named attributes.
-	 * @param {string[]} strings a template literal tag array
-	 * @param {string} prefix prefix to use per each comment/attribute
 	 * @returns {string} template with tagged placeholders for values
 	 */
 	get templateString() {

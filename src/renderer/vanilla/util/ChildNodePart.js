@@ -6,18 +6,30 @@ import { PersistentFragment } from './PersistentFragment.js';
 import { AttributePart } from './AttributePart.js';
 import { TextOnlyNodePart } from './TextOnlyNodePart.js';
 
+/** @type {Map<TemplateStringsArray, Part[]>} */
 const partsCache = new WeakMap();
+
+// TODO: don't allow DocumentFragments to be inserted here
+/** @type {Map<TemplateStringsArray, PersistentFragment | DocumentFragment>} */
 const fragmentsCache = new WeakMap();
 
 export class ChildNodePart extends Part {
-	// Used to remember parent template state as we recurse into nested templates
-	parts = [];
+	/** @type {Part[]} */
+	parts = []; // Used to remember parent template state as we recurse into nested templates
+
+	// TODO: instead of using the strings array, we should use a hash of the strings maybe?
+	/** @type {TemplateStringsArray} */
 	strings = undefined;
 
-	fragment = undefined; // PersistentFragment
+	/** @type {PersistentFragment} */
+	fragment = undefined;
 	values = undefined;
 
-	// commentNode, TemplateResult | array, PersistentFragment
+	/**
+	 * @param {Node} node - the comment node
+	 * @param {TemplateResult | any[]} value
+	 * @param {PersistentFragment | undefined} fragment
+	 */
 	constructor(node, value, fragment) {
 		super(node, value);
 		this.fragment = fragment;
@@ -25,6 +37,10 @@ export class ChildNodePart extends Part {
 		if (node) this.processor = processNodePart(this.node);
 	}
 
+	/**
+	 * @param {TemplateResult | any[]} value
+	 * @return {any[] | PersistentFragment}
+	 */
 	parseValue(value) {
 		if (Array.isArray(value)) {
 			return this.parseArray(value);
@@ -36,6 +52,10 @@ export class ChildNodePart extends Part {
 		return value;
 	}
 
+	/**
+	 * @param {any} value
+	 * @return {*}
+	 */
 	update(value) {
 		if (value instanceof TemplateResult || Array.isArray(value)) {
 			const parsedValue = this.parseValue(value);
@@ -56,7 +76,11 @@ export class ChildNodePart extends Part {
 		}
 	}
 
-	// nested TemplateResults values need to be unrolled in order for update functions to be able to process them
+	/**
+	 * Nested TemplateResults values need to be unrolled in order for update functions to be able to process them
+	 * @param {any[]} values
+	 * @return {any[]}
+	 */
 	parseArray(values) {
 		const parsedValues = [];
 		for (let index = 0; index < values.length; index++) {
@@ -85,6 +109,9 @@ export class ChildNodePart extends Part {
 		return parsedValues;
 	}
 
+	/**
+	 * @param {TemplateResult} templateResult
+	 */
 	parseTemplateResult(templateResult) {
 		if (this.strings !== templateResult.strings) {
 			if (!this.fragment) {
@@ -134,11 +161,18 @@ export class ChildNodePart extends Part {
 		}
 	}
 
+	/**
+	 * @param {TemplateResult} templateResult
+	 * @return {DocumentFragment}
+	 */
 	parseFragment(templateResult) {
 		const templateString = templateResult.templateString;
 		return convertStringToTemplate(templateString);
 	}
 
+	/**
+	 * @return {any[] | PersistentFragment}
+	 */
 	valueOf() {
 		// TemplateResult | Array
 		return this.values ? this.values : this.fragment;
