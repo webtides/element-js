@@ -165,8 +165,8 @@ export const processNodePart = (comment) => {
 	let oldValue;
 	let text;
 	let nodes = [];
-	// TODO: rename anyContent to something meaningful?!
-	const anyContent = (newValue, oldValue) => {
+
+	const processNodeValue = (newValue, oldValue) => {
 		switch (typeof newValue) {
 			// primitives are handled as text content
 			case 'string':
@@ -237,7 +237,7 @@ export const processNodePart = (comment) => {
 						nodes = diffNodes(comment.parentNode, nodes, newValue, comment);
 					}
 					// in all other cases the value is stringified
-					else anyContent(String(newValue));
+					else processNodeValue(String(newValue));
 					oldValue = newValue;
 					break;
 				}
@@ -254,16 +254,17 @@ export const processNodePart = (comment) => {
 						);
 					} else {
 						const value = newValue.valueOf();
-						if (value !== newValue) anyContent(value);
+						if (value !== newValue) processNodeValue(value);
 					}
 				}
 				break;
 			case 'function':
-				anyContent(newValue(comment));
+				processNodeValue(newValue(comment));
 				break;
 		}
 	};
-	return anyContent;
+
+	return processNodeValue;
 };
 
 export const processAttributePart = (node, name) => {
