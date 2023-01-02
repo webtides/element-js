@@ -1,4 +1,4 @@
-import { PERSISTENT_DOCUMENT_FRAGMENT_NODE } from '../../../util/DOMHelper.js';
+import { ELEMENT_NODE, PERSISTENT_DOCUMENT_FRAGMENT_NODE } from '../../../util/DOMHelper.js';
 
 // https://github.com/whatwg/dom/issues/736
 /**
