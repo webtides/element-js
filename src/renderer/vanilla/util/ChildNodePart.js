@@ -1,7 +1,7 @@
-import { COMMENT_NODE, convertStringToTemplate, getNodePath } from '../../../util/DOMHelper.js';
+import { convertStringToTemplate } from '../../../util/DOMHelper.js';
 import { Part } from './Part.js';
 import { processNodePart } from './dom-processers.js';
-import { prefix, TemplateResult, textOnly } from './TemplateResult.js';
+import { TemplateResult } from './TemplateResult.js';
 import { PersistentFragment } from './PersistentFragment.js';
 import { AttributePart } from './AttributePart.js';
 import { TextOnlyNodePart } from './TextOnlyNodePart.js';
@@ -96,13 +96,9 @@ export class ChildNodePart extends Part {
 				this.fragment = new PersistentFragment(fragment);
 			}
 
-			// TODO: maybe we can move this into TemplateResult?!
-			// But then it would run on the server... :(
-			// Maybe we can move it there, but not run it on creation but only when requested...
-			// But then we would still have to shim things like TreeWalker and DocumentFragment right?!
 			let parts = partsCache.get(templateResult.strings);
 			if (!parts) {
-				parts = this.parseParts(templateResult, this.fragment);
+				parts = templateResult.parseParts(this.fragment);
 				partsCache.set(templateResult.strings, parts);
 			}
 
@@ -141,63 +137,6 @@ export class ChildNodePart extends Part {
 	parseFragment(templateResult) {
 		const templateString = templateResult.templateString;
 		return convertStringToTemplate(templateString);
-	}
-
-	// PersistentFragment
-	parseParts(templateResult, fragment) {
-		// we always create a template fragment so that we can start at the root for traversing the node path
-		// TODO: for real dom we need to specify a limit/end node
-		const template = globalThis.document?.createDocumentFragment();
-		for (const childNode of fragment.childNodes) {
-			// TODO: maybe use a range to create a fragment faster?!
-			template.append(childNode.cloneNode(true));
-		}
-
-		// TODO: if attributes had comment nodes as well we could omit traversing all normal elements and just loop over comments - should be way faster...
-		const tw = globalThis.document?.createTreeWalker(template, 1 | 128);
-		const parts = [];
-		const length = templateResult.strings.length - 1;
-		let i = 0;
-		let placeholder = `${prefix}${i}`;
-		// search for parts through numbered placeholders
-		// <div dom-part-0="attribute" dom-part-1="another-attribute"><!--dom-part-2--><span><!--dom-part-3--</span></div>
-		while (i < length) {
-			const node = tw.nextNode();
-
-			// TODO: this is not a good way to handle this...
-			// because the template string looks perfectly fine - it is rather not a real DocumentFragment?!
-			if (!node) {
-				console.log('bad template:', templateResult, fragment);
-				throw `bad template: ${templateResult.templateString}`;
-			}
-
-			if (node.nodeType === COMMENT_NODE) {
-				if (node.data === `${placeholder}`) {
-					// TODO: do we need markers for parts inside arrays ?! (like lit)
-					// https://lit.dev/playground/#sample=examples/repeating-and-conditional
-
-					// therefore we probably need a comment/marker node around the template right?!
-					parts.push({ type: 'node', path: getNodePath(node) });
-					// TODO: ^ could we also start parsing the stack recursively?!
-					placeholder = `${prefix}${++i}`;
-				}
-			} else {
-				while (node.hasAttribute(placeholder)) {
-					parts.push({ type: 'attribute', path: getNodePath(node), name: node.getAttribute(placeholder) });
-					// the placeholder attribute can be removed once we have our part for processing updates
-					//node.removeAttribute(placeholder);
-					placeholder = `${prefix}${++i}`;
-				}
-				// if the node is a text-only node, check its content for a placeholder
-				if (textOnly.test(node.localName) && node.textContent.trim() === `<!--${placeholder}-->`) {
-					node.textContent = '';
-					// TODO: add example to test this case...
-					parts.push({ type: 'text', path: getNodePath(node) });
-					placeholder = `${prefix}${++i}`;
-				}
-			}
-		}
-		return parts;
 	}
 
 	valueOf() {

@@ -1,3 +1,4 @@
+import { COMMENT_NODE, getNodePath } from '../../../util/DOMHelper';
 import { encodeAttribute } from '../../../util/AttributeParser.js';
 import { ChildNodePart } from './ChildNodePart.js';
 import { PersistentFragment } from './PersistentFragment.js';
@@ -204,6 +205,66 @@ export class TemplateResult {
 			updates[length - 1] = (value) => last(value) + chunk;
 		} else updates.push(() => html);
 		return updates;
+	}
+
+	/**
+	 * @param {PersistentFragment} fragment
+	 * @return {Part[]}
+	 */
+	parseParts(fragment) {
+		// we always create a template fragment so that we can start at the root for traversing the node path
+		// TODO: if we wanted to use real dom, we need to specify a limit/end node
+		const template = globalThis.document?.createDocumentFragment();
+		for (const childNode of fragment.childNodes) {
+			// TODO: maybe use a range to create a fragment faster?!
+			template.append(childNode.cloneNode(true));
+		}
+
+		// TODO: if attributes had comment nodes as well we could omit traversing all normal elements and just loop over comments - should be way faster...
+		const tw = globalThis.document?.createTreeWalker(template, 1 | 128);
+		const parts = [];
+		const length = this.strings.length - 1;
+		let i = 0;
+		let placeholder = `${prefix}${i}`;
+		// search for parts through numbered placeholders
+		// <div dom-part-0="attribute" dom-part-1="another-attribute"><!--dom-part-2--><span><!--dom-part-3--</span></div>
+		while (i < length) {
+			const node = tw.nextNode();
+
+			// TODO: this is not a good way to handle this...
+			// because the template string looks perfectly fine - it is rather not a real DocumentFragment?!
+			if (!node) {
+				console.log('bad template:', this, fragment);
+				throw `bad template: ${this.templateString}`;
+			}
+
+			if (node.nodeType === COMMENT_NODE) {
+				if (node.data === `${placeholder}`) {
+					// TODO: do we need markers for parts inside arrays ?! (like lit)
+					// https://lit.dev/playground/#sample=examples/repeating-and-conditional
+
+					// therefore we probably need a comment/marker node around the template right?!
+					parts.push({ type: 'node', path: getNodePath(node) });
+					// TODO: ^ could we also start parsing the stack recursively?!
+					placeholder = `${prefix}${++i}`;
+				}
+			} else {
+				while (node.hasAttribute(placeholder)) {
+					parts.push({ type: 'attribute', path: getNodePath(node), name: node.getAttribute(placeholder) });
+					// the placeholder attribute can be removed once we have our part for processing updates
+					//node.removeAttribute(placeholder);
+					placeholder = `${prefix}${++i}`;
+				}
+				// if the node is a text-only node, check its content for a placeholder
+				if (textOnly.test(node.localName) && node.textContent.trim() === `<!--${placeholder}-->`) {
+					node.textContent = '';
+					// TODO: add example to test this case...
+					parts.push({ type: 'text', path: getNodePath(node) });
+					placeholder = `${prefix}${++i}`;
+				}
+			}
+		}
+		return parts;
 	}
 
 	/**
