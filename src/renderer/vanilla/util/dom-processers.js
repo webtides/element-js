@@ -161,9 +161,10 @@ const diffNodes = function (parentNode, domChildNodes, templateChildNodes, ancho
 	return templateChildNodes;
 };
 
+// this is for string values to be inserted into the DOM. A cached TextNode will be used so that we don't have to constantly create new DOM nodes.
+let cachedTextNode = undefined;
+
 export const processNodePart = (comment) => {
-	let oldValue;
-	let text;
 	let nodes = [];
 
 	const processNodeValue = (newValue, oldValue) => {
@@ -174,18 +175,18 @@ export const processNodePart = (comment) => {
 			case 'boolean':
 				if (oldValue !== newValue) {
 					oldValue = newValue;
-					if (!text) text = globalThis.document?.createTextNode('');
-					text.data = newValue;
+					if (!cachedTextNode) cachedTextNode = globalThis.document?.createTextNode('');
+					cachedTextNode.data = newValue;
 
 					if (comment.previousSibling?.data === comment.data.replace('/', '')) {
 						// the part is empty - we haven't rendered it yet
-						comment.parentNode.insertBefore(text, comment);
+						comment.parentNode.insertBefore(cachedTextNode, comment);
 					} else {
 						// the part was already rendered (either server side or on the client)
 						comment.previousSibling.data = newValue;
 					}
 
-					nodes = [text];
+					nodes = [cachedTextNode];
 				}
 				break;
 			// null (= typeof "object") and undefined are used to clean up previous content
