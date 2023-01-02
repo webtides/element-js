@@ -161,11 +161,10 @@ const diffNodes = function (parentNode, domChildNodes, templateChildNodes, ancho
 	return templateChildNodes;
 };
 
-// this is for string values to be inserted into the DOM. A cached TextNode will be used so that we don't have to constantly create new DOM nodes.
-let cachedTextNode = undefined;
-
 export const processNodePart = (comment) => {
 	let nodes = [];
+	// this is for string values to be inserted into the DOM. A cached TextNode will be used so that we don't have to constantly create new DOM nodes.
+	let cachedTextNode = undefined;
 
 	const processNodeValue = (newValue, oldValue) => {
 		switch (typeof newValue) {
