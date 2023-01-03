@@ -24,9 +24,6 @@ export class ChildNodePart extends Part {
 	/** @type {PersistentFragment} */
 	fragment = undefined;
 
-	// TODO: do we really need this here? And if so should it not be just value?!
-	values = undefined;
-
 	/**
 	 * @param {Node} node - the comment node
 	 * @param {TemplateResult | any[]} value
@@ -176,6 +173,6 @@ export class ChildNodePart extends Part {
 	 */
 	valueOf() {
 		// TemplateResult | Array
-		return this.values ? this.values : this.fragment;
+		return Array.isArray(this.value) ? this.value : this.fragment;
 	}
 }
