@@ -23,6 +23,8 @@ export class ChildNodePart extends Part {
 
 	/** @type {PersistentFragment} */
 	fragment = undefined;
+
+	// TODO: do we really need this here? And if so should it not be just value?!
 	values = undefined;
 
 	/**
@@ -65,7 +67,6 @@ export class ChildNodePart extends Part {
 			const values = Array.isArray(value) ? value : value.values;
 
 			for (let index = 0; index < values.length; index++) {
-				// TODO: parts and values might have different lengths?!
 				this.parts[index].update(values[index]);
 			}
 
