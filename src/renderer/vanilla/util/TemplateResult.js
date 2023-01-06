@@ -43,8 +43,18 @@ const createTemplateString = (template, prefix) => {
 		);
 };
 
+/**
+ * @param {String} name
+ * @param {String} quote
+ * @param {any} value
+ * @return {String}
+ */
 const attribute = (name, quote, value) => ` ${name}=${quote}${encodeAttribute(value)}${quote}`;
 
+/**
+ * @param {any} value
+ * @return {String}
+ */
 const getValue = (value) => {
 	switch (typeof value) {
 		case 'string':
@@ -66,7 +76,10 @@ const getValue = (value) => {
 	return value == null ? '' : encodeAttribute(String(value));
 };
 
+/** @type {Map<TemplateStringsArray, *[]>} */
 const parsedUpdates = new WeakMap();
+
+/** @type {Map<Element, ChildNodePart>} */
 const childNodeParts = new WeakMap();
 
 export class TemplateResult {

@@ -1,6 +1,12 @@
 import { COMMENT_NODE, DOCUMENT_FRAGMENT_NODE, ELEMENT_NODE } from '../../../util/DOMHelper.js';
 import { PersistentFragment } from './PersistentFragment.js';
 
+/**
+ * @param {Element} node
+ * @param {String} name
+ * @param {Boolean} oldValue
+ * @return {(function(*): void)|*}
+ */
 const processBooleanAttribute = (node, name, oldValue) => {
 	return (newValue) => {
 		const value = !!newValue?.valueOf();
@@ -10,12 +16,22 @@ const processBooleanAttribute = (node, name, oldValue) => {
 	};
 };
 
+/**
+ * @param {Element} node
+ * @param {String} name
+ * @return {(function(*): void)|*}
+ */
 const processPropertyAttribute = (node, name) => {
 	return (value) => {
 		node[name] = value;
 	};
 };
 
+/**
+ * @param {Element} node
+ * @param {String} name
+ * @return {(function(*): void)|*}
+ */
 const processEventAttribute = (node, name) => {
 	let oldValue,
 		lower,
@@ -30,6 +46,11 @@ const processEventAttribute = (node, name) => {
 	};
 };
 
+/**
+ * @param {Element} node
+ * @param {String} name
+ * @return {(function(*): void)|*}
+ */
 const processAttribute = (node, name) => {
 	let oldValue,
 		orphan = true;
@@ -53,6 +74,10 @@ const processAttribute = (node, name) => {
 	};
 };
 
+/**
+ * @param {Element} node
+ * @return {ChildNode}
+ */
 const remove = (node) => {
 	const range = globalThis.document?.createRange();
 	range.setStartAfter(node.firstChild);
@@ -61,6 +86,13 @@ const remove = (node) => {
 	return node.firstChild;
 };
 
+/**
+ * @param {Element} parentNode
+ * @param {Element[]} domChildNodes
+ * @param {Element[]} templateChildNodes
+ * @param {Element} anchorNode
+ * @return {Element[]}
+ */
 const diffNodes = function (parentNode, domChildNodes, templateChildNodes, anchorNode) {
 	// Diff each node in the child node lists
 	let length = Math.max(templateChildNodes.length, domChildNodes.length);
@@ -161,6 +193,10 @@ const diffNodes = function (parentNode, domChildNodes, templateChildNodes, ancho
 	return templateChildNodes;
 };
 
+/**
+ * @param {Element} comment
+ * @return {(function(*): void)|*}
+ */
 export const processNodePart = (comment) => {
 	let nodes = [];
 	// this is for string values to be inserted into the DOM. A cached TextNode will be used so that we don't have to constantly create new DOM nodes.
@@ -267,6 +303,11 @@ export const processNodePart = (comment) => {
 	return processNodeValue;
 };
 
+/**
+ * @param {Element} node
+ * @param {String} name
+ * @return {(function(*): void)|*}
+ */
 export const processAttributePart = (node, name) => {
 	// boolean attribute: ?boolean=${...}
 	if (name.startsWith('?')) {

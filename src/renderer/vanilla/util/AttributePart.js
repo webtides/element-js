@@ -5,6 +5,10 @@ export class AttributePart extends Part {
 	name = undefined;
 
 	// TODO: this is the actual node and not a comment like for the other parts...
+	/**
+	 * @param {Node} node
+	 * @param {String} name
+	 */
 	constructor(node, name) {
 		super(node);
 		this.name = name;

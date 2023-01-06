@@ -9,6 +9,9 @@ export class PersistentFragment {
 	// TODO: I think we can get rid of this ^ if we simply store childNodes[] on ChildNodePart
 	childNodes = [];
 
+	/**
+	 * @param {Node | DocumentFragment | Node[]} node
+	 */
 	constructor(node) {
 		if (node instanceof DocumentFragment) {
 			const fragment = globalThis.document?.importNode(node, true);
