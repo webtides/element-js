@@ -14,6 +14,10 @@
 		</style>
 	</head>
 	<script>
+
+		// TODO add test
+		// TODO add docs
+
 		document.addEventListener('request-context', (event) => {
 			if(event.detail.hasOwnProperty('vanillaContext')) {
 				const callback = event.detail['vanillaContext'];
@@ -36,7 +40,7 @@
 			<request-context class="block p-4 border-2 border-blue-500"></request-context>
 		</provide-context>
 
-		<h1>OTHER CONTEXT</h1>
+		<h1>OTHER CONTEXT (No Store)</h1>
 		<other-provide-context class="block p-4 border-2 border-yellow-500">
 			<request-context class="block p-4 border-2 border-red-500"></request-context>
 		</other-provide-context>
