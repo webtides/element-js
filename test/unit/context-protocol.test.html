@@ -50,6 +50,10 @@
 	import {assert, expect, nextFrame, chai} from '@open-wc/testing';
 	import {html, defineElement, BaseElement} from '../../index';
 
+	import { Store } from '../../src/util/Store';
+
+	const primitiveStore = new Store(100);
+
 
 	runTests(() => {
 
@@ -61,13 +65,15 @@
 			properties() {
 				return {
 					ancestorContext: AncestorContextElement.CONTEXT,
-					multiContext: AncestorContextElement.MULTI
+					multiContext: AncestorContextElement.MULTI,
+					storeContext: primitiveStore
 				};
 			}
 			provideProperties() {
 				return {
 					ancestorContext: this.ancestorContext,
 					multiContext: this.multiContext,
+					storeContext: this.storeContext
 				};
 			}
 		}
@@ -106,7 +112,8 @@
 					missingVanillaContext: null,
 					simpleContext: '',
 					ancestorContext:null,
-					multiContext:null
+					multiContext:null,
+					storeContext:null
 				};
 			}
 
@@ -158,15 +165,56 @@
 			expect(el.ancestorContext).to.equal(AncestorContextElement.CONTEXT);
 		});
 
-		it('Does not receive Ancestor Context if parent not provide the requested value', async () => {
+		it('Does receive Parent Context if Parent provides the requested value', async () => {
 			const el = document.getElementById('primary');
-			expect(el.multiContext).not.to.equal(AncestorContextElement.MULTI);
 			expect(el.multiContext).to.equal(ParentContextElement.MULTI);
 		});
 
-		//TODO add store injection tests
+		it('Does not receive Ancestor Context if parent not provide the requested value', async () => {
+			const el = document.getElementById('primary');
+			expect(el.multiContext).not.to.equal(AncestorContextElement.MULTI);
+		});
 
 
+		it('Does receive Store instances from context requests ', async () => {
+			const el = document.getElementById('primary');
+			expect(el.storeContext).to.be.instanceOf(Store);
+		});
+
+		it('Does receive Store instances from context requests ', async () => {
+			const el = document.getElementById('primary');
+			expect(el.storeContext).to.equal(primitiveStore);
+		});
+
+		it('All Receiver do receive the same store instance', async () => {
+			const el = document.getElementById('primary');
+			const secondary = document.getElementById('secondary');
+			expect(secondary.storeContext).to.equal(el.storeContext);
+		});
+
+		it('One does receive new Values when store changes its state / value', async () => {
+			const changedValue = 200;
+			primitiveStore.value = changedValue
+			const el = document.getElementById('primary');
+			expect(el.storeContext.value).to.equal(changedValue);
+		});
+
+		it('All Receiver do receive updated new values when store changes its state / value', async () => {
+			const changedValue = 300;
+			primitiveStore.value = changedValue
+			const el = document.getElementById('primary');
+			const secondary = document.getElementById('secondary');
+			expect(secondary.storeContext.value).to.equal(el.storeContext.value);
+		});
+
+		it('All Receiver do receive updated values when another changes sthe value', async () => {
+			const primary = document.getElementById('primary');
+			const secondary = document.getElementById('secondary');
+			primary.storeContext.value = 400;
+			expect(secondary.storeContext.value).to.equal(primary.storeContext.value);
+			secondary.storeContext.value = 500;
+			expect(secondary.storeContext.value).to.equal(primary.storeContext.value);
+		});
 
 
 	});
