@@ -1,0 +1,179 @@
+<html>
+
+<body>
+
+<script>
+	/*
+	* Vannila Context Request
+	* */
+
+	globalThis.vanillaContext = 'Some Context returned from Vanilla JS';
+	globalThis.callbackContext = 'I will be provided via callback';
+
+
+	document.addEventListener('request-context', (event) => {
+		// global value
+		for (const [key, value] of Object.entries(event.detail)) {
+			if(window.hasOwnProperty(key)) {
+				// vanilla Context request
+				event.stopPropagation();
+				const globalContext = globalThis[key];
+				if (typeof value === 'function') {
+					// call function with context value
+					value(globalContext);
+				} else {
+					// auto define as prop as Requestee is probably a BaseElement
+					event.target[key] = globalContext;
+				}
+			}
+
+
+		}
+
+
+
+	} )
+
+</script>
+
+
+<ancestor-context-element>
+	<parent-context-element>
+		<request-context-element id="primary"></request-context-element>
+		<request-context-element id="secondary"></request-context-element>
+	</parent-context-element>
+</ancestor-context-element>
+
+<script type="module">
+	/* eslint-disable no-unused-expressions */
+	import {runTests} from '@web/test-runner-mocha';
+	import {assert, expect, nextFrame, chai} from '@open-wc/testing';
+	import {html, defineElement, BaseElement} from '../../index';
+
+
+	runTests(() => {
+
+
+		class AncestorContextElement extends BaseElement {
+			static CONTEXT = 'ancestorContext';
+			static MULTI = 'ancestorMultiContext';
+
+			properties() {
+				return {
+					ancestorContext: AncestorContextElement.CONTEXT,
+					multiContext: AncestorContextElement.MULTI
+				};
+			}
+			provideProperties() {
+				return {
+					ancestorContext: this.ancestorContext,
+					multiContext: this.multiContext,
+				};
+			}
+		}
+		class ParentContextElement extends BaseElement {
+			static SIMPLE_CONTEXT = 'simpleParentContext';
+			static MULTI = 'parentMultiContext';
+
+			properties() {
+				return {
+					simpleContext: ParentContextElement.SIMPLE_CONTEXT,
+					multiContext: ParentContextElement.MULTI
+				};
+			}
+			provideProperties() {
+				return {
+					simpleContext: this.simpleContext,
+					multiContext: this.multiContext
+				};
+			}
+		}
+
+		class RequestContextElement extends BaseElement {
+			properties() {
+				return {
+					callBackCalled: null,
+					simpleContext: '',
+					multiContext: '',
+				};
+			}
+
+			// reactive attributes/properties
+			injectProperties() {
+				return {
+					counterStore: {},
+					vanillaContext: '',
+					missingVanillaContext: null,
+					simpleContext: '',
+					ancestorContext:null,
+					multiContext:null
+				};
+			}
+
+			connected() {
+				this.requestContext('callbackContext', (context) => {
+					this.callBackCalled = context === globalThis.callbackContext;
+				});
+			}
+		}
+		// Provider needs to be declared before Requester
+		defineElement('ancestor-context-element', AncestorContextElement);
+		defineElement('parent-context-element', ParentContextElement);
+		defineElement('request-context-element', RequestContextElement);
+
+
+		it('receives global vanilla context', async () => {
+			const el = document.getElementById('primary');
+			expect(el.vanillaContext).to.equal(globalThis.vanillaContext);
+		});
+
+		it('secondary also receives global vanilla context', async () => {
+			const el = document.getElementById('secondary');
+			expect(el.vanillaContext).to.equal(globalThis.vanillaContext);
+		});
+
+		it('receives global vanilla context vial callback', async () => {
+			const el = document.getElementById('primary');
+			expect(el.callBackCalled).to.be.true;
+		});
+
+		it('does not receive anything if provider is missing', async () => {
+			const el = document.getElementById('primary');
+			expect(el.missingVanillaContext).to.be.undefined;
+		});
+
+		it('receives simple parent context', async () => {
+			const el = document.getElementById('primary');
+			expect(el.simpleContext).to.equal(ParentContextElement.SIMPLE_CONTEXT);
+		});
+
+		it('multiple requester receive the same value', async () => {
+			const el = document.getElementById('primary');
+			const secondary = document.getElementById('secondary');
+			expect(el.simpleContext).to.equal(secondary.simpleContext);
+		});
+
+		it('Receives Ancestor Context if parent does not provide the requested value', async () => {
+			const el = document.getElementById('primary');
+			expect(el.ancestorContext).to.equal(AncestorContextElement.CONTEXT);
+		});
+
+		it('Does not receive Ancestor Context if parent not provide the requested value', async () => {
+			const el = document.getElementById('primary');
+			expect(el.multiContext).not.to.equal(AncestorContextElement.MULTI);
+			expect(el.multiContext).to.equal(ParentContextElement.MULTI);
+		});
+
+		//TODO add store injection tests
+
+
+
+
+	});
+</script>
+</body>
+</html>
+
+
+
+
