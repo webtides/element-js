@@ -134,7 +134,7 @@ const slottingParentTag = defineCE(
 );
 
 describe(`vanilla-renderer`, () => {
-	it.only('can re-render/update slotted templates', async () => {
+	it('can re-render/update slotted templates', async () => {
 		const el = await fixture(`<${slottingParentTag}></${slottingParentTag}>`);
 		assert.lightDom.equal(el, `<${nestedShadowTag}><div>Foo</div></${nestedShadowTag}>`);
 		el.text = 'Bar';
