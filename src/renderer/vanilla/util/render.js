@@ -45,11 +45,7 @@ const diffAttributes = function (templateElement, domElement) {
  */
 const isTemplateElement = (element) => {
 	const tagName = element.tagName?.toLowerCase() ?? false;
-	if (!tagName || !tagName.includes('-')) {
-		return false;
-	}
-
-	if (element.shadowRoot) {
+	if (!tagName || !tagName.includes('-') || !element.shadowRoot) {
 		return false;
 	}
 
