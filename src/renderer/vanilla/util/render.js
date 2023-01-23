@@ -1,4 +1,4 @@
-import { TemplateElement } from '../TemplateElement';
+import { TemplateElement } from '../TemplateElement.js';
 
 /**
  * Parses the given template string and returns a real DOM element.
