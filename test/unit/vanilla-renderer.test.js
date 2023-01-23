@@ -1,4 +1,4 @@
-import { defineCE } from '@open-wc/testing';
+import { assert, defineCE, fixture } from '@open-wc/testing';
 import { TemplateElement, html, unsafeHTML } from '../../src/renderer/vanilla/TemplateElement.js';
 import { testTemplateBindings } from './renderer/template-bindings.js';
 import { testTemplateRendering } from './renderer/template-rendering.js';
@@ -106,3 +106,38 @@ const sanitizedParentTag = defineCE(
 );
 
 testUnsafeHtml('vanilla', sanitizedTag, unsafeTag, childTag, sanitizedParentTag);
+
+const nestedShadowTag = defineCE(
+	class extends TemplateElement {
+		constructor() {
+			super({ shadowRender: true });
+		}
+
+		template() {
+			return html`<slot></slot>`;
+		}
+	},
+);
+
+const slottingParentTag = defineCE(
+	class extends TemplateElement {
+		properties() {
+			return {
+				text: 'Foo',
+			};
+		}
+
+		template() {
+			return html`<${nestedShadowTag}><div>${this.text}</div></${nestedShadowTag}>`;
+		}
+	},
+);
+
+describe(`vanilla-renderer`, () => {
+	it.only('can re-render/update slotted templates', async () => {
+		const el = await fixture(`<${slottingParentTag}></${slottingParentTag}>`);
+		assert.isTrue(el.innerHTML.trim().includes('Foo'));
+		el.text = 'Bar';
+		assert.isTrue(el.innerHTML.trim().includes('Bar'));
+	});
+});
