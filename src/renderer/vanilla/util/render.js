@@ -1,4 +1,4 @@
-const _cachedTemplateElements = {};
+import { TemplateElement } from '../TemplateElement';
 
 /**
  * Parses the given template string and returns a real DOM element.
@@ -49,18 +49,11 @@ const isTemplateElement = (element) => {
 		return false;
 	}
 
-	if (_cachedTemplateElements[tagName]) {
-		return true;
+	if (element.shadowRoot) {
+		return false;
 	}
 
-	const elementClass = customElements.get(tagName);
-	const isTemplateElement = elementClass && elementClass._$templateElement$ === true;
-
-	if (isTemplateElement) {
-		_cachedTemplateElements[tagName] = elementClass;
-	}
-
-	return isTemplateElement;
+	return element instanceof TemplateElement;
 };
 
 /**

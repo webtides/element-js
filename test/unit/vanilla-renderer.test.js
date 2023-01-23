@@ -138,6 +138,7 @@ describe(`vanilla-renderer`, () => {
 		const el = await fixture(`<${slottingParentTag}></${slottingParentTag}>`);
 		assert.lightDom.equal(el, `<${nestedShadowTag}><div>Foo</div></${nestedShadowTag}>`);
 		el.text = 'Bar';
+		await el.requestUpdate();
 		assert.lightDom.equal(el, `<${nestedShadowTag}><div>Bar</div></${nestedShadowTag}>`);
 	});
 });
