@@ -45,10 +45,9 @@ const diffAttributes = function (templateElement, domElement) {
  */
 const isTemplateElement = (element) => {
 	const tagName = element.tagName?.toLowerCase() ?? false;
-	if (!tagName || !tagName.includes('-') || !element.shadowRoot) {
+	if (!tagName || !tagName.includes('-') || element.shadowRoot) {
 		return false;
 	}
-
 	return element instanceof TemplateElement;
 };
 
@@ -127,7 +126,11 @@ const diffNodes = function (templateNode, domNode) {
 
 		// If there are child nodes, diff them recursively
 		if (templateChildNode.hasChildNodes()) {
-			if (!isTemplateElement(templateChildNode)) {
+			// https://stackoverflow.com/questions/46898739/why-domparser-doesnt-use-the-customelements-registered
+			// we have to use the domChildNode here because the templateChildNode is not upgraded because it was not
+			// imported into a document yet and therefore instanceOf will not work...
+			// TODO: write a failing test for when using the template node here... I can't...
+			if (!isTemplateElement(domChildNode)) {
 				diffNodes(templateChildNode, domChildNode);
 			}
 		}
