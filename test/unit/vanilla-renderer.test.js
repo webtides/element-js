@@ -133,6 +133,28 @@ const slottingParentTag = defineCE(
 	},
 );
 
+const nestedLightTag = defineCE(
+	class extends TemplateElement {
+		template() {
+			return html`<div>Foo</div>`;
+		}
+	},
+);
+
+const nestingParentTag = defineCE(
+	class extends TemplateElement {
+		properties() {
+			return {
+				text: 'Bar',
+			};
+		}
+
+		template() {
+			return html`<${nestedLightTag} defer-update="true"><div>${this.text}</div></${nestedShadowTag}>`;
+		}
+	},
+);
+
 describe(`vanilla-renderer`, () => {
 	it('can re-render/update slotted templates', async () => {
 		const el = await fixture(`<${slottingParentTag}></${slottingParentTag}>`);
@@ -140,5 +162,13 @@ describe(`vanilla-renderer`, () => {
 		el.text = 'Bar';
 		await el.requestUpdate();
 		assert.lightDom.equal(el, `<${nestedShadowTag}><div>Bar</div></${nestedShadowTag}>`);
+	});
+
+	it('should not re-render/update nested templates', async () => {
+		const el = await fixture(`<${nestingParentTag}></${slottingParentTag}>`);
+		assert.lightDom.equal(el, `<${nestedLightTag} defer-update="true"><div>Bar</div></${nestedShadowTag}>`);
+		el.text = 'Baz';
+		await el.requestUpdate();
+		assert.lightDom.equal(el, `<${nestedLightTag} defer-update="true"><div>Bar</div></${nestedShadowTag}>`);
 	});
 });
