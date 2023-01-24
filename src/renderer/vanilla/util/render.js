@@ -129,7 +129,6 @@ const diffNodes = function (templateNode, domNode) {
 			// https://stackoverflow.com/questions/46898739/why-domparser-doesnt-use-the-customelements-registered
 			// we have to use the domChildNode here because the templateChildNode is not upgraded because it was not
 			// imported into a document yet and therefore instanceOf will not work...
-			// TODO: write a failing test for when using the template node here... I can't...
 			if (!isTemplateElement(domChildNode)) {
 				diffNodes(templateChildNode, domChildNode);
 			}

@@ -150,7 +150,7 @@ const nestingParentTag = defineCE(
 		}
 
 		template() {
-			return html`<${nestedLightTag} defer-update="true"><div>${this.text}</div></${nestedShadowTag}>`;
+			return html`<${nestedLightTag}><div>${this.text}</div></${nestedShadowTag}>`;
 		}
 	},
 );
@@ -166,9 +166,11 @@ describe(`vanilla-renderer`, () => {
 
 	it('should not re-render/update nested templates', async () => {
 		const el = await fixture(`<${nestingParentTag}></${slottingParentTag}>`);
-		assert.lightDom.equal(el, `<${nestedLightTag} defer-update="true"><div>Bar</div></${nestedShadowTag}>`);
+		assert.lightDom.equal(el, `<${nestedLightTag}><div>Bar</div></${nestedShadowTag}>`);
+		await el.requestUpdate();
+		assert.lightDom.equal(el, `<${nestedLightTag}><div>Foo</div></${nestedShadowTag}>`);
 		el.text = 'Baz';
 		await el.requestUpdate();
-		assert.lightDom.equal(el, `<${nestedLightTag} defer-update="true"><div>Bar</div></${nestedShadowTag}>`);
+		assert.lightDom.equal(el, `<${nestedLightTag}><div>Foo</div></${nestedShadowTag}>`);
 	});
 });
