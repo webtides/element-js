@@ -207,7 +207,7 @@
 			expect(secondary.storeContext.value).to.equal(el.storeContext.value);
 		});
 
-		it('All Receiver do receive updated values when another changes sthe value', async () => {
+		it('All Receiver do receive updated values when another changes state value', async () => {
 			const primary = document.getElementById('primary');
 			const secondary = document.getElementById('secondary');
 			primary.storeContext.value = 400;
