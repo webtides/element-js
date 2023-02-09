@@ -322,7 +322,7 @@ class BaseElement extends HTMLElement {
 	}
 
 	/**
-	 * Defines context on the element based on keys from this.context()
+	 * Defines context on the element based on keys from this.injectProperties()
 	 */
 	definePropertyInjection() {
 		Object.entries(this.injectProperties()).forEach(([key, value]) => {
