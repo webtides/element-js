@@ -74,18 +74,21 @@
 		class ParentContextElement extends BaseElement {
 			static SIMPLE_CONTEXT = 'simpleParentContext';
 			static MULTI = 'parentMultiContext';
+			static INLINE = 'parentInlineContext';
 
 			properties() {
 				return {
 					simpleContext: ParentContextElement.SIMPLE_CONTEXT,
-					multiContext: ParentContextElement.MULTI
+					multiContext: ParentContextElement.MULTI,
+					inlineCallback: ParentContextElement.INLINE
 				};
 			}
 
 			provideProperties() {
 				return {
 					simpleContext: this.simpleContext,
-					multiContext: this.multiContext
+					multiContext: this.multiContext,
+					inlineCallback: this.inlineCallback
 				};
 			}
 		}
@@ -96,6 +99,7 @@
 					callBackCalled: null,
 					simpleContext: '',
 					multiContext: '',
+					inlineCallbackValue: '',
 				};
 			}
 
@@ -108,7 +112,10 @@
 					simpleContext: '',
 					ancestorContext: null,
 					multiContext: null,
-					storeContext: null
+					storeContext: null,
+					inlineCallback: (value) => {
+						this.inlineCallbackValue = value;
+					}
 				};
 			}
 
@@ -212,6 +219,11 @@
 			expect(secondary.storeContext.value).to.equal(primary.storeContext.value);
 		});
 
+		it('receives a static context value via callback that is inlined into the injectProperties method', async () => {
+			// rare case probably a DON'T ... still possible
+			const el = document.getElementById('primary');
+			expect(el.inlineCallbackValue).to.equal(ParentContextElement.INLINE);
+		});
 	});
 </script>
 </body>
