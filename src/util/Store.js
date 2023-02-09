@@ -1,4 +1,4 @@
-import { isObjectLike } from './AttributeParser';
+import { isObjectLike, isNotEqual } from './AttributeParser';
 
 export class Store {
 	_observer = new Set();
@@ -19,11 +19,14 @@ export class Store {
 				set: (newValue) => {
 					const oldValue = this._state[key];
 					this._state[key] = newValue;
-					const watch = this.watch();
-					if (watch.hasOwnProperty(key) && typeof watch[key] === 'function') {
-						watch[key](newValue, oldValue);
+
+					if (isNotEqual(newValue, oldValue)) {
+						const watch = this.watch();
+						if (watch.hasOwnProperty(key) && typeof watch[key] === 'function') {
+							watch[key](newValue, oldValue);
+						}
+						this.requestUpdate();
 					}
-					this.requestUpdate();
 				},
 			});
 		});

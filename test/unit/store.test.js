@@ -72,7 +72,8 @@ describe('store-observer', () => {
 		const elB = await fixture(`<${tagB}></${tagB}>`);
 		assert.equal(el.updateCount, 0);
 		assert.equal(elB.updateCount, 0);
-		simpleStore.count = 1;
+		// need to set a different value to actually trigger a change
+		simpleStore.count = 2;
 		await nextFrame();
 		assert.equal(el.updateCount, 1);
 		assert.equal(elB.updateCount, 1);

@@ -33,6 +33,18 @@ export function isNaN(value) {
 	return Number.isNaN(value);
 }
 
+/**
+ * deep compare two values primitive or complex
+ *
+ * @param valueA
+ * @param valueB
+ * @returns {boolean}
+ */
+
+export function isNotEqual(valueA, valueB) {
+	return JSON.stringify(valueA) !== JSON.stringify(valueB);
+}
+
 export function parseAttribute(value, options = {}) {
 	if (options.parse === false || !isString(value)) {
 		// no-op
