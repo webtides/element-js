@@ -33,7 +33,7 @@ It also bloats up the DOM Tree as redundant data ist being passed to multiple de
 
 #### Dependency Injection for the rescue 
                                  
-To address the issues caused by "Prop Drilling" `element-js` provides a simple Dependency Injection Implementation following the idea of the Context Protocol mentioned above.
+To address the issues caused by "Prop Drilling" _element-js_ provides a simple Dependency Injection Implementation following the idea of the Context Protocol mentioned above.
 
 ##### Provide via provideProperties()
 
