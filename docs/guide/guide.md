@@ -7,7 +7,7 @@
 
 ### Design System
 
-### Style Guide
+### Style Guide / Best Practices
 
 This is an element style guide created and enforced for the purpose of standardizing elements and file structures.
 
