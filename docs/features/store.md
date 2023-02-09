@@ -2,7 +2,7 @@
 
 When a certain property in the properties map is an instance of the provided class `Store` it is treated as an
 external `Store`.
-A `Store` can be created outside of a components´ scope or in a dedicated Module to keep track of shared Application
+A `Store` can be created outside a components´ scope or in a dedicated Module to keep track of shared Application
 State.
 When a components´ property is an instance of a `Store` the instance will be added as an observer and
 automatically updated when the store ist changed.
@@ -14,20 +14,20 @@ Stores can also be initialized with a primitive value (Numbers, Booleans). Such 
 
 ##### store.js
 
-```javascript
+```js
 export const simpleStore = new Store({
 	value: 'simple'
 })
 
 class MoreComplexStore extends Store {
-    properties() {
-        return {
-            storeCount: 1
-        };
-    }
-    get sum() {
-        return this.storeCount + this.argumentCount;
-    }
+	properties() {
+		return {
+			storeCount: 1
+		};
+	}
+	get sum() {
+		return this.storeCount + this.argumentCount;
+	}
 }
 export const exampleStore = new MoreComplexStore({
 	argumentCount: 1
@@ -35,18 +35,18 @@ export const exampleStore = new MoreComplexStore({
 
 
 class MediaStore extends Store {
-		constructor: () {
-			super();
-			const mql = window.matchMedia('(max-width: 600px)');
-			mql.onchange = (e) => {
-					this.isMobile = e.matches;
-			}
+	constructor() {
+		super();
+		const mql = window.matchMedia('(max-width: 600px)');
+		mql.onchange = (e) => {
+			this.isMobile = e.matches;
 		}
-    properties() {
-        return {
-            isMobile: true
-        };
-    }
+	}
+	properties() {
+		return {
+			isMobile: true
+		};
+	}
 }
 export const mediaStore = new MediaStore()
 
@@ -60,7 +60,7 @@ window.addEventListener('scroll', () => {
 
 ##### MyElement.js
 
-```javascript 
+```js 
 
 import { exampleStore, simpleStore, mediaStore } from './store.js'; 
 

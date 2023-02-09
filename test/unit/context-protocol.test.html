@@ -10,11 +10,10 @@
 	globalThis.vanillaContext = 'Some Context returned from Vanilla JS';
 	globalThis.callbackContext = 'I will be provided via callback';
 
-
 	document.addEventListener('request-context', (event) => {
 		// global value
 		for (const [key, value] of Object.entries(event.detail)) {
-			if(window.hasOwnProperty(key)) {
+			if (window.hasOwnProperty(key)) {
 				// vanilla Context request
 				event.stopPropagation();
 				const globalContext = globalThis[key];
@@ -26,16 +25,9 @@
 					event.target[key] = globalContext;
 				}
 			}
-
-
 		}
-
-
-
-	} )
-
+	})
 </script>
-
 
 <ancestor-context-element>
 	<parent-context-element>
@@ -50,7 +42,7 @@
 	import {assert, expect, nextFrame, chai} from '@open-wc/testing';
 	import {html, defineElement, BaseElement} from '../../index';
 
-	import { Store } from '../../src/util/Store';
+	import {Store} from '../../src/util/Store';
 
 	const primitiveStore = new Store(100);
 
@@ -69,6 +61,7 @@
 					storeContext: primitiveStore
 				};
 			}
+
 			provideProperties() {
 				return {
 					ancestorContext: this.ancestorContext,
@@ -77,6 +70,7 @@
 				};
 			}
 		}
+
 		class ParentContextElement extends BaseElement {
 			static SIMPLE_CONTEXT = 'simpleParentContext';
 			static MULTI = 'parentMultiContext';
@@ -87,6 +81,7 @@
 					multiContext: ParentContextElement.MULTI
 				};
 			}
+
 			provideProperties() {
 				return {
 					simpleContext: this.simpleContext,
@@ -111,9 +106,9 @@
 					vanillaContext: '',
 					missingVanillaContext: null,
 					simpleContext: '',
-					ancestorContext:null,
-					multiContext:null,
-					storeContext:null
+					ancestorContext: null,
+					multiContext: null,
+					storeContext: null
 				};
 			}
 
@@ -123,6 +118,7 @@
 				});
 			}
 		}
+
 		// Provider needs to be declared before Requester
 		defineElement('ancestor-context-element', AncestorContextElement);
 		defineElement('parent-context-element', ParentContextElement);
@@ -215,7 +211,6 @@
 			secondary.storeContext.value = 500;
 			expect(secondary.storeContext.value).to.equal(primary.storeContext.value);
 		});
-
 
 	});
 </script>
