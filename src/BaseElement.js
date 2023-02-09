@@ -343,15 +343,16 @@ class BaseElement extends HTMLElement {
 		const provideProperties = this.provideProperties();
 
 		Object.entries(event.detail ?? {}).forEach(([key, valueOrCallback]) => {
-			if (provideProperties.hasOwnProperty(key) && this.hasOwnProperty(key)) {
+			const providedValue = provideProperties[key] ?? properties[key];
+			if (providedValue) {
 				// found it, provide it
 				event.stopPropagation();
 				if (typeof valueOrCallback === 'function') {
 					// call function with context value
-					valueOrCallback(properties[key]);
+					valueOrCallback(providedValue);
 				} else {
 					// assign to prop
-					event.target[key] = properties[key];
+					event.target[key] = providedValue;
 				}
 			}
 		});

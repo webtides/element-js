@@ -80,7 +80,6 @@
 				return {
 					simpleContext: ParentContextElement.SIMPLE_CONTEXT,
 					multiContext: ParentContextElement.MULTI,
-					inlineCallback: ParentContextElement.INLINE
 				};
 			}
 
@@ -88,7 +87,7 @@
 				return {
 					simpleContext: this.simpleContext,
 					multiContext: this.multiContext,
-					inlineCallback: this.inlineCallback
+					inlineCallback: ParentContextElement.INLINE
 				};
 			}
 		}
@@ -113,6 +112,7 @@
 					ancestorContext: null,
 					multiContext: null,
 					storeContext: null,
+					noContext: 'noContext',
 					inlineCallback: (value) => {
 						this.inlineCallbackValue = value;
 					}
