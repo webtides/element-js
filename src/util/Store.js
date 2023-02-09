@@ -1,4 +1,4 @@
-import { isObjectLike, isNotEqual } from './AttributeParser';
+import { isObjectLike, deepEquals } from './AttributeParser';
 
 export class Store {
 	_observer = new Set();
@@ -20,7 +20,7 @@ export class Store {
 					const oldValue = this._state[key];
 					this._state[key] = newValue;
 
-					if (isNotEqual(newValue, oldValue)) {
+					if (!deepEquals(newValue, oldValue)) {
 						const watch = this.watch();
 						if (watch.hasOwnProperty(key) && typeof watch[key] === 'function') {
 							watch[key](newValue, oldValue);

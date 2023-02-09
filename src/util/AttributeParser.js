@@ -41,8 +41,8 @@ export function isNaN(value) {
  * @returns {boolean}
  */
 
-export function isNotEqual(valueA, valueB) {
-	return JSON.stringify(valueA) !== JSON.stringify(valueB);
+export function deepEquals(valueA, valueB) {
+	return JSON.stringify(valueA) === JSON.stringify(valueB);
 }
 
 export function parseAttribute(value, options = {}) {
