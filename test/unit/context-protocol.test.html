@@ -223,7 +223,6 @@
 		});
 
 		it('receives a static context value that is not a property in the Provider', async () => {
-			// rare case probably a DON'T ... still possible
 			const el = document.getElementById('primary');
 			expect(el.staticContext).to.equal(ParentContextElement.STATIC);
 		});
