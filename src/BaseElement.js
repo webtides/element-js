@@ -334,10 +334,23 @@ class BaseElement extends HTMLElement {
 		}
 	}
 
+	/**
+	 * Helper Function to initialize the context requests
+	 *
+	 * @param propertyName
+	 * @param valueOrCallback
+	 */
 	requestContext(propertyName, valueOrCallback) {
 		this.dispatch('request-context', { [propertyName]: valueOrCallback }, true);
 	}
 
+	/**
+	 * Internal Context Request Handler
+	 * This will check if the current/receiving instance actually provides a value under the requested name.
+	 * If there is something to provide it will either assign the value to the requesting element or call the callback.
+	 *
+	 * @param event
+	 */
 	onRequestContext(event) {
 		const properties = this.properties();
 		const provideProperties = this.provideProperties();
