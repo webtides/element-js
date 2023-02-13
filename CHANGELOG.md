@@ -14,6 +14,22 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Changed -->
 <!-- ### Removed -->
 <!-- ### Fixed -->
+
+## [0.7.0] - 2022-11-18
+
+### Added
+* Dependency Injection via Context Protocol 💉
+* Provide reactive Properties or entire Stores via: provideProperties() { return { name : value}} 
+* Inject / Request them via injectProperties() { return { name : 'defaultValue'}}
+
+### Changed
+* docs structure
+
+### Fixed
+* Cannot re-render slotted light dom when using the vanilla renderer https://github.com/webtides/element-js/issues/76
+* adds Vanilla Renderer Tests
+
+
 ## [0.6.2] - 2022-11-18
 
 ### FIXED
