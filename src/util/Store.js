@@ -71,7 +71,7 @@ export class Store {
 	requestUpdate() {
 		this._observer.forEach(async (observer) => {
 			typeof observer.requestUpdate === 'function' ? await observer.requestUpdate() : observer();
-			// check if store is actually watched
+			// check if store is watched by an observer
 			if (typeof observer.watch === 'function' && Object.keys(observer.watch() ?? {}).length > 0) {
 				// observer actually has watched properties
 				const properties = observer.properties();
