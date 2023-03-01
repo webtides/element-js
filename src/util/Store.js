@@ -1,4 +1,5 @@
 import { isObjectLike, deepEquals } from './AttributeParser.js';
+import { informWatchedPropertiesAndDispatchChangeEvent } from './PropertyHelper';
 
 export class Store {
 	_observer = new Set();
@@ -68,8 +69,19 @@ export class Store {
 	}
 
 	requestUpdate() {
-		this._observer.forEach((observer) =>
-			typeof observer.requestUpdate === 'function' ? observer.requestUpdate() : observer(),
-		);
+		this._observer.forEach(async (observer) => {
+			typeof observer.requestUpdate === 'function' ? await observer.requestUpdate() : observer();
+			// check if store is actually watched
+			if (typeof observer.watch === 'function' && Object.keys(observer.watch() ?? {}).length > 0) {
+				// observer actually has watched properties
+				const properties = observer.properties();
+				Object.keys(observer.watch() ?? {}).forEach((key) => {
+					if (properties[key] === this) {
+						// observer is actually watching store changes
+						informWatchedPropertiesAndDispatchChangeEvent(observer, key, this, this);
+					}
+				});
+			}
+		});
 	}
 }
