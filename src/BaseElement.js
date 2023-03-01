@@ -1,5 +1,6 @@
 import { parseAttribute, isNaN, dashToCamel, camelToDash, isObjectLike } from './util/AttributeParser.js';
 import { getClosestParentCustomElementNode, isOfSameNodeType } from './util/DOMHelper.js';
+import { informWatchedPropertiesAndDispatchChangeEvent } from './util/PropertyHelper.js';
 import { Store } from './util/Store.js';
 
 export { defineElement } from './util/defineElement.js';
@@ -241,7 +242,6 @@ class BaseElement extends HTMLElement {
 			set: (newValue) => {
 				const oldValue = this._state[property];
 				const newValueString = JSON.stringify(newValue);
-
 				if (JSON.stringify(oldValue) !== newValueString) {
 					this._state[property] = newValue;
 
@@ -253,21 +253,6 @@ class BaseElement extends HTMLElement {
 						this.reflectProperty({ property, newValue, newValueString });
 					}
 
-					const informWatchedPropertiesAndDispatchChangeEvent = () => {
-						// notify watched properties (after update())
-						if (property in this.watch()) {
-							this.watch()[property](newValue, oldValue);
-						}
-
-						// dispatch change event
-						if (
-							property in this._options['propertyOptions'] &&
-							this._options['propertyOptions'][property]['notify'] === true
-						) {
-							this.dispatch(`${camelToDash(property)}-changed`, newValue, true);
-						}
-					};
-
 					if (this._options.autoUpdate) {
 						this.requestUpdate({
 							notify: true,
@@ -276,10 +261,10 @@ class BaseElement extends HTMLElement {
 							newValueString: newValueString,
 							oldValue: oldValue,
 						}).finally(() => {
-							informWatchedPropertiesAndDispatchChangeEvent();
+							informWatchedPropertiesAndDispatchChangeEvent(this, property, newValue, oldValue);
 						});
 					} else {
-						informWatchedPropertiesAndDispatchChangeEvent();
+						informWatchedPropertiesAndDispatchChangeEvent(this, property, newValue, oldValue);
 					}
 				}
 

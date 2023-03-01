@@ -43,9 +43,27 @@ class ComplexStoreElement extends StoreElement {
 	}
 }
 
+class WatchStoreElement extends BaseElement {
+	properties() {
+		return {
+			watchTriggered: false,
+			store: simpleStore,
+		};
+	}
+
+	watch() {
+		return {
+			store: (storeUpdate) => {
+				this.watchTriggered = true;
+			},
+		};
+	}
+}
+
 const tagA = defineCE(StoreElement);
 const tagB = defineCE(AnotherStoreElement);
 const tagC = defineCE(ComplexStoreElement);
+const tagW = defineCE(WatchStoreElement);
 
 describe('store-observer', () => {
 	it('generates reactive store properties from object as constructor argument ', async () => {
@@ -150,5 +168,13 @@ describe('store-observer', () => {
 		simpleStore.unsubscribe(callback);
 		// means callback was called
 		assert.equal(simpleStore._observer.has(callback), false);
+	});
+
+	it('triggers an elements watch callback when a store is wathched and changes', async () => {
+		const el = await fixture(`<${tagW}></${tagW}>`);
+		assert.isFalse(el.watchTriggered);
+		simpleStore.count = 1;
+		await nextFrame();
+		assert.isTrue(el.watchTriggered);
 	});
 });
