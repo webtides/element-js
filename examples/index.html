@@ -6,6 +6,7 @@
 		<!--		<script type="module" src="example-base-element.js"></script>-->
 		<script type="module" src="example-input-element.js"></script>
 		<script type="module" src="example-template-element.js"></script>
+		<script type="module" src="example-test-element.js"></script>
 		<script src="https://cdn.tailwindcss.com"></script>
 		<style type="text/tailwindcss">
 			.btn {
@@ -20,7 +21,7 @@
 		<!-- TODO: when we have more than one of the same element/template, there will be problems -->
 		<example-template-elementNOT name="Jane" items="1" array="[1,2,3,4]"></example-template-elementNOT>
 		<example-template-element name="Jane" items="1" array="[1,2,3,4]">
-			<!--template-result-->
+			<!--template-part-->
 			<div class="container">
 				<div class="flex flex-wrap bg-gray-300 p-4 gap-4">
 					<button type="button" class="btn" id="run" data-count="10">Create 10 rows</button>
@@ -34,11 +35,18 @@
 				</div>
 				<table class="min-w-full divide-y divide-gray-300">
 					<tbody class="divide-y divide-gray-200 bg-white">
-					<!--dom-part-0--><tr dom-part-0=id id="1" dom-part-1="class" class="bg-white even:bg-gray-100" ssr="true">
-					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500"><!--dom-part-2-->1<!--/dom-part-2--></td>
+					<!--dom-part-0-->
+					<!--template-part-->
+					<!--dom-part-0:id-->
+					<!--dom-part-1:class-->
+					<tr id="1" class="bg-white even:bg-gray-100" ssr="true">
 					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-						<a class="select block w-full hover:cursor-pointer hover:underline"><!--dom-part-3-->big brown sandwich from SSR<!--/dom-part-3--></a
-						>
+						<!--dom-part-2-->1<!--/dom-part-2-->
+					</td>
+					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+						<a class="select block w-full hover:cursor-pointer hover:underline">
+							<!--dom-part-3-->big brown sandwich from SSR<!--/dom-part-3-->
+						</a>
 					</td>
 					<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
 						<btn
@@ -47,11 +55,19 @@
 										>
 						</btn>
 					</td>
-					</tr><tr dom-part-0=id id="2" dom-part-1="class" class="bg-white even:bg-gray-100">
-					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500"><!--dom-part-2-->2<!--/dom-part-2--></td>
+					</tr>
+					<!--/template-part-->
+					<!--template-part-->
+					<!--dom-part-0:id-->
+					<!--dom-part-1:class-->
+					<tr id="2" class="bg-white even:bg-gray-100">
 					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-						<a class="select block w-full hover:cursor-pointer hover:underline"><!--dom-part-3-->cheap yellow mouse<!--/dom-part-3--></a
-						>
+						<!--dom-part-2-->2<!--/dom-part-2-->
+					</td>
+					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+						<a class="select block w-full hover:cursor-pointer hover:underline">
+							<!--dom-part-3-->cheap yellow mouse<!--/dom-part-3-->
+						</a>
 					</td>
 					<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
 						<btn
@@ -60,11 +76,19 @@
 										>
 						</btn>
 					</td>
-					</tr><tr dom-part-0=id id="3" dom-part-1="class" class="bg-white even:bg-gray-100">
-					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500"><!--dom-part-2-->3<!--/dom-part-2--></td>
+					</tr>
+					<!--/template-part-->
+					<!--template-part-->
+					<!--dom-part-0:id-->
+					<!--dom-part-1:class-->
+					<tr id="3" class="bg-white even:bg-gray-100">
 					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-						<a class="select block w-full hover:cursor-pointer hover:underline"><!--dom-part-3-->tall red keyboard<!--/dom-part-3--></a
-						>
+						<!--dom-part-2-->3<!--/dom-part-2-->
+					</td>
+					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+						<a class="select block w-full hover:cursor-pointer hover:underline">
+							<!--dom-part-3-->tall red keyboard<!--/dom-part-3-->
+						</a>
 					</td>
 					<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
 						<btn
@@ -73,11 +97,19 @@
 										>
 						</btn>
 					</td>
-					</tr><tr dom-part-0=id id="4" dom-part-1="class" class="bg-white even:bg-gray-100">
-					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500"><!--dom-part-2-->4<!--/dom-part-2--></td>
+					</tr>
+					<!--/template-part-->
+					<!--template-part-->
+					<!--dom-part-0:id-->
+					<!--dom-part-1:class-->
+					<tr id="4" class="bg-white even:bg-gray-100">
 					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-						<a class="select block w-full hover:cursor-pointer hover:underline"><!--dom-part-3-->small white burger<!--/dom-part-3--></a
-						>
+						<!--dom-part-2-->4<!--/dom-part-2-->
+					</td>
+					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+						<a class="select block w-full hover:cursor-pointer hover:underline">
+							<!--dom-part-3-->small white burger<!--/dom-part-3-->
+						</a>
 					</td>
 					<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
 						<btn
@@ -86,11 +118,19 @@
 										>
 						</btn>
 					</td>
-					</tr><tr dom-part-0=id id="5" dom-part-1="class" class="bg-white even:bg-gray-100">
-					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500"><!--dom-part-2-->5<!--/dom-part-2--></td>
+					</tr>
+					<!--/template-part-->
+					<!--template-part-->
+					<!--dom-part-0:id-->
+					<!--dom-part-1:class-->
+					<tr id="5" class="bg-white even:bg-gray-100">
 					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-						<a class="select block w-full hover:cursor-pointer hover:underline"><!--dom-part-3-->handsome red bbq<!--/dom-part-3--></a
-						>
+						<!--dom-part-2-->5<!--/dom-part-2-->
+					</td>
+					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+						<a class="select block w-full hover:cursor-pointer hover:underline">
+							<!--dom-part-3-->handsome red bbq<!--/dom-part-3-->
+						</a>
 					</td>
 					<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
 						<btn
@@ -99,11 +139,19 @@
 										>
 						</btn>
 					</td>
-					</tr><tr dom-part-0=id id="6" dom-part-1="class" class="bg-white even:bg-gray-100">
-					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500"><!--dom-part-2-->6<!--/dom-part-2--></td>
+					</tr>
+					<!--/template-part-->
+					<!--template-part-->
+					<!--dom-part-0:id-->
+					<!--dom-part-1:class-->
+					<tr id="6" class="bg-white even:bg-gray-100">
 					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-						<a class="select block w-full hover:cursor-pointer hover:underline"><!--dom-part-3-->large black pony<!--/dom-part-3--></a
-						>
+						<!--dom-part-2-->6<!--/dom-part-2-->
+					</td>
+					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+						<a class="select block w-full hover:cursor-pointer hover:underline">
+							<!--dom-part-3-->large black pony<!--/dom-part-3-->
+						</a>
 					</td>
 					<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
 						<btn
@@ -112,11 +160,19 @@
 										>
 						</btn>
 					</td>
-					</tr><tr dom-part-0=id id="7" dom-part-1="class" class="bg-white even:bg-gray-100">
-					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500"><!--dom-part-2-->7<!--/dom-part-2--></td>
+					</tr>
+					<!--/template-part-->
+					<!--template-part-->
+					<!--dom-part-0:id-->
+					<!--dom-part-1:class-->
+					<tr id="7" class="bg-white even:bg-gray-100">
 					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-						<a class="select block w-full hover:cursor-pointer hover:underline"><!--dom-part-3-->inexpensive brown pony<!--/dom-part-3--></a
-						>
+						<!--dom-part-2-->7<!--/dom-part-2-->
+					</td>
+					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+						<a class="select block w-full hover:cursor-pointer hover:underline">
+							<!--dom-part-3-->inexpensive brown pony<!--/dom-part-3-->
+						</a>
 					</td>
 					<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
 						<btn
@@ -125,11 +181,19 @@
 										>
 						</btn>
 					</td>
-					</tr><tr dom-part-0=id id="8" dom-part-1="class" class="bg-white even:bg-gray-100">
-					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500"><!--dom-part-2-->8<!--/dom-part-2--></td>
+					</tr>
+					<!--/template-part-->
+					<!--template-part-->
+					<!--dom-part-0:id-->
+					<!--dom-part-1:class-->
+					<tr id="8" class="bg-white even:bg-gray-100">
 					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-						<a class="select block w-full hover:cursor-pointer hover:underline"><!--dom-part-3-->expensive white cookie<!--/dom-part-3--></a
-						>
+						<!--dom-part-2-->8<!--/dom-part-2-->
+					</td>
+					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+						<a class="select block w-full hover:cursor-pointer hover:underline">
+							<!--dom-part-3-->expensive white cookie<!--/dom-part-3-->
+						</a>
 					</td>
 					<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
 						<btn
@@ -138,11 +202,19 @@
 										>
 						</btn>
 					</td>
-					</tr><tr dom-part-0=id id="9" dom-part-1="class" class="bg-white even:bg-gray-100">
-					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500"><!--dom-part-2-->9<!--/dom-part-2--></td>
+					</tr>
+					<!--/template-part-->
+					<!--template-part-->
+					<!--dom-part-0:id-->
+					<!--dom-part-1:class-->
+					<tr id="9" class="bg-white even:bg-gray-100">
 					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-						<a class="select block w-full hover:cursor-pointer hover:underline"><!--dom-part-3-->plain brown pizza<!--/dom-part-3--></a
-						>
+						<!--dom-part-2-->9<!--/dom-part-2-->
+					</td>
+					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+						<a class="select block w-full hover:cursor-pointer hover:underline">
+							<!--dom-part-3-->plain brown pizza<!--/dom-part-3-->
+						</a>
 					</td>
 					<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
 						<btn
@@ -151,11 +223,19 @@
 										>
 						</btn>
 					</td>
-					</tr><tr dom-part-0=id id="10" dom-part-1="class" class="bg-white even:bg-gray-100">
-					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500"><!--dom-part-2-->10<!--/dom-part-2--></td>
+					</tr>
+					<!--/template-part-->
+					<!--template-part-->
+					<!--dom-part-0:id-->
+					<!--dom-part-1:class-->
+					<tr id="10" class="bg-white even:bg-gray-100">
 					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-						<a class="select block w-full hover:cursor-pointer hover:underline"><!--dom-part-3-->short purple sandwich<!--/dom-part-3--></a
-						>
+						<!--dom-part-2-->10<!--/dom-part-2-->
+					</td>
+					<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+						<a class="select block w-full hover:cursor-pointer hover:underline">
+							<!--dom-part-3-->short purple sandwich<!--/dom-part-3-->
+						</a>
 					</td>
 					<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
 						<btn
@@ -164,10 +244,14 @@
 										>
 						</btn>
 					</td>
-					</tr><!--/dom-part-0-->
+					</tr>
+					<!--/template-part-->
+					<!--/dom-part-0-->
 					</tbody>
 				</table>
 			</div>
+			<!--/template-part-->
 		</example-template-element>
+		<example-test-elementNOT count="2" foo="bar" bar="baz" text="John Done"></example-test-elementNOT>
 	</body>
 </html>

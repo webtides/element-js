@@ -28,19 +28,33 @@ const interpolation = new RegExp(`(<!--${prefix}(\\d+)--><!--/${prefix}(\\d+)-->
  * @param {string} prefix prefix to use per each comment/attribute
  * @returns {string} X/HTML with prefixed comments or attributes
  */
-const createTemplateString = (template, prefix) => {
+export const createTemplateString = (template, prefix) => {
 	let i = 0;
-	return template
+	const templatePart = template
 		.join('\x01')
 		.trim()
 		.replace(elements, (_, name, attrs, selfClosing) => {
-			let ml = name + attrs.replace(attributes, '\x02=$2$1').trimEnd();
+			let ml = name + attrs.replace(attributes, '$1=$2').trimEnd();
 			if (selfClosing.length) ml += empty.test(name) ? ' /' : '></' + name;
-			return '<' + ml + '>';
+			const attributeParts = attrs
+				.replace(attributes, '<!--\x02:$1-->')
+				.trim()
+				.replaceAll('"', '')
+				.replaceAll('> <', '><');
+			return `
+				${attrs.includes('\x01') ? attributeParts : ''}
+				<${ml}>
+			`;
 		})
 		.replace(partPositions, (partPosition) =>
-			partPosition === '\x01' ? '<!--' + prefix + i + '--><!--/' + prefix + i++ + '-->' : prefix + i++,
+			partPosition === '\x01' ? `<!--dom-part-${i}--><!--/dom-part-${i++}-->` : `dom-part-${i++}`,
 		);
+	return `
+		<!--template-part-->
+		${templatePart}
+		<!--/template-part-->
+	`;
+	// TODO: ^ this is actually important because of the whitespace
 };
 
 /**
@@ -99,17 +113,28 @@ export class TemplateResult {
 		let serverSideRendered = false;
 		let childNodePart = childNodeParts.get(domNode);
 		if (!childNodePart) {
-			// TODO: find a better way to get the comment node here...
-			serverSideRendered = domNode.innerHTML.trim().startsWith('<!--template-result-->');
-			childNodePart = new ChildNodePart(
-				undefined, // TODO
-				this,
-				domNode.childNodes.length > 0 ? new PersistentFragment(domNode) : undefined,
-			);
+			const tempNodes = Array.from(domNode.childNodes).filter((node) => node.nodeType !== 3);
+			serverSideRendered =
+				tempNodes.length > 0 && tempNodes[0].nodeType === COMMENT_NODE && tempNodes[0].data === 'template-part';
+
+			if (serverSideRendered) {
+				const startCommentMarker = tempNodes[0];
+				const childNodes = [];
+				let childNode = startCommentMarker.nextSibling;
+				while (childNode && childNode.data !== `/template-part`) {
+					childNodes.push(childNode);
+					childNode = childNode.nextSibling;
+				}
+				const endCommentMarker = childNode?.data === `/template-part` ? childNode : startCommentMarker;
+				const fragment = new PersistentFragment(childNodes);
+
+				childNodePart = new ChildNodePart(endCommentMarker, this, fragment);
+			} else {
+				childNodePart = new ChildNodePart(undefined, this, undefined);
+			}
 			childNodeParts.set(domNode, childNodePart);
 
-			// TODO: maybe we could have a root marker and look for that?!
-			if (domNode.childNodes.length === 0) {
+			if (!serverSideRendered) {
 				domNode.replaceChildren(...childNodePart.fragment.childNodes);
 			}
 		}
@@ -245,8 +270,7 @@ export class TemplateResult {
 			template.append(childNode.cloneNode(true));
 		}
 
-		// TODO: if attributes had comment nodes as well we could omit traversing all normal elements and just loop over comments - should be way faster...
-		const tw = globalThis.document?.createTreeWalker(template, 1 | 128);
+		const tw = globalThis.document?.createTreeWalker(template, 128);
 		const parts = [];
 		const length = this.strings.length - 1;
 		let i = 0;
@@ -263,31 +287,26 @@ export class TemplateResult {
 				throw `bad template: ${this.templateString}`;
 			}
 
-			if (node.nodeType === COMMENT_NODE) {
-				if (node.data === `${placeholder}`) {
-					// TODO: do we need markers for parts inside arrays ?! (like lit)
-					// https://lit.dev/playground/#sample=examples/repeating-and-conditional
+			if (node.data === `${placeholder}`) {
+				// TODO: do we need markers for parts inside arrays ?! (like lit)
+				// https://lit.dev/playground/#sample=examples/repeating-and-conditional
 
-					// therefore we probably need a comment/marker node around the template right?!
-					parts.push({ type: 'node', path: getNodePath(node) });
-					// TODO: ^ could we also start parsing the stack recursively?!
-					placeholder = `${prefix}${++i}`;
-				}
-			} else {
-				while (node.hasAttribute(placeholder)) {
-					parts.push({ type: 'attribute', path: getNodePath(node), name: node.getAttribute(placeholder) });
-					// the placeholder attribute can be removed once we have our part for processing updates
-					//node.removeAttribute(placeholder);
-					placeholder = `${prefix}${++i}`;
-				}
-				// if the node is a text-only node, check its content for a placeholder
-				if (textOnly.test(node.localName) && node.textContent.trim() === `<!--${placeholder}-->`) {
-					node.textContent = '';
-					// TODO: add example to test this case...
-					parts.push({ type: 'text', path: getNodePath(node) });
-					placeholder = `${prefix}${++i}`;
-				}
+				// therefore we probably need a comment/marker node around the template right?!
+				parts.push({ type: 'node', path: getNodePath(node) });
+				// TODO: ^ could we also start parsing the stack recursively?!
+				placeholder = `${prefix}${++i}`;
+			} else if (node.data.includes(`${placeholder}:`)) {
+				const name = node.data.split(':').pop();
+				parts.push({ type: 'attribute', path: getNodePath(node), name: name });
+				placeholder = `${prefix}${++i}`;
 			}
+			// TODO: implement... if the node is a text-only node, check its content for a placeholder
+			/*if (textOnly.test(node.localName) && node.textContent.trim() === `<!--${placeholder}-->`) {
+				node.textContent = '';
+				// TODO: add example to test this case...
+				parts.push({ type: 'text', path: getNodePath(node) });
+				placeholder = `${prefix}${++i}`;
+			}*/
 		}
 		return parts;
 	}

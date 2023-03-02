@@ -1,4 +1,4 @@
-import { convertStringToTemplate } from '../../../util/DOMHelper.js';
+import { COMMENT_NODE, convertStringToTemplate } from "../../../util/DOMHelper.js";
 import { Part } from './Part.js';
 import { processNodePart } from './dom-processers.js';
 import { TemplateResult } from './TemplateResult.js';
@@ -83,16 +83,28 @@ export class ChildNodePart extends Part {
 		const parsedValues = [];
 		for (let index = 0; index < values.length; index++) {
 			let value = values[index];
-			const node = this.fragment?.childNodes?.[index];
 
 			if (value instanceof TemplateResult || Array.isArray(value)) {
 				let childNodePart = this.parts[index];
 				if (!childNodePart) {
-					childNodePart = new ChildNodePart(
-						undefined, // TODO
-						value,
-						node ? new PersistentFragment([node]) : undefined,
+					const templatePartCommentNodes = this.fragment?.childNodes?.filter(
+						(node) => node.nodeType === 8 && node.data === 'template-part',
 					);
+					const startCommentMarker = templatePartCommentNodes[index];
+
+					if (startCommentMarker) {
+						const childNodes = [];
+						let childNode = startCommentMarker.nextSibling;
+						while (childNode && childNode.data !== `/template-part`) {
+							childNodes.push(childNode);
+							childNode = childNode.nextSibling;
+						}
+						const endCommentMarker = childNode?.data === `/template-part` ? childNode : startCommentMarker;
+						const fragment = new PersistentFragment(childNodes);
+						childNodePart = new ChildNodePart(endCommentMarker, value, fragment);
+					} else {
+						childNodePart = new ChildNodePart(undefined, value, undefined);
+					}
 					this.parts[index] = childNodePart;
 				} else {
 					childNodePart.parseValue(value);
@@ -118,7 +130,26 @@ export class ChildNodePart extends Part {
 					fragment = this.parseFragment(templateResult);
 					fragmentsCache.set(templateResult.strings, fragment);
 				}
-				this.fragment = new PersistentFragment(fragment);
+
+				// TODO: this is somehow duplicated from TemplateResult...
+				const tempNodes = Array.from(fragment.childNodes).filter((node) => node.nodeType !== 3);
+				const isTemplatePart =
+					tempNodes.length > 0 &&
+					tempNodes[0].nodeType === COMMENT_NODE &&
+					tempNodes[0].data === 'template-part';
+
+				if (isTemplatePart) {
+					const startCommentMarker = tempNodes[0];
+					const childNodes = [];
+					let childNode = startCommentMarker.nextSibling;
+					while (childNode && childNode.data !== `/template-part`) {
+						childNodes.push(childNode);
+						childNode = childNode.nextSibling;
+					}
+					this.fragment = new PersistentFragment(childNodes);
+				} else {
+					this.fragment = new PersistentFragment(fragment);
+				}
 			}
 
 			let parts = partsCache.get(templateResult.strings);
