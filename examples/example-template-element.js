@@ -11,7 +11,7 @@ class Store {
 		this.data = [
 			{
 				id: 1,
-				label: 'big brown sandwich 12345',
+				label: 'big brown sandwich from CSR',
 			},
 			{
 				id: 2,

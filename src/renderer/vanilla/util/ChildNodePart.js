@@ -1,4 +1,4 @@
-import { COMMENT_NODE, convertStringToTemplate } from "../../../util/DOMHelper.js";
+import { COMMENT_NODE, convertStringToTemplate } from '../../../util/DOMHelper.js';
 import { Part } from './Part.js';
 import { processNodePart } from './dom-processers.js';
 import { TemplateResult } from './TemplateResult.js';
@@ -30,9 +30,10 @@ export class ChildNodePart extends Part {
 	 * @param {PersistentFragment | undefined} fragment
 	 */
 	constructor(node, value, fragment) {
-		super(node, value);
+		// TODO: if SSRed, we probably need to set the value?!
+		super(node, undefined);
 		this.fragment = fragment;
-		this.value = this.parseValue(value);
+		this.parseValue(value);
 		if (node) this.processor = processNodePart(this.node);
 	}
 
@@ -57,7 +58,9 @@ export class ChildNodePart extends Part {
 	 */
 	update(value) {
 		if (value instanceof TemplateResult || Array.isArray(value)) {
+			// TODO: when doing it for the first time, parseValue will be done twice.. (1. in constructor)
 			const parsedValue = this.parseValue(value);
+			// TODO: because it was already parsed in the constructor, old and new values will be the same...
 			const parsedOldValue = this.value;
 			this.value = parsedValue;
 
@@ -68,6 +71,10 @@ export class ChildNodePart extends Part {
 			}
 
 			// TODO: is this really doing the right thing?!
+			// Maybe so! There are two kind of ChildNode Parts - Node Parts and Array Parts
+			// The Array parts won't have a comment node and therefore also don't have a processor
+			// but the Node Parts have a comment node and a processor and the update is the actual call
+			// to actually render anything to the DOM.
 			return super.update(parsedValue, parsedOldValue);
 		} else {
 			return super.update(value);
@@ -93,13 +100,14 @@ export class ChildNodePart extends Part {
 					const startCommentMarker = templatePartCommentNodes[index];
 
 					if (startCommentMarker) {
-						const childNodes = [];
+						const childNodes = [startCommentMarker];
 						let childNode = startCommentMarker.nextSibling;
 						while (childNode && childNode.data !== `/template-part`) {
 							childNodes.push(childNode);
 							childNode = childNode.nextSibling;
 						}
 						const endCommentMarker = childNode?.data === `/template-part` ? childNode : startCommentMarker;
+						childNodes.push(endCommentMarker);
 						const fragment = new PersistentFragment(childNodes);
 						childNodePart = new ChildNodePart(endCommentMarker, value, fragment);
 					} else {
@@ -130,26 +138,7 @@ export class ChildNodePart extends Part {
 					fragment = this.parseFragment(templateResult);
 					fragmentsCache.set(templateResult.strings, fragment);
 				}
-
-				// TODO: this is somehow duplicated from TemplateResult...
-				const tempNodes = Array.from(fragment.childNodes).filter((node) => node.nodeType !== 3);
-				const isTemplatePart =
-					tempNodes.length > 0 &&
-					tempNodes[0].nodeType === COMMENT_NODE &&
-					tempNodes[0].data === 'template-part';
-
-				if (isTemplatePart) {
-					const startCommentMarker = tempNodes[0];
-					const childNodes = [];
-					let childNode = startCommentMarker.nextSibling;
-					while (childNode && childNode.data !== `/template-part`) {
-						childNodes.push(childNode);
-						childNode = childNode.nextSibling;
-					}
-					this.fragment = new PersistentFragment(childNodes);
-				} else {
-					this.fragment = new PersistentFragment(fragment);
-				}
+				this.fragment = new PersistentFragment(fragment);
 			}
 
 			let parts = partsCache.get(templateResult.strings);
@@ -165,14 +154,15 @@ export class ChildNodePart extends Part {
 				if (part.type === 'node') {
 					const placeholder = node.data;
 
-					const childNodes = [];
+					const childNodes = [node];
 					let childNode = node.nextSibling;
 					while (childNode && childNode.data !== `/${placeholder}`) {
 						childNodes.push(childNode);
 						childNode = childNode.nextSibling;
 					}
 
-					const endCommentMarker = childNode?.data === `/${placeholder}` ? childNode : node;
+					const endCommentMarker = childNode;
+					childNodes.push(endCommentMarker);
 
 					const fragment = new PersistentFragment(childNodes);
 					return new ChildNodePart(endCommentMarker, templateResult.values[index], fragment);
