@@ -102,6 +102,7 @@
 					simpleContext: '',
 					multiContext: '',
 					inlineCallbackValue: '',
+					watcherReflectedValue: false
 				};
 			}
 
@@ -114,7 +115,7 @@
 					simpleContext: '',
 					ancestorContext: null,
 					multiContext: null,
-					storeContext: null,
+					storeContext: {},
 					noContext: 'noContext',
 					staticContext: 'noContext',
 					booleanContext: true,
@@ -123,6 +124,16 @@
 					}
 				};
 			}
+
+			watch() {
+				return {
+					storeContext: (newValues) => {
+						console.log('change', newValues.value, this.storeContext.value)
+						this.watcherReflectedValue = newValues.value;
+					}
+				}
+			}
+
 
 			connected() {
 				this.requestContext('callbackContext', (context) => {
@@ -240,6 +251,16 @@
 			const el = document.getElementById('primary');
 			expect(el.inlineCallbackValue).to.equal(ParentContextElement.INLINE);
 		});
+
+		it('Does receive watcher calls through Store updates even if defaults were defined ', async () => {
+			const el = document.getElementById('primary');
+			// TODO be sure to ignore injection cals
+			el.storeContext.value = 600;
+			// need to await one update
+			await nextFrame();
+			expect(el.watcherReflectedValue).to.equal(el.storeContext.value);
+		});
+
 	});
 </script>
 </body>
