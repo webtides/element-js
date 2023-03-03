@@ -102,7 +102,7 @@
 					simpleContext: '',
 					multiContext: '',
 					inlineCallbackValue: '',
-					watcherReflectedValue: false
+					watcherReflectedValue: 0
 				};
 			}
 
@@ -254,7 +254,6 @@
 
 		it('Does receive watcher calls through Store updates even if defaults were defined ', async () => {
 			const el = document.getElementById('primary');
-			// TODO be sure to ignore injection cals
 			el.storeContext.value = 600;
 			// need to await one update
 			await nextFrame();
