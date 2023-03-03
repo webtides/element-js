@@ -250,7 +250,7 @@ export const processNodePart = (comment) => {
 						while (comment.previousSibling) {
 							if (
 								comment.previousSibling.nodeType === COMMENT_NODE &&
-								comment.previousSibling.data.includes('dom-part-')
+								comment.previousSibling.data === comment.data.replace('/', '')
 							) {
 								break;
 							}
