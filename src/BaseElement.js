@@ -1,6 +1,5 @@
 import { parseAttribute, isNaN, dashToCamel, camelToDash, isObjectLike } from './util/AttributeParser.js';
 import { getClosestParentCustomElementNode, isOfSameNodeType } from './util/DOMHelper.js';
-import { informWatchedPropertiesAndDispatchChangeEvent } from './util/PropertyHelper.js';
 import { Store } from './util/Store.js';
 
 export { defineElement } from './util/defineElement.js';
@@ -261,16 +260,49 @@ class BaseElement extends HTMLElement {
 							newValueString: newValueString,
 							oldValue: oldValue,
 						}).finally(() => {
-							informWatchedPropertiesAndDispatchChangeEvent(this, property, newValue, oldValue);
+							this.callPropertyWatcher(property, newValue, oldValue);
+							this.notifyPropertyChange(property, newValue);
 						});
 					} else {
-						informWatchedPropertiesAndDispatchChangeEvent(this, property, newValue, oldValue);
+						this.callPropertyWatcher(property, newValue, oldValue);
+						this.notifyPropertyChange(property, newValue);
 					}
 				}
-
 				return this;
 			},
 		});
+	}
+
+	/**
+	 * call the watch callbacks on property changes
+	 *
+	 * @param context is the elements instance
+	 * @param property property that changes
+	 * @param newValue
+	 * @param oldValue
+	 */
+	callPropertyWatcher(property, newValue, oldValue) {
+		// notify watched properties (after update())
+		const watch = this.watch();
+		if (property in watch) {
+			watch[property](newValue, oldValue);
+		}
+	}
+	/**
+	 * notify property observer via change event
+	 *
+	 * @param context is the elements instance
+	 * @param property property that changes
+	 * @param newValue
+	 */
+	notifyPropertyChange(property, newValue) {
+		// dispatch change event
+		if (
+			property in this._options['propertyOptions'] &&
+			this._options['propertyOptions'][property]['notify'] === true
+		) {
+			this.dispatch(`${camelToDash(property)}-changed`, newValue, true);
+		}
 	}
 
 	reflectProperty(options) {

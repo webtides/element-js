@@ -1,5 +1,5 @@
 import { isObjectLike, deepEquals } from './AttributeParser.js';
-import { informWatchedPropertiesAndDispatchChangeEvent } from './PropertyHelper';
+import { BaseElement } from '../BaseElement';
 
 export class Store {
 	_observer = new Set();
@@ -18,6 +18,7 @@ export class Store {
 					return this._state[key];
 				},
 				set: (newValue) => {
+					const oldState = structuredClone(this._state);
 					const oldValue = this._state[key];
 					this._state[key] = newValue;
 
@@ -26,7 +27,7 @@ export class Store {
 						if (watch.hasOwnProperty(key) && typeof watch[key] === 'function') {
 							watch[key](newValue, oldValue);
 						}
-						this.requestUpdate();
+						this.requestUpdate(oldState);
 					}
 				},
 			});
@@ -68,19 +69,26 @@ export class Store {
 		this._observer.delete(observer);
 	}
 
-	requestUpdate() {
+	requestUpdate(oldState) {
 		this._observer.forEach(async (observer) => {
-			typeof observer.requestUpdate === 'function' ? await observer.requestUpdate() : observer();
-			// check if store is watched by an observer
-			if (typeof observer.watch === 'function' && Object.keys(observer.watch() ?? {}).length > 0) {
-				// observer actually has watched properties
-				const properties = observer.properties();
-				Object.keys(observer.watch() ?? {}).forEach((key) => {
-					if (properties[key] === this) {
-						// observer is actually watching store changes
-						informWatchedPropertiesAndDispatchChangeEvent(observer, key, this, this);
-					}
-				});
+			if (observer instanceof BaseElement) {
+				await observer.requestUpdate();
+				// check if store is watched by an observer
+				if (Object.keys(observer.watch() ?? {}).length > 0) {
+					// observer actually has watched properties
+					const properties = observer.properties();
+					Object.keys(observer.watch() ?? {}).forEach((key) => {
+						if (properties[key] === this) {
+							// observer is actually watching store changes provide new and old values
+							observer.callPropertyWatcher(key, this._state, oldState);
+							observer.notifyPropertyChange(key, this._state);
+						}
+					});
+				}
+			} else if (typeof observer === 'function') {
+				observer();
+			} else {
+				console.error('Store: observer type is not supported.', observer);
 			}
 		});
 	}
