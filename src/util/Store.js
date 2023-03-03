@@ -18,7 +18,6 @@ export class Store {
 					return this._state[key];
 				},
 				set: (newValue) => {
-					const oldState = structuredClone(this._state);
 					const oldValue = this._state[key];
 					this._state[key] = newValue;
 
@@ -27,7 +26,7 @@ export class Store {
 						if (watch.hasOwnProperty(key) && typeof watch[key] === 'function') {
 							watch[key](newValue, oldValue);
 						}
-						this.requestUpdate(oldState);
+						this.requestUpdate();
 					}
 				},
 			});
@@ -69,7 +68,7 @@ export class Store {
 		this._observer.delete(observer);
 	}
 
-	requestUpdate(oldState) {
+	requestUpdate() {
 		this._observer.forEach(async (observer) => {
 			if (observer instanceof BaseElement) {
 				await observer.requestUpdate();
@@ -78,10 +77,10 @@ export class Store {
 					// observer actually has watched properties
 					const properties = observer.properties();
 					Object.keys(observer.watch() ?? {}).forEach((key) => {
-						if (properties[key] === this) {
+						if (observer._state[key] === this) {
 							// observer is actually watching store changes provide new and old values
-							observer.callPropertyWatcher(key, this._state, oldState);
-							observer.notifyPropertyChange(key, this._state);
+							observer.callPropertyWatcher(key, this, this);
+							observer.notifyPropertyChange(key, this);
 						}
 					});
 				}
