@@ -89,7 +89,8 @@
 					simpleContext: this.simpleContext,
 					multiContext: this.multiContext,
 					inlineCallback: ParentContextElement.INLINE,
-					staticContext: ParentContextElement.STATIC
+					staticContext: ParentContextElement.STATIC,
+					booleanContext: false
 				};
 			}
 		}
@@ -116,6 +117,7 @@
 					storeContext: null,
 					noContext: 'noContext',
 					staticContext: 'noContext',
+					booleanContext: true,
 					inlineCallback: (value) => {
 						this.inlineCallbackValue = value;
 					}
@@ -164,6 +166,12 @@
 			const el = document.getElementById('primary');
 			const secondary = document.getElementById('secondary');
 			expect(el.simpleContext).to.equal(secondary.simpleContext);
+		});
+
+		it('it receives boolean values even if they are falsy', async () => {
+			const el = document.getElementById('primary');
+
+			expect(el.booleanContext).to.equal(false);
 		});
 
 		it('Receives Ancestor Context if parent does not provide the requested value', async () => {
