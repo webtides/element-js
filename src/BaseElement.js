@@ -356,9 +356,9 @@ class BaseElement extends HTMLElement {
 		const provideProperties = this.provideProperties();
 
 		Object.entries(event.detail ?? {}).forEach(([key, valueOrCallback]) => {
-			const providedValue = provideProperties[key] ?? properties[key];
-			if (providedValue) {
+			if (key in provideProperties) {
 				// found it, provide it
+				const providedValue = provideProperties[key];
 				event.stopPropagation();
 				if (typeof valueOrCallback === 'function') {
 					// call function with context value
