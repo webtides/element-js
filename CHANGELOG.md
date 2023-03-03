@@ -15,6 +15,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [0.7.2] - 2023-03-03
+
+### Fixed
+* watcher callbacks for injected stores
+
 ## [0.7.1] - 2023-03-03
 
 ### Added
