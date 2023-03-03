@@ -108,7 +108,8 @@ export const convertStringToHTML = (template) => {
  */
 export const convertStringToTemplate = (string) => {
 	const template = globalThis.document?.createElement('template');
-	template.innerHTML = string;
+	// TODO: ensure that SSRed and CSRed templates have the same amount of whitespace text nodes
+	template.innerHTML = string.trimStart().trimEnd();
 	return template.content;
 };
 
