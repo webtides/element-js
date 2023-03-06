@@ -132,7 +132,11 @@ export class ChildNodePart extends Part {
 	 */
 	parseTemplateResult(templateResult) {
 		if (this.strings !== templateResult.strings) {
-			if (!this.fragment) {
+			// TODO: for nested TemplateResults the fragment seems to be wrong
+			// and won't get updated ever again...
+			// TODO: the || check should not be needed :(
+			// but if the nested TemplateResult has values the strings will never ever be rendered...
+			if (!this.fragment || templateResult.values.length === 0) {
 				let fragment = fragmentsCache.get(templateResult.strings);
 				if (!fragment) {
 					fragment = this.parseFragment(templateResult);

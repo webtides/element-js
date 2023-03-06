@@ -39,7 +39,9 @@ class ExampleTestElement extends TemplateElement {
 		// but i think it is rather a missing call to update.
 		return html`
 			<div class="test2">
-				${[1, 'Text', html`<span>Foo</span>`, () => 'Function', p].map((item) => html` <div>${item}</div> `)}
+				${[1, 'Text', html`<span>Foo</span>`, html`<span>${this.count}</span>`, () => 'Function', p].map(
+					(item) => html` <div>${item}</div> `,
+				)}
 			</div>
 		`;
 	}
