@@ -29,8 +29,6 @@ class WatchStore extends Store {
 				this.triggerCount++;
 			},
 			nestedStore: () => {
-				console.log('BLOODY CALLBACK !?');
-				console.log(this.nestedStore.nestedCount);
 				this.echoNestedStoreCount = this.nestedStore.nestedCount;
 			},
 		};
