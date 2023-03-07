@@ -1,3 +1,5 @@
+import { BaseElement } from '../BaseElement';
+
 export function getAllParentNodes(domNode) {
 	let node = domNode.parentElement;
 	let parents = [];
@@ -31,6 +33,20 @@ export function getClosestParentCustomElementNode(domNode) {
 	});
 
 	return customElementParents.pop();
+}
+
+export function getAllElementChildren(domNode) {
+	const nodeIterator = document.createNodeIterator(domNode, NodeFilter.SHOW_ELEMENT, (node) =>
+		node.nodeName.includes('-') && node instanceof BaseElement
+			? NodeFilter.FILTER_ACCEPT
+			: NodeFilter.FILTER_REJECT,
+	);
+	const customElements = [];
+	let currentNode;
+	while ((currentNode = nodeIterator.nextNode())) {
+		customElements.push(currentNode);
+	}
+	return customElements;
 }
 
 export function isOfSameNodeType(nodeA, nodeB) {

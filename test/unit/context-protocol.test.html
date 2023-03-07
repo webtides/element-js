@@ -31,8 +31,10 @@
 
 <ancestor-context-element>
 	<parent-context-element>
-		<request-context-element id="primary"></request-context-element>
-		<request-context-element id="secondary"></request-context-element>
+		<late-provider>
+			<request-context-element id="primary"></request-context-element>
+			<request-context-element id="secondary"></request-context-element>
+		</late-provider>
 	</parent-context-element>
 </ancestor-context-element>
 
@@ -49,6 +51,16 @@
 
 	runTests(() => {
 
+
+		class LateProvider extends BaseElement {
+			static LATE_CONTEXT = 'lateContext';
+
+			provideProperties() {
+				return {
+					lateContext: LateProvider.LATE_CONTEXT,
+				};
+			}
+		}
 
 		class AncestorContextElement extends BaseElement {
 			static CONTEXT = 'ancestorContext';
@@ -119,6 +131,7 @@
 					noContext: 'noContext',
 					staticContext: 'noContext',
 					booleanContext: true,
+					lateContext: null,
 					inlineCallback: (value) => {
 						this.inlineCallbackValue = value;
 					}
@@ -128,7 +141,6 @@
 			watch() {
 				return {
 					storeContext: (newValues) => {
-						console.log('change', newValues.value, this.storeContext.value)
 						this.watcherReflectedValue = newValues.value;
 					}
 				}
@@ -146,7 +158,6 @@
 		defineElement('ancestor-context-element', AncestorContextElement);
 		defineElement('parent-context-element', ParentContextElement);
 		defineElement('request-context-element', RequestContextElement);
-
 
 		it('receives global vanilla context', async () => {
 			const el = document.getElementById('primary');
@@ -258,6 +269,16 @@
 			// need to await one update
 			await nextFrame();
 			expect(el.watcherReflectedValue).to.equal(el.storeContext.value);
+		});
+
+		it('It does receive requested Values even if the provider is late (loaded or defined) ', async () => {
+			const el = document.getElementById('primary');
+			// value needs to be undefined initally
+			expect(el.lateContext).to.be.undefined;
+			// element gets defined late
+			defineElement('late-provider', LateProvider);
+			// value is expected to be injected anyways
+			expect(el.lateContext).to.equal(LateProvider.LATE_CONTEXT);
 		});
 
 	});
