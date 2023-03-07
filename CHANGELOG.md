@@ -15,6 +15,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [0.7.3] - 2023-03-07
+
+### Fixed
+* last release was tagged wrong
+
 ## [0.7.2] - 2023-03-03
 
 ### Fixed
