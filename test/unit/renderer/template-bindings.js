@@ -26,15 +26,11 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 			assert.equal(stripCommentMarkers(el.innerHTML), '<div>Hello John</div>');
 		});
 
-		// TODO:
-		/*if (name !== 'lit') {
-			// TODO: for some reason the lit html literal does not sanitize...
-			it('correctly sanitizes html input', async () => {
-				const el = document.createElement('div');
-				render(`<strong>Unsafe HTML</strong>`, el);
-				assert.equal(stripCommentMarkers(el.innerHTML), '&lt;strong&gt;Unsafe HTML&lt;/strong&gt;');
-			});
-		}*/
+		it('correctly sanitizes html input', async () => {
+			const el = document.createElement('div');
+			render(html`${'<strong>Unsafe HTML</strong>'}`, el);
+			assert.equal(stripCommentMarkers(el.innerHTML), '&lt;strong&gt;Unsafe HTML&lt;/strong&gt;');
+		});
 
 		// TODO:
 		/*it('allows unsafe html input with the "unsafeHTML" directive', async () => {
@@ -64,23 +60,18 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 			assert.equal(stripCommentMarkers(el.innerHTML), '<div><div>1</div><div>2</div><div>3</div></div>');
 		});
 
-		// TODO:
-		/*if (name !== 'lit') {
-			// TODO: for some reason the lit html literal does not sanitize...
-			it('correctly parses an array of unsafe strings', async () => {
-				const el = await fixture(`<${templateTag}></${templateTag}>`);
+		// TODO: fix and add test back in...
+		/*it('correctly sanitizes an array of unsafe strings', async () => {
+			const el = document.createElement('div');
+			const parts = [`<strong>First part</strong>`, `<strong>Second part</strong>`];
+			render(html`<div>${parts}</div>`, el);
+			assert.equal(
+				stripCommentMarkers(el.innerHTML),
+				'<div>&lt;strong&gt;First part&lt;/strong&gt;&lt;strong&gt;Second part&lt;/strong&gt;</div>',
+			);
+		});*/
 
-				const parts = [`<strong>First part</strong>`, `<strong>Second part</strong>`];
-				await el.updateTemplate(html`${parts}`);
-
-				assert.lightDom.equal(
-					el,
-					'$lt;strong$gt;First part$lt;/strong$gt;$lt;strong$gt;Second part$lt;/strong$gt;',
-				);
-			});
-		}*/
-
-		// TODO:
+		// TODO: fix and add test back in...
 		/*it('allows unsafe html input with the "unsafeHTML" directive in arrays', async () => {
 			const el = await fixture(`<${templateTag}></${templateTag}>`);
 
@@ -90,7 +81,7 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 			assert.lightDom.equal(el, '<strong>First part</strong><strong>Second part</strong>');
 		});*/
 
-		// TODO:
+		// TODO: fix and add test back in...
 		/*it('can render bindings inside attributes', async () => {
 			const el = document.createElement('div');
 
@@ -100,7 +91,7 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 			assert.equal(stripCommentMarkers(el.innerHTML), '<a class="link is-active">Label</a>');
 		});*/
 
-		// TODO:
+		// TODO: fix and add test back in...
 		/*it('can render multiple bindings inside attributes', async () => {
 			const el = await fixture(`<${templateTag}></${templateTag}>`);
 
