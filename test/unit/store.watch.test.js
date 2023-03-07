@@ -29,6 +29,7 @@ class WatchStore extends Store {
 				this.triggerCount++;
 			},
 			nestedStore: () => {
+				console.log('BLOODY CALLBACK !?');
 				console.log(this.nestedStore.nestedCount);
 				this.echoNestedStoreCount = this.nestedStore.nestedCount;
 			},
@@ -63,9 +64,10 @@ describe('store-watch', () => {
 	it('watches changes on nested store properties which are in itself instances of Store', async () => {
 		const watchStore = new WatchStore({ count: 0 });
 		assert.equal(watchStore.nestedStore.nestedCount, 0);
-
 		watchStore.nestedStore.nestedCount = 1;
 		assert.equal(watchStore.nestedStore.nestedCount, 1);
+		// store updates contains a potential await requestUpdate so we need to wait a frame here
+		await nextFrame();
 		assert.equal(watchStore.echoNestedStoreCount, watchStore.nestedStore.nestedCount);
 	});
 });
