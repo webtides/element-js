@@ -1,5 +1,5 @@
 import { parseAttribute, isNaN, dashToCamel, camelToDash, isObjectLike } from './util/AttributeParser.js';
-import { getClosestParentCustomElementNode, isOfSameNodeType } from './util/DOMHelper.js';
+import { getAllElementChildren, getClosestParentCustomElementNode, isOfSameNodeType } from './util/DOMHelper.js';
 import { Store } from './util/Store.js';
 
 export { defineElement } from './util/defineElement.js';
@@ -346,8 +346,21 @@ class BaseElement extends HTMLElement {
 			this.requestContext(key, value);
 		});
 		// define context provider
-		if (Object.keys(this.provideProperties()).length > 0) {
+		const providedKeys = Object.keys(this.provideProperties());
+		if (providedKeys.length > 0) {
 			this.addEventListener('request-context', this.onRequestContext);
+			// check if there are already connected elements in child dom and restart requests
+			getAllElementChildren(this).forEach((customChild) => {
+				// if injectProperties?.() is defined it means that the child got connected BEFORE the parent (Runtime Issue)
+				const requestedProperties = customChild.injectProperties?.() ?? {};
+				Object.entries(requestedProperties).forEach(([key, value]) => {
+					// iterate over requested properties to find missed context requests
+					if (providedKeys.includes(key)) {
+						// owns the provided  key -> replay request
+						customChild.requestContext(key, value);
+					}
+				});
+			});
 		}
 	}
 
