@@ -92,10 +92,10 @@ export function camelToDash(string) {
  */
 export function decodeAttribute(attribute) {
 	return `${attribute}`
-		.replace(/\$lt;/g, '<')
-		.replace(/\$gt;/g, '>')
-		.replace(/\$quot;/g, '"')
-		.replace(/\$apos;/g, "'");
+		.replace(/&lt;/g, '<')
+		.replace(/&gt;/g, '>')
+		.replace(/&quot;/g, '"')
+		.replace(/&apos;/g, "'");
 }
 
 /**
@@ -111,10 +111,10 @@ export function decodeAttribute(attribute) {
  */
 export function encodeAttribute(attribute) {
 	return `${attribute}`
-		.replace(/'/g, '$apos;')
-		.replace(/"/g, '$quot;')
-		.replace(/</g, '$lt;')
-		.replace(/>/g, '$gt;')
+		.replace(/'/g, '&apos;')
+		.replace(/"/g, '&quot;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
 		.replace(/\r\n/g, '\n')
 		.replace(/[\r\n]/g, '\n');
 }

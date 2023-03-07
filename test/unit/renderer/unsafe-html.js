@@ -1,5 +1,12 @@
 import { fixture, assert, nextFrame } from '@open-wc/testing';
 
+export const stripCommentMarkers = (html) =>
+	html
+		.replace(/<!--(\/?)(template-part|dom-part-\d+(:\w+)?)-->/g, '')
+		.replace(/\s+/g, ' ')
+		.replaceAll('> ', '>')
+		.trim();
+
 export const testUnsafeHtml = function (name, sanitizedTag, unsafeTag, childTag, sanitizedParentTag) {
 	describe(`unsafeHtml directive for ${name}`, () => {
 		it('sanitizes the unsafe html input', async () => {
@@ -13,21 +20,24 @@ export const testUnsafeHtml = function (name, sanitizedTag, unsafeTag, childTag,
 		});
 
 		it('correctly updates unsafe input', async () => {
-			const el = await fixture(`<${unsafeTag}></${unsafeTag}>`);
-			el.updateContent();
-			await nextFrame();
-			assert.lightDom.equal(el, '<div><strong>unsafe content</strong>1</div>');
+			const el = await fixture(`<unsafe-tag></unsafe-tag>`);
+			await el.updateContent();
+			assert.equal(
+				stripCommentMarkers(el.innerHTML.replace(/^\s+|\s+$|\s+(?=\s)/g, '')),
+				`<div><strong>unsafe content</strong>1</div>`,
+			);
 		});
 
 		it('correctly passes the sanitized html to child components', async () => {
-			const el = await fixture(`<${sanitizedParentTag}></${sanitizedParentTag}>`);
+			console.log('test', sanitizedParentTag);
+			const el = await fixture(`<sanitized-parent-tag></sanitized-parent-tag>`);
 			await nextFrame();
 			assert.lightDom.equal(
 				el,
 				`
-			<${childTag} text="$lt;strong$gt;unsafe content$lt;/strong$gt;">
-				$lt;strong$gt;unsafe content$lt;/strong$gt;
-			</${childTag}>
+			<child-tag text="&lt;strong&gt;unsafe content&lt;/strong&gt;">
+				&lt;strong&gt;unsafe content&lt;/strong&gt;
+			</child-tag>
 		`,
 			);
 		});

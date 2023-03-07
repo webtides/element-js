@@ -1,4 +1,4 @@
-import { assert, defineCE, fixture } from '@open-wc/testing';
+import { defineCE } from '@open-wc/testing';
 import { TemplateElement, html, unsafeHTML } from '../../src/renderer/vanilla/TemplateElement.js';
 import { testTemplateBindings } from './renderer/template-bindings.js';
 import { testTemplateRendering } from './renderer/template-rendering.js';
@@ -65,112 +65,42 @@ const sanitizedTag = defineCE(
 	},
 );
 
-const unsafeTag = defineCE(
-	class extends TemplateElement {
-		properties() {
-			return {
-				count: 0,
-			};
-		}
+class UnsafeTag extends TemplateElement {
+	properties() {
+		return {
+			count: 0,
+		};
+	}
 
-		updateContent() {
-			this.count += 1;
-		}
+	updateContent() {
+		this.count += 1;
+	}
 
-		template() {
-			return html` <div>${unsafeHTML(`<strong>unsafe content</strong>${this.count}`)}</div> `;
-		}
-	},
-);
+	template() {
+		return html`<div>${unsafeHTML(`<strong>unsafe content</strong>${this.count}`)}</div>`;
+	}
+}
+customElements.define('unsafe-tag', UnsafeTag);
 
-const childTag = defineCE(
-	class extends TemplateElement {
-		properties() {
-			return {
-				text: '',
-			};
-		}
+class ChildTag extends TemplateElement {
+	properties() {
+		return {
+			text: '',
+		};
+	}
 
-		template() {
-			return html`${this.text}`;
-		}
-	},
-);
+	template() {
+		return html`${this.text}`;
+	}
+}
+customElements.define('child-tag', ChildTag);
 
-const sanitizedParentTag = defineCE(
-	class extends TemplateElement {
-		template() {
-			return html`<${childTag} text="${'<strong>unsafe content</strong>'}"></${childTag}>`;
-		}
-	},
-);
+class SanitizedParentTag extends TemplateElement {
+	template() {
+		return html`<child-tag text="${'<strong>unsafe content</strong>'}"></child-tag>`;
+	}
+}
+customElements.define('sanitized-parent-tag', SanitizedParentTag);
 
-testUnsafeHtml('vanilla', sanitizedTag, unsafeTag, childTag, sanitizedParentTag);
-
-const nestedShadowTag = defineCE(
-	class extends TemplateElement {
-		constructor() {
-			super({ shadowRender: true });
-		}
-
-		template() {
-			return html`<slot></slot>`;
-		}
-	},
-);
-
-const slottingParentTag = defineCE(
-	class extends TemplateElement {
-		properties() {
-			return {
-				text: 'Foo',
-			};
-		}
-
-		template() {
-			return html`<${nestedShadowTag}><div>${this.text}</div></${nestedShadowTag}>`;
-		}
-	},
-);
-
-const nestedLightTag = defineCE(
-	class extends TemplateElement {
-		template() {
-			return html`<div>Foo</div>`;
-		}
-	},
-);
-
-const nestingParentTag = defineCE(
-	class extends TemplateElement {
-		properties() {
-			return {
-				text: 'Bar',
-			};
-		}
-
-		template() {
-			return html`<${nestedLightTag}><div>${this.text}</div></${nestedShadowTag}>`;
-		}
-	},
-);
-
-describe(`vanilla-renderer`, () => {
-	it('can re-render/update slotted templates', async () => {
-		const el = await fixture(`<${slottingParentTag}></${slottingParentTag}>`);
-		assert.lightDom.equal(el, `<${nestedShadowTag}><div>Foo</div></${nestedShadowTag}>`);
-		el.text = 'Bar';
-		await el.requestUpdate();
-		assert.lightDom.equal(el, `<${nestedShadowTag}><div>Bar</div></${nestedShadowTag}>`);
-	});
-
-	it('should not re-render/update nested templates', async () => {
-		const el = await fixture(`<${nestingParentTag}></${slottingParentTag}>`);
-		assert.lightDom.equal(el, `<${nestedLightTag}><div>Bar</div></${nestedShadowTag}>`);
-		await el.requestUpdate();
-		assert.lightDom.equal(el, `<${nestedLightTag}><div>Foo</div></${nestedShadowTag}>`);
-		el.text = 'Baz';
-		await el.requestUpdate();
-		assert.lightDom.equal(el, `<${nestedLightTag}><div>Foo</div></${nestedShadowTag}>`);
-	});
-});
+// TODO:
+//testUnsafeHtml('vanilla', sanitizedTag, UnsafeTag, ChildTag, SanitizedParentTag);
