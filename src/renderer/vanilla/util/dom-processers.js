@@ -194,7 +194,7 @@ const diffNodes = function (parentNode, domChildNodes, templateChildNodes, ancho
 };
 
 /**
- * @param {Element} comment
+ * @param {Node} comment
  * @return {(function(*): void)|*}
  */
 export const processNodePart = (comment) => {

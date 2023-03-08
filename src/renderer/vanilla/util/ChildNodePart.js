@@ -14,10 +14,15 @@ const partsCache = new WeakMap();
 const fragmentsCache = new WeakMap();
 
 export class ChildNodePart extends Part {
-	/** @type {Part[]} */
-	parts = []; // Used to remember parent template state as we recurse into nested templates
+	/** @type {Node | undefined} */
+	startNode = undefined;
 
-	// TODO: instead of using the strings array, we should use a hash of the strings maybe?
+	/** @type {Node | undefined} */
+	endNode = undefined;
+
+	/** @type {Part[]} */
+	parts = [];
+
 	/** @type {TemplateStringsArray} */
 	strings = undefined;
 
@@ -25,16 +30,35 @@ export class ChildNodePart extends Part {
 	fragment = undefined;
 
 	/**
-	 * @param {Node} node - the comment node
+	 * @param {Node} startNode - the start comment marker node
 	 * @param {TemplateResult | any[]} value
-	 * @param {PersistentFragment | undefined} fragment
 	 */
-	constructor(node, value, fragment) {
+	constructor(startNode, value) {
+		if (startNode && startNode?.nodeType !== COMMENT_NODE) {
+			throw new Error('ChildNodePart: startNode is not a comment node');
+		}
+
 		// TODO: if SSRed, we probably need to set the value?!
-		super(node, undefined);
-		this.fragment = fragment;
+		super(startNode, undefined);
+
+		if (startNode) {
+			const placeholder = startNode.data;
+			const childNodes = [startNode];
+			let childNode = startNode.nextSibling;
+			while (childNode && childNode.data !== `/${placeholder}`) {
+				childNodes.push(childNode);
+				childNode = childNode.nextSibling;
+			}
+
+			const endNode = childNode;
+			childNodes.push(endNode);
+
+			this.fragment = new PersistentFragment(childNodes);
+			this.startNode = startNode;
+			this.endNode = endNode;
+		}
 		this.parseValue(value);
-		if (node) this.processor = processNodePart(this.node);
+		if (this.endNode) this.processor = processNodePart(this.endNode);
 	}
 
 	/**
@@ -95,24 +119,11 @@ export class ChildNodePart extends Part {
 				let childNodePart = this.parts[index];
 				if (!childNodePart) {
 					const templatePartCommentNodes = this.fragment?.childNodes?.filter(
-						(node) => node.nodeType === 8 && node.data === 'template-part',
+						(node) => node && node.nodeType === COMMENT_NODE && node.data === 'template-part',
 					);
-					const startCommentMarker = templatePartCommentNodes[index];
+					const startNode = templatePartCommentNodes[index];
 
-					if (startCommentMarker) {
-						const childNodes = [startCommentMarker];
-						let childNode = startCommentMarker.nextSibling;
-						while (childNode && childNode.data !== `/template-part`) {
-							childNodes.push(childNode);
-							childNode = childNode.nextSibling;
-						}
-						const endCommentMarker = childNode?.data === `/template-part` ? childNode : startCommentMarker;
-						childNodes.push(endCommentMarker);
-						const fragment = new PersistentFragment(childNodes);
-						childNodePart = new ChildNodePart(endCommentMarker, value, fragment);
-					} else {
-						childNodePart = new ChildNodePart(undefined, value, undefined);
-					}
+					childNodePart = new ChildNodePart(startNode, value);
 					this.parts[index] = childNodePart;
 				} else {
 					childNodePart.parseValue(value);
@@ -156,20 +167,7 @@ export class ChildNodePart extends Part {
 				const node = part.path.reduceRight(({ childNodes }, i) => childNodes[i], this.fragment);
 
 				if (part.type === 'node') {
-					const placeholder = node.data;
-
-					const childNodes = [node];
-					let childNode = node.nextSibling;
-					while (childNode && childNode.data !== `/${placeholder}`) {
-						childNodes.push(childNode);
-						childNode = childNode.nextSibling;
-					}
-
-					const endCommentMarker = childNode;
-					childNodes.push(endCommentMarker);
-
-					const fragment = new PersistentFragment(childNodes);
-					return new ChildNodePart(endCommentMarker, templateResult.values[index], fragment);
+					return new ChildNodePart(node, templateResult.values[index]);
 				}
 				if (part.type === 'attribute') {
 					return new AttributePart(node, part.name);

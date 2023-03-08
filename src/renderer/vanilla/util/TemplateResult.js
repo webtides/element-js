@@ -118,25 +118,13 @@ export class TemplateResult {
 		let serverSideRendered = false;
 		let childNodePart = childNodeParts.get(domNode);
 		if (!childNodePart) {
-			const tempNodes = Array.from(domNode.childNodes).filter((node) => node.nodeType !== 3);
-			serverSideRendered =
-				tempNodes.length > 0 && tempNodes[0].nodeType === COMMENT_NODE && tempNodes[0].data === 'template-part';
+			const startNode = Array.from(domNode.childNodes)
+				.filter((node) => node.nodeType === COMMENT_NODE)
+				.find((node) => node.data === 'template-part');
 
-			if (serverSideRendered) {
-				const startCommentMarker = tempNodes[0];
-				const childNodes = [];
-				let childNode = startCommentMarker.nextSibling;
-				while (childNode && childNode.data !== `/template-part`) {
-					childNodes.push(childNode);
-					childNode = childNode.nextSibling;
-				}
-				const endCommentMarker = childNode?.data === `/template-part` ? childNode : startCommentMarker;
-				const fragment = new PersistentFragment(childNodes);
+			serverSideRendered = startNode !== undefined;
 
-				childNodePart = new ChildNodePart(endCommentMarker, this, fragment);
-			} else {
-				childNodePart = new ChildNodePart(undefined, this, undefined);
-			}
+			childNodePart = new ChildNodePart(startNode, this);
 			childNodeParts.set(domNode, childNodePart);
 
 			if (!serverSideRendered) {
