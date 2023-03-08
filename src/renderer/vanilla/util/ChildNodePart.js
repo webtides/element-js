@@ -38,8 +38,7 @@ export class ChildNodePart extends Part {
 			throw new Error('ChildNodePart: startNode is not a comment node');
 		}
 
-		// TODO: if SSRed, we probably need to set the value?!
-		super(startNode, undefined);
+		super(startNode);
 
 		if (startNode) {
 			const placeholder = startNode.data;
@@ -57,13 +56,14 @@ export class ChildNodePart extends Part {
 			this.startNode = startNode;
 			this.endNode = endNode;
 		}
-		this.parseValue(value);
-		if (this.endNode) this.processor = processNodePart(this.endNode);
+		const initialValue = this.parseValue(value);
+		// TODO: if SSRed, we probably need to set the initialValue?!
+		if (this.endNode) this.processor = processNodePart(this.endNode, undefined);
 	}
 
 	/**
-	 * @param {TemplateResult | any[]} value
-	 * @return {any[] | PersistentFragment}
+	 * @param {TemplateResult | any[] | any} value
+	 * @return {any[] | PersistentFragment | any}
 	 */
 	parseValue(value) {
 		if (Array.isArray(value)) {
@@ -81,28 +81,16 @@ export class ChildNodePart extends Part {
 	 * @return {*}
 	 */
 	update(value) {
+		// TODO: when doing it for the first time, parseValue will be done twice.. (1. in constructor)
+		const parsedValue = this.parseValue(value);
 		if (value instanceof TemplateResult || Array.isArray(value)) {
-			// TODO: when doing it for the first time, parseValue will be done twice.. (1. in constructor)
-			const parsedValue = this.parseValue(value);
-			// TODO: because it was already parsed in the constructor, old and new values will be the same...
-			const parsedOldValue = this.value;
-			this.value = parsedValue;
-
 			const values = Array.isArray(value) ? value : value.values;
 
 			for (let index = 0; index < values.length; index++) {
 				this.parts[index].update(values[index]);
 			}
-
-			// TODO: is this really doing the right thing?!
-			// Maybe so! There are two kind of ChildNode Parts - Node Parts and Array Parts
-			// The Array parts won't have a comment node and therefore also don't have a processor
-			// but the Node Parts have a comment node and a processor and the update is the actual call
-			// to actually render anything to the DOM.
-			return super.update(parsedValue, parsedOldValue);
-		} else {
-			return super.update(value);
 		}
+		return super.update(parsedValue);
 	}
 
 	/**

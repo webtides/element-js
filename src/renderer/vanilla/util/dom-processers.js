@@ -195,14 +195,19 @@ const diffNodes = function (parentNode, domChildNodes, templateChildNodes, ancho
 
 /**
  * @param {Node} comment
+ * @param {any} initialValue
  * @return {(function(*): void)|*}
  */
-export const processNodePart = (comment) => {
+export const processNodePart = (comment, initialValue) => {
 	let nodes = [];
+	let oldValue =
+		typeof initialValue === 'object' && initialValue.nodeType === DOCUMENT_FRAGMENT_NODE
+			? [...initialValue.childNodes]
+			: initialValue;
 	// this is for string values to be inserted into the DOM. A cached TextNode will be used so that we don't have to constantly create new DOM nodes.
 	let cachedTextNode = undefined;
 
-	const processNodeValue = (newValue, oldValue) => {
+	const processNodeValue = (newValue) => {
 		switch (typeof newValue) {
 			// primitives are handled as text content
 			case 'string':
