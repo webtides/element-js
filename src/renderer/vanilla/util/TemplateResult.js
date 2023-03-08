@@ -21,6 +21,11 @@ const partPositions = /[\x01\x02]/g;
 const rename = /([^\s>]+)[\s\S]*$/;
 const interpolation = new RegExp(`(<!--${prefix}(\\d+)--><!--/${prefix}(\\d+)-->|\\s*${prefix}(\\d+)=([^\\s>]))`, 'g');
 
+// TODO: path for regex for multiple interpolations within attribute:
+// elements: https://regex101.com/r/vjWWsx/1
+// attributes: https://regex101.com/r/zG0qAI/1
+// for attributes we still need to think about variations without the quotes
+
 /**
  * Given a template, find part positions as both nodes and attributes and
  * return a string with placeholders as either comment nodes or named attributes.
@@ -288,10 +293,6 @@ export class TemplateResult {
 			}
 
 			if (node.data === `${placeholder}`) {
-				// TODO: do we need markers for parts inside arrays ?! (like lit)
-				// https://lit.dev/playground/#sample=examples/repeating-and-conditional
-
-				// therefore we probably need a comment/marker node around the template right?!
 				parts.push({ type: 'node', path: getNodePath(node) });
 				// TODO: ^ could we also start parsing the stack recursively?!
 				placeholder = `${prefix}${++i}`;

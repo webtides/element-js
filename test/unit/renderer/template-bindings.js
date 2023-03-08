@@ -81,26 +81,29 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 			assert.lightDom.equal(el, '<strong>First part</strong><strong>Second part</strong>');
 		});*/
 
-		// TODO: fix and add test back in...
-		/*it('can render bindings inside attributes', async () => {
+		it('can render single bindings inside attributes', async () => {
 			const el = document.createElement('div');
+			const active = true;
+			render(html`<a class="${active ? 'is-active' : ''}">Label</a>`, el);
+			assert.equal(stripCommentMarkers(el.innerHTML), '<a class="is-active">Label</a>');
+		});
 
+		// TODO: fix and add test back in...
+		/*it('can render bindings inside attributes between static strings', async () => {
+			const el = document.createElement('div');
 			const active = true;
 			render(html`<a class="link ${active ? 'is-active' : ''}">Label</a>`, el);
-
 			assert.equal(stripCommentMarkers(el.innerHTML), '<a class="link is-active">Label</a>');
 		});*/
 
 		// TODO: fix and add test back in...
 		/*it('can render multiple bindings inside attributes', async () => {
 			const el = await fixture(`<${templateTag}></${templateTag}>`);
-
 			const active = true;
 			const highlight = true;
 			await el.updateTemplate(
 				html`<a class="link ${active ? 'is-active' : ''} ${highlight ? 'is-highlight' : ''}">Label</a>`,
 			);
-
 			assert.lightDom.equal(el, '<a class="link is-active is-highlight">Label</a>');
 		});*/
 
