@@ -17,7 +17,7 @@ describe('spreadAttributes directive', () => {
 			list: [1, '2', 3],
 			map: { foo: 'bar' },
 		});
-		assert.equal(result(), "list='[1,$quot;2$quot;,3]' map='{$quot;foo$quot;:$quot;bar$quot;}'");
+		assert.equal(result(), "list='[1,&quot;2&quot;,3]' map='{&quot;foo&quot;:&quot;bar&quot;}'");
 	});
 
 	it('converts camelCase names to dash-case', async () => {

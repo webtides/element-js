@@ -1,5 +1,4 @@
-import { camelToDash, decodeAttribute } from '../../../util/AttributeParser.js';
-import { Part } from './html.js';
+import { camelToDash, decodeAttribute, encodeAttribute } from '../../../util/AttributeParser.js';
 
 /**
  * Maps a list of classes to an element from an object.
@@ -32,9 +31,9 @@ const styleMap = (map) => {
 /**
  * Renders one of two template parts based on a condition.
  * @param {boolean} condition
- * @param {TemplateLiteral | string} trueCase
- * @param {TemplateLiteral | string} [falseCase]
- * @returns {TemplateLiteral | string}
+ * @param {TemplateResult | string} trueCase
+ * @param {TemplateResult | string} [falseCase]
+ * @returns {TemplateResult | string}
  */
 const when = (condition, trueCase, falseCase) => {
 	return condition ? trueCase : falseCase;
@@ -43,9 +42,9 @@ const when = (condition, trueCase, falseCase) => {
 /**
  * Chooses and evaluates a template part from a map of cases based on matching the given value to a case.
  * @param {string} value
- * @param {Object.<string, TemplateLiteral | string>} cases
- * @param {TemplateLiteral | string} [defaultCase]
- * @returns {TemplateLiteral | string}
+ * @param {Object.<string, TemplateResult | string>} cases
+ * @param {TemplateResult | string} [defaultCase]
+ * @returns {TemplateResult | string}
  */
 const choose = (value, cases, defaultCase) => {
 	return cases[value] || defaultCase;
@@ -69,7 +68,10 @@ const spreadAttributes = (attributes) => {
 	return () => {
 		return Object.keys(attributes)
 			.map((key) => {
-				return `${camelToDash(key)}='${new Part(attributes[key])}'`;
+				let value = attributes[key];
+				return `${camelToDash(key)}='${encodeAttribute(
+					typeof value !== 'string' ? JSON.stringify(value) : value,
+				)}'`;
 			})
 			.join(' ');
 	};

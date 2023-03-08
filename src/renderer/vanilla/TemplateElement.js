@@ -1,5 +1,6 @@
 import { StyledElement } from '../../StyledElement.js';
-import { html, spreadAttributes, unsafeHTML } from './util/html.js';
+import { html } from './util/html.js';
+import { spreadAttributes, unsafeHTML } from './util/directives';
 import { render } from './util/render.js';
 export { i18n } from '../../util/i18n.js';
 

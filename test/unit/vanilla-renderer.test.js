@@ -1,4 +1,4 @@
-import { defineCE } from '@open-wc/testing';
+import { assert, defineCE, fixture } from '@open-wc/testing';
 import { TemplateElement, html, unsafeHTML } from '../../src/renderer/vanilla/TemplateElement.js';
 import { testTemplateBindings } from './renderer/template-bindings.js';
 import { testTemplateRendering } from './renderer/template-rendering.js';
@@ -104,3 +104,67 @@ customElements.define('sanitized-parent-tag', SanitizedParentTag);
 
 // TODO:
 //testUnsafeHtml('vanilla', sanitizedTag, UnsafeTag, ChildTag, SanitizedParentTag);
+
+class NestedShadowTag extends TemplateElement {
+	constructor() {
+		super({ shadowRender: true });
+	}
+
+	template() {
+		return html`<slot></slot>`;
+	}
+}
+customElements.define('nested-shadow-tag', NestedShadowTag);
+
+class SlottingParentTag extends TemplateElement {
+	properties() {
+		return {
+			text: 'Foo',
+		};
+	}
+
+	template() {
+		return html`<nested-shadow-tag><div>${this.text}</div></nested-shadow-tag>`;
+	}
+}
+customElements.define('slotting-parent-tag', SlottingParentTag);
+
+class NestedLightTag extends TemplateElement {
+	template() {
+		return html`<div>Foo</div>`;
+	}
+}
+customElements.define('nested-light-tag', NestedLightTag);
+
+class NestingParentTag extends TemplateElement {
+	properties() {
+		return {
+			text: 'Bar',
+		};
+	}
+
+	template() {
+		return html`<nested-light-tag><div>${this.text}</div></nested-light-tag>`;
+	}
+}
+customElements.define('nesting-parent-tag', NestingParentTag);
+
+describe(`vanilla-renderer`, () => {
+	it('can re-render/update slotted templates', async () => {
+		const el = await fixture(`<slotting-parent-tag></slotting-parent-tag>`);
+		assert.lightDom.equal(el, `<nested-shadow-tag><div>Foo</div></nested-shadow-tag>`);
+		el.text = 'Bar';
+		await el.requestUpdate();
+		assert.lightDom.equal(el, `<nested-shadow-tag><div>Bar</div></nested-shadow-tag>`);
+	});
+
+	it('should not re-render/update nested templates', async () => {
+		const el = await fixture(`<nesting-parent-tag></nesting-parent-tag>`);
+		assert.lightDom.equal(el, `<nested-light-tag><div>Bar</div></nested-light-tag>`);
+		await el.requestUpdate();
+		assert.lightDom.equal(el, `<nested-light-tag><div>Foo</div></nested-light-tag>`);
+		el.text = 'Baz';
+		await el.requestUpdate();
+		assert.lightDom.equal(el, `<nested-light-tag><div>Foo</div></nested-light-tag>`);
+	});
+});
