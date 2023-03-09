@@ -3,7 +3,7 @@ import { render } from '../../../src/renderer/vanilla/util/render';
 
 export const stripCommentMarkers = (html) =>
 	html
-		.replace(/<!--(\/?)(template-part|dom-part-\d+(:\w+)?)-->/g, '')
+		.replace(/<!--(\/)?(dom|template)-part(-\d+)?(:\w+(=.*)?)?-->/g, '')
 		.replace(/\s+/g, ' ')
 		.replaceAll('> ', '>')
 		.trim();
@@ -88,24 +88,20 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 			assert.equal(stripCommentMarkers(el.innerHTML), '<a class="is-active">Label</a>');
 		});
 
-		// TODO: fix and add test back in...
-		/*it('can render bindings inside attributes between static strings', async () => {
+		it('can render bindings inside attributes between static strings', async () => {
 			const el = document.createElement('div');
 			const active = true;
 			render(html`<a class="link ${active ? 'is-active' : ''}">Label</a>`, el);
 			assert.equal(stripCommentMarkers(el.innerHTML), '<a class="link is-active">Label</a>');
-		});*/
+		});
 
-		// TODO: fix and add test back in...
-		/*it('can render multiple bindings inside attributes', async () => {
-			const el = await fixture(`<${templateTag}></${templateTag}>`);
+		it('can render multiple bindings inside attributes', async () => {
+			const el = document.createElement('div');
 			const active = true;
 			const highlight = true;
-			await el.updateTemplate(
-				html`<a class="link ${active ? 'is-active' : ''} ${highlight ? 'is-highlight' : ''}">Label</a>`,
-			);
-			assert.lightDom.equal(el, '<a class="link is-active is-highlight">Label</a>');
-		});*/
+			render(html`<a class="link ${active ? 'is-active' : ''} ${highlight ? 'is-highlight' : ''}">Label</a>`, el);
+			assert.equal(stripCommentMarkers(el.innerHTML), '<a class="link is-active is-highlight">Label</a>');
+		});
 
 		it('can render conditional nested html templates', async () => {
 			const el = document.createElement('div');

@@ -13,18 +13,14 @@ export const textOnly = /^(?:textarea|script|style|title|plaintext|xmp)$/;
 
 const empty = /^(?:area|base|br|col|embed|hr|img|input|keygen|link|menuitem|meta|param|source|track|wbr)$/i;
 const elements = /<([a-z]+[a-z0-9:._-]*)([^>]*?)(\/?)>/g;
-const attributes = /([^\s\\>"'=]+)\s*=\s*(['"]?)\x01/g;
+const attributes = /([^\s\\>"'=]+)=(['"]?([^"]*)['"]?)/g;
 const partPositions = /[\x01\x02]/g;
 // \x01 Node.ELEMENT_NODE
 // \x02 Node.ATTRIBUTE_NODE
+// \x03 Node.ATTRIBUTE_TOKEN
 
 const rename = /([^\s>]+)[\s\S]*$/;
 const interpolation = new RegExp(`(<!--${prefix}(\\d+)--><!--/${prefix}(\\d+)-->|\\s*${prefix}(\\d+)=([^\\s>]))`, 'g');
-
-// TODO: path for regex for multiple interpolations within attribute:
-// elements: https://regex101.com/r/vjWWsx/1
-// attributes: https://regex101.com/r/zG0qAI/1
-// for attributes we still need to think about variations without the quotes
 
 /**
  * Given a template, find part positions as both nodes and attributes and
@@ -39,21 +35,29 @@ export const createTemplateString = (template, prefix) => {
 		.join('\x01')
 		.trim()
 		.replace(elements, (_, name, attrs, selfClosing) => {
-			let ml = name + attrs.replace(attributes, '$1=$2').trimEnd();
+			let ml = name + attrs.replace(attributes, '$1=$2').replaceAll('\x01', '').trimEnd();
 			if (selfClosing.length) ml += empty.test(name) ? ' /' : '></' + name;
-			const attributeParts = attrs
-				.replace(attributes, '<!--\x02:$1-->')
-				.trim()
-				.replaceAll('"', '')
-				.replaceAll('> <', '><');
+			const attributeParts = attrs.replace(attributes, (attribute, name, valueWithQuotes, value) => {
+				const count = (attribute.match(/\x01/g) || []).length;
+				const parts = [];
+				for (let j = 0; j < count; j++) {
+					parts.push(`<!--\x02:${name}=${value.replaceAll('\x01', '\x03')}-->`);
+				}
+				return parts.join('');
+			});
 			return `
 				${attrs.includes('\x01') ? attributeParts : ''}
 				<${ml}>
 			`;
 		})
-		.replace(partPositions, (partPosition) =>
-			partPosition === '\x01' ? `<!--dom-part-${i}--><!--/dom-part-${i++}-->` : `dom-part-${i++}`,
-		);
+		.replace(partPositions, (partPosition) => {
+			if (partPosition === '\x01') {
+				return `<!--dom-part-${i}--><!--/dom-part-${i++}-->`;
+			}
+			if (partPosition === '\x02') {
+				return `dom-part-${i++}`;
+			}
+		});
 	return `
 		<!--template-part-->
 		${templatePart}
@@ -282,11 +286,11 @@ export class TemplateResult {
 
 			if (node.data === `${placeholder}`) {
 				parts.push({ type: 'node', path: getNodePath(node) });
-				// TODO: ^ could we also start parsing the stack recursively?!
 				placeholder = `${prefix}${++i}`;
 			} else if (node.data.includes(`${placeholder}:`)) {
-				const name = node.data.split(':').pop();
-				parts.push({ type: 'attribute', path: getNodePath(node), name: name });
+				const [_, attribute] = node.data.split(':');
+				const [name, initialValue] = attribute.split('=');
+				parts.push({ type: 'attribute', path: getNodePath(node), name: name, initialValue });
 				placeholder = `${prefix}${++i}`;
 			}
 			// TODO: implement... if the node is a text-only node, check its content for a placeholder

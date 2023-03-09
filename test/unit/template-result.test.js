@@ -40,22 +40,31 @@ describe(`TemplateResult.createTemplateString()`, () => {
 	});
 
 	it('adds placeholders as comment nodes before the node for attribute variables', async () => {
-		const template = html`<div id="${1}" class="${'some-class'}">Text</div>`;
+		const template = html`<div id="${1}" class="${'some'}">Text</div>`;
 		const templateString = createTemplateString(template.strings, 'dom-part-');
 		assert.equal(
 			stripWhitespace(templateString),
-			'<!--template-part--><!--dom-part-0:id--><!--dom-part-1:class--><div id="" class="">Text</div><!--/template-part-->',
+			'<!--template-part--><!--dom-part-0:id=\x03--><!--dom-part-1:class=\x03--><div id="" class="">Text</div><!--/template-part-->',
+		);
+	});
+
+	it('adds multiple placeholders as comment nodes before the node for attributes with multiple variables', async () => {
+		const template = html`<div id="${1}" class="${'some'} other ${'class'}">Text</div>`;
+		const templateString = createTemplateString(template.strings, 'dom-part-');
+		assert.equal(
+			stripWhitespace(templateString),
+			'<!--template-part--><!--dom-part-0:id=\x03--><!--dom-part-1:class=\x03 other \x03--><!--dom-part-2:class=\x03 other \x03--><div id="" class=" other ">Text</div><!--/template-part-->',
 		);
 	});
 
 	// TODO: what if attributes don't have quotes?! Test it!
 
 	it('adds the correct amount of placeholders as comment nodes for each variable', async () => {
-		const template = html`<div id="${1}" class="${'some-class'}">${'Text'}</div>`;
+		const template = html`<div id="${1}" class="${'some'}">${'Text'}</div>`;
 		const templateString = createTemplateString(template.strings, 'dom-part-');
 		assert.equal(
 			stripWhitespace(templateString),
-			'<!--template-part--><!--dom-part-0:id--><!--dom-part-1:class--><div id="" class=""><!--dom-part-2--><!--/dom-part-2--></div><!--/template-part-->',
+			'<!--template-part--><!--dom-part-0:id=\x03--><!--dom-part-1:class=\x03--><div id="" class=""><!--dom-part-2--><!--/dom-part-2--></div><!--/template-part-->',
 		);
 	});
 });

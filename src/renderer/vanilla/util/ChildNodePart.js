@@ -150,6 +150,9 @@ export class ChildNodePart extends Part {
 				partsCache.set(templateResult.strings, parts);
 			}
 
+			// TODO: maybe move this as method somewhere else?!
+			/** @type AttributePart */
+			let previousAttributePart = undefined;
 			this.parts = parts.map((part, index) => {
 				// We currently need the path because the fragment will be cloned via importNode and therefore the node will be a different one
 				const node = part.path.reduceRight(({ childNodes }, i) => childNodes[i], this.fragment);
@@ -158,7 +161,14 @@ export class ChildNodePart extends Part {
 					return new ChildNodePart(node, templateResult.values[index]);
 				}
 				if (part.type === 'attribute') {
-					return new AttributePart(node, part.name);
+					// If we have multiple attribute parts with the same name, it means we have multiple
+					// interpolations inside that attribute. Instead of creating a new part, we will return the same
+					// as before and let it defer the update until the last interpolation gets updated
+					if (previousAttributePart && previousAttributePart.name === part.name) {
+						previousAttributePart.addNode(node);
+						return previousAttributePart;
+					}
+					return (previousAttributePart = new AttributePart(node, part.name, part.initialValue));
 				}
 				if (part.type === 'text') {
 					return new TextOnlyNodePart(node, templateResult.values[index]);
