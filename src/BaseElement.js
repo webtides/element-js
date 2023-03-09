@@ -350,7 +350,7 @@ class BaseElement extends HTMLElement {
 		if (providedKeys.length > 0) {
 			this.addEventListener('request-context', this.onRequestContext);
 			// check if there are already connected elements in child dom and restart requests
-			getAllElementChildren(this).forEach((customChild) => {
+			getAllElementChildren(this.getRoot()).forEach((customChild) => {
 				// if injectProperties?.() is defined it means that the child got connected BEFORE the parent (Runtime Issue)
 				const requestedProperties = customChild.injectProperties?.() ?? {};
 				Object.entries(requestedProperties).forEach(([key, value]) => {
