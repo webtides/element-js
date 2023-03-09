@@ -288,6 +288,7 @@ class BaseElement extends HTMLElement {
 			watch[property](newValue, oldValue);
 		}
 	}
+
 	/**
 	 * notify property observer via change event
 	 *
@@ -371,7 +372,7 @@ class BaseElement extends HTMLElement {
 	 * @param valueOrCallback
 	 */
 	requestContext(propertyName, valueOrCallback) {
-		this.dispatch('request-context', { [propertyName]: valueOrCallback }, true);
+		this.dispatch('request-context', { [propertyName]: valueOrCallback }, true, true, true);
 	}
 
 	/**
@@ -395,7 +396,9 @@ class BaseElement extends HTMLElement {
 					valueOrCallback(providedValue);
 				} else {
 					// assign to prop
-					event.target[key] = providedValue;
+					const eventPath = event.composedPath();
+					const target = eventPath[0] || event.target;
+					target[key] = providedValue;
 				}
 			}
 		});
