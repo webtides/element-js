@@ -1,11 +1,11 @@
 import { COMMENT_NODE, getNodePath } from '../../../util/DOMHelper';
-import { encodeAttribute } from '../../../util/AttributeParser.js';
+import { encodeAttribute, isObjectLike } from '../../../util/AttributeParser.js';
 import { ChildNodePart } from './ChildNodePart.js';
 import { PersistentFragment } from './PersistentFragment.js';
 
 // the prefix is used to tag and reference nodes and attributes to create parts with updates
 // attributes: dom-part-1="attribute-name"
-// nodes|fragments|arrays (as comment nodes): <!--dom-part-2-->
+// nodes|fragments|arrays (as comment nodes): <!--dom-part-2--><!--/dom-part-2-->
 export const prefix = 'dom-part-';
 
 // match nodes|elements that cannot contain comment nodes and must be handled via text-only updates directly.
@@ -17,25 +17,25 @@ const attributes = /([^\s\\>"'=]+)=(['"]?([^"]*)['"]?)/g;
 const partPositions = /[\x01\x02]/g;
 // \x01 Node.ELEMENT_NODE
 // \x02 Node.ATTRIBUTE_NODE
-// \x03 Node.ATTRIBUTE_TOKEN
+// \x03 COMMENT.ATTRIBUTE_TOKEN
+// \x04 Node.ATTRIBUTE_TOKEN
 
-const rename = /([^\s>]+)[\s\S]*$/;
-const interpolation = new RegExp(`(<!--${prefix}(\\d+)--><!--/${prefix}(\\d+)-->|\\s*${prefix}(\\d+)=([^\\s>]))`, 'g');
+const interpolation = new RegExp(`(<!--dom-part-(\\d+)--><!--/dom-part-(\\d+)-->|(\\S\\w+)="\x04(")?|\x04)`, 'g');
 
 /**
  * Given a template, find part positions as both nodes and attributes and
  * return a string with placeholders as either comment nodes or named attributes.
  * @param {string[]} template a template literal tag array
- * @param {string} prefix prefix to use per each comment/attribute
+ * @param {string} attributePlaceholders replace placeholders inside attribute values with this value
  * @returns {string} X/HTML with prefixed comments or attributes
  */
-export const createTemplateString = (template, prefix) => {
+export const createTemplateString = (template, attributePlaceholders = '') => {
 	let i = 0;
 	const templatePart = template
 		.join('\x01')
 		.trim()
 		.replace(elements, (_, name, attrs, selfClosing) => {
-			let ml = name + attrs.replace(attributes, '$1=$2').replaceAll('\x01', '').trimEnd();
+			let ml = name + attrs.replace(attributes, '$1=$2').replaceAll('\x01', attributePlaceholders).trimEnd();
 			if (selfClosing.length) ml += empty.test(name) ? ' /' : '></' + name;
 			const attributeParts = attrs.replace(attributes, (attribute, name, valueWithQuotes, value) => {
 				const count = (attribute.match(/\x01/g) || []).length;
@@ -68,11 +68,12 @@ export const createTemplateString = (template, prefix) => {
 
 /**
  * @param {String} name
- * @param {String} quote
  * @param {any} value
+ * @param {Boolean} isSingleValue
  * @return {String}
  */
-const attribute = (name, quote, value) => ` ${name}=${quote}${encodeAttribute(value)}${quote}`;
+const attribute = (name, value, isSingleValue = true) =>
+	` ${name}="${encodeAttribute(isObjectLike(value) ? JSON.stringify(value) : value)}${isSingleValue ? '"' : ''}`;
 
 /**
  * @param {any} value
@@ -148,7 +149,7 @@ export class TemplateResult {
 	 * @return {*[]}
 	 */
 	parse(strings, expectedLength) {
-		const html = createTemplateString(strings, prefix);
+		const html = createTemplateString(strings, '\x04');
 		const updates = [];
 		let i = 0;
 		let match = null;
@@ -156,26 +157,13 @@ export class TemplateResult {
 			const pre = html.slice(i, match.index);
 			i = match.index + match[0].length;
 			if (match[2]) {
+				// ChildNodePart
 				const index = match[2];
-				const placeholder1 = `<!--${prefix}${index}-->`;
-				const placeholder2 = `<!--/${prefix}${index}-->`;
-				updates.push((value) => pre + placeholder1 + getValue(value) + placeholder2);
-			} else {
-				let name = '';
-				let quote = match[4];
-				switch (quote) {
-					case '"':
-					case "'":
-						const next = html.indexOf(quote, i);
-						name = html.slice(i, next);
-						i = next + 1;
-						break;
-					default:
-						name = html.slice(--i).replace(rename, '$1');
-						i += name.length;
-						quote = '"';
-						break;
-				}
+				updates.push((value) => `${pre}<!--dom-part-${index}-->${getValue(value)}<!--/dom-part-${index}-->`);
+			} else if (match[4]) {
+				// AttributePart with single interpolation or the first interpolation right after the attribute=
+				const isSingleValue = match[5] !== undefined;
+				let name = match[4];
 				switch (true) {
 					// case name === 'ref':
 					// 	updates.push((value) => {
@@ -183,12 +171,11 @@ export class TemplateResult {
 					// 		return pre;
 					// 	});
 					// 	break;
-					// setters as boolean attributes (.disabled .contentEditable)
 					case name[0] === '?':
-						const boolean = name.slice(1).toLowerCase();
+						const booleanName = name.slice(1).toLowerCase();
 						updates.push((value) => {
 							let result = pre;
-							if (value) result += ` ${boolean}`;
+							if (value) result += ` ${booleanName}`;
 							return result;
 						});
 						break;
@@ -197,11 +184,11 @@ export class TemplateResult {
 						updates.push((value) => {
 							let result = pre;
 							// null, undefined, and false are not shown at all
-							if (value != null && value !== false) {
-								// true means boolean attribute, just show the name
-								if (value === true) result += ` ${lower}`;
+							if (value === null || value === undefined || value === '') {
+								result += attribute(lower, '');
+							} else {
 								// in all other cases, just escape it in quotes
-								else result += attribute(lower, quote, value);
+								result += attribute(lower, value, isSingleValue);
 							}
 							return result;
 						});
@@ -210,46 +197,35 @@ export class TemplateResult {
 						name = 'on' + name.slice(1);
 					case name[0] === 'o' && name[1] === 'n':
 						updates.push((value) => {
-							let result = pre;
-							// allow handleEvent based objects that
-							// follow the `onMethod` convention
-							// allow listeners only if passed as string,
-							// as functions with a special toString method,
-							// as objects with handleEvents and a method
-							switch (typeof value) {
-								case 'object':
-									if (!(name in value)) break;
-									value = value[name];
-									if (typeof value !== 'function') break;
-								case 'function':
-									if (value.toString === toString) break;
-								case 'string':
-									result += attribute(name, quote, value);
-									break;
-							}
-							return result;
+							return pre;
 						});
 						break;
 					default:
-						const placeholder = ` ${prefix}${match[4]}=${name}`;
 						updates.push((value) => {
 							let result = pre;
 							if (value != null) {
-								result += placeholder;
-								result += attribute(name, quote, value);
+								result += attribute(name, value, isSingleValue);
 							}
 							return result;
 						});
 						break;
 				}
+			} else {
+				// AttributePart in the middle of an attribute value
+				updates.push((value) => {
+					let result = pre;
+					if (value != null) {
+						result += encodeAttribute(isObjectLike(value) ? JSON.stringify(value) : value);
+					}
+					return result;
+				});
 			}
 		}
-		const { length } = updates;
-		if (length !== expectedLength) throw new Error(`invalid template ${strings}`);
-		if (length) {
-			const last = updates[length - 1];
+		if (updates.length !== expectedLength) throw new Error(`invalid template ${strings}`);
+		if (updates.length) {
+			const last = updates[updates.length - 1];
 			const chunk = html.slice(i);
-			updates[length - 1] = (value) => last(value) + chunk;
+			updates[updates.length - 1] = (value) => last(value) + chunk;
 		} else updates.push(() => html);
 		return updates;
 	}
@@ -311,7 +287,7 @@ export class TemplateResult {
 	 */
 	get templateString() {
 		// TODO: this could also be cached!
-		return createTemplateString(this.strings, prefix);
+		return createTemplateString(this.strings);
 	}
 
 	toString() {
