@@ -9,27 +9,47 @@ export const stripCommentMarkers = (html) =>
 		.trim();
 
 export const testTemplateBindings = function (name, templateTag, html, unsafeHTML) {
+	// TODO: for testing that SSR and CSR will render the same thing, it would be good to test with whitespace and comment markers to make sure that they perfectly match!
+
 	describe(`template bindings for ${name}`, () => {
 		it('creates the correct string from the literal', async () => {
 			const el = document.createElement('div');
-			render(html`<div class="parent"><div class="child">content</div></div>`, el);
+			const templateResult = html`<div class="parent"><div class="child">content</div></div>`;
+			render(templateResult, el);
 			assert.equal(
 				stripCommentMarkers(el.innerHTML),
 				'<div class="parent"><div class="child">content</div></div>',
+			);
+			assert.equal(
+				stripCommentMarkers(el.innerHTML),
+				stripCommentMarkers(templateResult.toString()),
+				'CSR template does not match SSR template',
 			);
 		});
 
 		it('parses variables as string from the literal', async () => {
 			const el = document.createElement('div');
 			let name = 'John';
-			render(html`<div>Hello ${name}</div>`, el);
+			const templateResult = html`<div>Hello ${name}</div>`;
+			render(templateResult, el);
 			assert.equal(stripCommentMarkers(el.innerHTML), '<div>Hello John</div>');
+			assert.equal(
+				stripCommentMarkers(el.innerHTML),
+				stripCommentMarkers(templateResult.toString()),
+				'CSR template does not match SSR template',
+			);
 		});
 
 		it('correctly sanitizes html input', async () => {
 			const el = document.createElement('div');
-			render(html`${'<strong>Unsafe HTML</strong>'}`, el);
+			const templateResult = html`${'<strong>Unsafe HTML</strong>'}`;
+			render(templateResult, el);
 			assert.equal(stripCommentMarkers(el.innerHTML), '&lt;strong&gt;Unsafe HTML&lt;/strong&gt;');
+			assert.equal(
+				stripCommentMarkers(el.innerHTML),
+				stripCommentMarkers(templateResult.toString()),
+				'CSR template does not match SSR template',
+			);
 		});
 
 		// TODO:
@@ -42,22 +62,40 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 		it('can have functions as bindings', async () => {
 			const el = document.createElement('div');
 			const name = () => 'John';
-			render(html`<div>Hello ${name}</div>`, el);
+			const templateResult = html`<div>Hello ${name}</div>`;
+			render(templateResult, el);
 			assert.equal(stripCommentMarkers(el.innerHTML), '<div>Hello John</div>');
+			assert.equal(
+				stripCommentMarkers(el.innerHTML),
+				stripCommentMarkers(templateResult.toString()),
+				'CSR template does not match SSR template',
+			);
 		});
 
 		it('can render bindings with html literals', async () => {
 			const el = document.createElement('div');
 			let nested = html`<div class="nested"></div>`;
-			render(html`<div>${nested}</div>`, el);
+			const templateResult = html`<div>${nested}</div>`;
+			render(templateResult, el);
 			assert.equal(stripCommentMarkers(el.innerHTML), '<div><div class="nested"></div></div>');
+			assert.equal(
+				stripCommentMarkers(el.innerHTML),
+				stripCommentMarkers(templateResult.toString()),
+				'CSR template does not match SSR template',
+			);
 		});
 
 		it('correctly parses arrays of literals', async () => {
 			const el = document.createElement('div');
 			let list = [html`<div>1</div>`, html`<div>2</div>`, html`<div>3</div>`];
-			render(html`<div>${list}</div>`, el);
+			const templateResult = html`<div>${list}</div>`;
+			render(templateResult, el);
 			assert.equal(stripCommentMarkers(el.innerHTML), '<div><div>1</div><div>2</div><div>3</div></div>');
+			assert.equal(
+				stripCommentMarkers(el.innerHTML),
+				stripCommentMarkers(templateResult.toString()),
+				'CSR template does not match SSR template',
+			);
 		});
 
 		// TODO: fix and add test back in...
@@ -84,49 +122,84 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 		it('can render single bindings inside attributes', async () => {
 			const el = document.createElement('div');
 			const active = true;
-			render(html`<a class="${active ? 'is-active' : ''}">Label</a>`, el);
+			const templateResult = html`<a class="${active ? 'is-active' : ''}">Label</a>`;
+			render(templateResult, el);
 			assert.equal(stripCommentMarkers(el.innerHTML), '<a class="is-active">Label</a>');
+			assert.equal(
+				stripCommentMarkers(el.innerHTML),
+				stripCommentMarkers(templateResult.toString()),
+				'CSR template does not match SSR template',
+			);
 		});
 
 		it('can render bindings inside attributes between static strings', async () => {
 			const el = document.createElement('div');
 			const active = true;
-			render(html`<a class="link ${active ? 'is-active' : ''}">Label</a>`, el);
+			const templateResult = html`<a class="link ${active ? 'is-active' : ''}">Label</a>`;
+			render(templateResult, el);
 			assert.equal(stripCommentMarkers(el.innerHTML), '<a class="link is-active">Label</a>');
+			assert.equal(
+				stripCommentMarkers(el.innerHTML),
+				stripCommentMarkers(templateResult.toString()),
+				'CSR template does not match SSR template',
+			);
 		});
 
 		it('can render multiple bindings inside attributes', async () => {
 			const el = document.createElement('div');
 			const active = true;
 			const highlight = true;
-			render(html`<a class="link ${active ? 'is-active' : ''} ${highlight ? 'is-highlight' : ''}">Label</a>`, el);
-			assert.equal(stripCommentMarkers(el.innerHTML), '<a class="link is-active is-highlight">Label</a>');
+			const templateResult = html`<a class="link ${active ? 'is-a' : ''} ${highlight ? 'is-h' : ''}">Label</a>`;
+			render(templateResult, el);
+			assert.equal(stripCommentMarkers(el.innerHTML), '<a class="link is-a is-h">Label</a>');
+			assert.equal(
+				stripCommentMarkers(el.innerHTML),
+				stripCommentMarkers(templateResult.toString()),
+				'CSR template does not match SSR template',
+			);
 		});
+
+		// TODO: add ?|.|@|on* attributes tests
 
 		it('can render conditional nested html templates', async () => {
 			const el = document.createElement('div');
 			const nested = true;
-			render(html`<div>${nested ? html`<div class="nested">nested</div>` : html``}</div>`, el);
+			const templateResult = html`<div>${nested ? html`<div class="nested">nested</div>` : html``}</div>`;
+			render(templateResult, el);
 			assert.equal(stripCommentMarkers(el.innerHTML), '<div><div class="nested">nested</div></div>');
+			assert.equal(
+				stripCommentMarkers(el.innerHTML),
+				stripCommentMarkers(templateResult.toString()),
+				'CSR template does not match SSR template',
+			);
 		});
 
 		it('can render empty conditional html templates', async () => {
 			const el = document.createElement('div');
 			const nested = false;
-			render(html`<div>${nested ? html`<div class="nested">nested</div>` : html``}</div>`, el);
+			const templateResult = html`<div>${nested ? html`<div class="nested">nested</div>` : html``}</div>`;
+			render(templateResult, el);
 			assert.equal(stripCommentMarkers(el.innerHTML), '<div></div>');
+			assert.equal(
+				stripCommentMarkers(el.innerHTML),
+				stripCommentMarkers(templateResult.toString()),
+				'CSR template does not match SSR template',
+			);
 		});
 
 		it('can render lists with looped bindings', async () => {
 			const el = document.createElement('div');
 			const colors = ['red', 'green', 'blue'];
-			render(
-				html`<ul>
-					${colors.map((color) => html`<li>${color}</li>`)}
-				</ul>`,
-				el,
-			);
+			const templateResult = html`<ul>
+				${colors.map((color) => html`<li>${color}</li>`)}
+			</ul>`;
+			render(templateResult, el);
 			assert.equal(stripCommentMarkers(el.innerHTML), '<ul><li>red</li><li>green</li><li>blue</li></ul>');
+			assert.equal(
+				stripCommentMarkers(el.innerHTML),
+				stripCommentMarkers(templateResult.toString()),
+				'CSR template does not match SSR template',
+			);
 		});
 	});
 };
