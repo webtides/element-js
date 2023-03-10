@@ -161,6 +161,20 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 
 		// TODO: add ?|.|@|on* attributes tests
 
+		/*it('can render special boolean bindings inside attributes', async () => {
+			const el = document.createElement('div');
+			let hidden = true;
+			let disabled = false;
+			const templateResult = html`<a ?hidden="${hidden}" ?disabled="${disabled}">Label</a>`;
+			render(templateResult, el);
+			assert.equal(stripCommentMarkers(el.innerHTML), '<a hidden >Label</a>');
+			assert.equal(
+				stripCommentMarkers(el.innerHTML),
+				stripCommentMarkers(templateResult.toString()),
+				'CSR template does not match SSR template',
+			);
+		});*/
+
 		it('can render conditional nested html templates', async () => {
 			const el = document.createElement('div');
 			const nested = true;
