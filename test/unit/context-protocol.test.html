@@ -74,6 +74,7 @@
 
 			onRequestContext(event) {
 				super.onRequestContext(event);
+				console.log(event.type, event.detail)
 			}
 
 			template() {
@@ -296,6 +297,13 @@
 			const shadowRoot = document.querySelector('shadow-provider').shadowRoot;
 			const shadow = shadowRoot.getElementById('shadow');
 			expect(shadow.shadowContext).to.equal(ShadowProvider.SHADOW_CONTEXT);
+		});
+
+		// TODO finalize test and decide what to expect !? -- naive expectation would be to work, but its not
+		it('Light / Slotted DOM Receiver receive values from a provider', async () => {
+			const secondary = document.getElementById('secondary');
+			console.log(secondary.shadowContext)
+			expect(secondary.shadowContext).to.equal(ShadowProvider.SHADOW_CONTEXT);
 		});
 
 		it('Even Shadow DOM Receiver do receive updated values from outside of the Shadow Root', async () => {
