@@ -69,7 +69,6 @@ describe(`TemplateResult.createTemplateString()`, () => {
 	});
 
 	// TODO: test for nested template results
-	// TODO: test for text only elements
 });
 
 describe('TemplateResult.parse()', () => {

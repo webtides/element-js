@@ -4,7 +4,6 @@ import { processNodePart } from './dom-processers.js';
 import { TemplateResult } from './TemplateResult.js';
 import { PersistentFragment } from './PersistentFragment.js';
 import { AttributePart } from './AttributePart.js';
-import { TextOnlyNodePart } from './TextOnlyNodePart.js';
 
 /** @type {Map<TemplateStringsArray, Part[]>} */
 const partsCache = new WeakMap();
@@ -169,9 +168,6 @@ export class ChildNodePart extends Part {
 						return previousAttributePart;
 					}
 					return (previousAttributePart = new AttributePart(node, part.name, part.initialValue));
-				}
-				if (part.type === 'text') {
-					return new TextOnlyNodePart(node, templateResult.values[index]);
 				}
 
 				throw `cannot map part: ${part}`;

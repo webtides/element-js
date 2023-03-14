@@ -8,9 +8,6 @@ import { PersistentFragment } from './PersistentFragment.js';
 // nodes|fragments|arrays (as comment nodes): <!--dom-part-2--><!--/dom-part-2-->
 export const prefix = 'dom-part-';
 
-// match nodes|elements that cannot contain comment nodes and must be handled via text-only updates directly.
-export const textOnly = /^(?:textarea|script|style|title|plaintext|xmp)$/;
-
 const empty = /^(?:area|base|br|col|embed|hr|img|input|keygen|link|menuitem|meta|param|source|track|wbr)$/i;
 const elements = /<([a-z]+[a-z0-9:._-]*)([^>]*?)(\/?)>/g;
 const attributes = /([^\s\\>"'=]+)=(['"]?([^"]*)['"]?)/g;
@@ -269,13 +266,6 @@ export class TemplateResult {
 				parts.push({ type: 'attribute', path: getNodePath(node), name: name, initialValue });
 				placeholder = `${prefix}${++i}`;
 			}
-			// TODO: implement... if the node is a text-only node, check its content for a placeholder
-			/*if (textOnly.test(node.localName) && node.textContent.trim() === `<!--${placeholder}-->`) {
-				node.textContent = '';
-				// TODO: add example to test this case...
-				parts.push({ type: 'text', path: getNodePath(node) });
-				placeholder = `${prefix}${++i}`;
-			}*/
 		}
 		return parts;
 	}
