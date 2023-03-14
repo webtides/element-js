@@ -144,8 +144,9 @@ export const diffAttributes = function (templateElement, domElement) {
  * Diff a live DOM node against a template DOM node
  * @param {Node} templateNode
  * @param {Node} domNode
+ * @param {(Node) => Boolean} shouldDiffChildNodes
  */
-export const diffNodes = function (templateNode, domNode) {
+export const diffNodes = function (templateNode, domNode, shouldDiffChildNodes = (templateChildNode) => true) {
 	// If the DOM node should be empty, remove all child nodes
 	if (hasChildNodes(domNode) && !hasChildNodes(templateNode)) {
 		domNode.replaceChildren();
@@ -254,37 +255,9 @@ export const diffNodes = function (templateNode, domNode) {
 
 		// If there are child nodes, diff them recursively
 		if (templateChildNode.hasChildNodes()) {
-			if (!isTemplateElement(templateChildNode)) {
+			if (shouldDiffChildNodes(templateChildNode)) {
 				diffNodes(templateChildNode, domChildNode);
 			}
 		}
 	}
-};
-
-const _cachedTemplateElements = {};
-
-// TODO: this probably does not belong here...
-/**
- * Checks whether the given element or node is a TemplateElement or not
- * @param {Element|Node} element
- * @returns {boolean}
- */
-export const isTemplateElement = (element) => {
-	const tagName = element.tagName?.toLowerCase() ?? false;
-	if (!tagName || !tagName.includes('-')) {
-		return false;
-	}
-
-	if (_cachedTemplateElements[tagName]) {
-		return true;
-	}
-
-	const elementClass = customElements.get(tagName);
-	const isTemplateElement = elementClass && elementClass._$templateElement$ === true;
-
-	if (isTemplateElement) {
-		_cachedTemplateElements[tagName] = elementClass;
-	}
-
-	return isTemplateElement;
 };
