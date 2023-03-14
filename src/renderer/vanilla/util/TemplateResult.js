@@ -162,12 +162,6 @@ export class TemplateResult {
 				const isSingleValue = match[5] !== undefined;
 				let name = match[4];
 				switch (true) {
-					// case name === 'ref':
-					// 	updates.push((value) => {
-					// 		passRef(value);
-					// 		return pre;
-					// 	});
-					// 	break;
 					case name[0] === '?':
 						const booleanName = name.slice(1).toLowerCase();
 						updates.push((value) => {

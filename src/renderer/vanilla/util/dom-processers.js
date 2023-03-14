@@ -334,12 +334,6 @@ export const processAttributePart = (node, name) => {
 		return processEventAttribute(node, name);
 	}
 
-	// TODO: implement refs...
-	// reference attribute: ref=${...}
-	// if (name === 'ref') {
-	// 	return ref(node);
-	// }
-
 	// normal "string" attribute: attribute=${...}
 	return processAttribute(node, name);
 };
