@@ -47,7 +47,6 @@ describe(`TemplateResult.createTemplateString()`, () => {
 		);
 	});
 
-	// TODO: add same test below?
 	it('can leave (comment) placeholders in attribute values', async () => {
 		const templateResult = html`<div id="${1}" class="${'some'} other ${'class'}">Text</div>`;
 		const templateString = createTemplateString(templateResult.strings, '\x03');
@@ -67,8 +66,6 @@ describe(`TemplateResult.createTemplateString()`, () => {
 			'<!--template-part--><!--dom-part-0:id=\x03--><!--dom-part-1:class=\x03--><div id="" class=""><!--dom-part-2--><!--/dom-part-2--></div><!--/template-part-->',
 		);
 	});
-
-	// TODO: test for nested template results
 });
 
 describe('TemplateResult.parse()', () => {
