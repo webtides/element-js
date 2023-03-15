@@ -85,7 +85,21 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 			);
 		});
 
-		it('correctly parses arrays of literals', async () => {
+		// TODO:
+		/*it('can render arrays of primitive values', async () => {
+			const el = document.createElement('div');
+			let list = [1, '2', true];
+			const templateResult = html`<div>${list}</div>`;
+			render(templateResult, el);
+			assert.equal(stripCommentMarkers(el.innerHTML), '<div>12true</div>');
+			assert.equal(
+				stripCommentMarkers(el.innerHTML),
+				stripCommentMarkers(templateResult.toString()),
+				'CSR template does not match SSR template',
+			);
+		});*/
+
+		it('can render arrays of literals', async () => {
 			const el = document.createElement('div');
 			let list = [html`<div>1</div>`, html`<div>2</div>`, html`<div>3</div>`];
 			const templateResult = html`<div>${list}</div>`;
@@ -215,5 +229,19 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 				'CSR template does not match SSR template',
 			);
 		});
+
+		// TODO:
+		/*it('can switch between primitive values and template literals', async () => {
+			const el = document.createElement('div');
+			const primitiveValue = 'Test';
+			render(html`<div>${primitiveValue}</div>`, el);
+			assert.equal(stripCommentMarkers(el.innerHTML), '<div>Test</div>');
+
+			render(html`<div>${html`<span>${primitiveValue}</span>`}</div>`, el);
+			assert.equal(stripCommentMarkers(el.innerHTML), '<div><span>Test</span></div>');
+
+			render(html`<div>${primitiveValue}</div>`, el);
+			assert.equal(stripCommentMarkers(el.innerHTML), '<div>Test</div>');
+		});*/
 	});
 };
