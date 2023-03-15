@@ -105,8 +105,17 @@ const diffNodes = function (parentNode, domChildNodes, templateChildNodes, ancho
 			// operation = 1
 			if (templateChildNode instanceof PersistentFragment) {
 				anchorNode.before(...templateChildNode.childNodes);
-			} else {
+			} else if (typeof templateChildNode === 'object' && 'ELEMENT_NODE' in templateChildNode) {
 				parentNode.insertBefore(templateChildNode, anchorNode);
+			} else {
+				// TODO: this might not be performant?! Can we maybe handle this in processDomNode?!
+				// TODO: I think that we need to make ChildNodeParts from all primitive values as well
+				parentNode.insertBefore(
+					document.createTextNode(
+						typeof templateChildNode === 'function' ? templateChildNode() : templateChildNode,
+					),
+					anchorNode,
+				);
 			}
 			continue;
 		}
@@ -263,22 +272,14 @@ export const processNodePart = (comment, initialValue) => {
 						}
 						nodes = [];
 					}
-					// else if (oldValue.length === 0) {
-					// 	for (const newValueElement of newValue) {
-					// 		comment.parentNode.insertBefore(newValueElement.valueOf(), comment);
-					// 	}
-					// }
 					// or diff if they contain nodes or fragments
-					// TODO: what if the array has mixed content?! object, primitives and functions?!
-					else if (typeof newValue[0] === 'object') {
+					else {
 						nodes = oldValue || [];
 						// nodes = diff(comment, nodes, newValue);
 						// TODO: when rendering server side, nodes is empty :(
 						// How do we get the nodes?! WTF?!
 						nodes = diffNodes(comment.parentNode, nodes, newValue, comment);
 					}
-					// in all other cases the value is stringified
-					else processNodeValue(String(newValue));
 					oldValue = newValue;
 					break;
 				}

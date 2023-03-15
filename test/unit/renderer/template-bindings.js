@@ -85,8 +85,7 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 			);
 		});
 
-		// TODO:
-		/*it('can render arrays of primitive values', async () => {
+		it('can render arrays of primitive values', async () => {
 			const el = document.createElement('div');
 			let list = [1, '2', true];
 			const templateResult = html`<div>${list}</div>`;
@@ -97,7 +96,7 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 				stripCommentMarkers(templateResult.toString()),
 				'CSR template does not match SSR template',
 			);
-		});*/
+		});
 
 		it('can render arrays of literals', async () => {
 			const el = document.createElement('div');
@@ -105,6 +104,19 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 			const templateResult = html`<div>${list}</div>`;
 			render(templateResult, el);
 			assert.equal(stripCommentMarkers(el.innerHTML), '<div><div>1</div><div>2</div><div>3</div></div>');
+			assert.equal(
+				stripCommentMarkers(el.innerHTML),
+				stripCommentMarkers(templateResult.toString()),
+				'CSR template does not match SSR template',
+			);
+		});
+
+		it('can render arrays of mixed values', async () => {
+			const el = document.createElement('div');
+			let list = [1, '2', true, html`<span>${'Test'}</span>`, () => 'Function'];
+			const templateResult = html`<div>${list}</div>`;
+			render(templateResult, el);
+			assert.equal(stripCommentMarkers(el.innerHTML), '<div>12true <span>Test</span>Function</div>');
 			assert.equal(
 				stripCommentMarkers(el.innerHTML),
 				stripCommentMarkers(templateResult.toString()),

@@ -86,7 +86,7 @@ export class ChildNodePart extends Part {
 			const values = Array.isArray(value) ? value : value.values;
 
 			for (let index = 0; index < values.length; index++) {
-				this.parts[index].update(values[index]);
+				this.parts[index]?.update(values[index]);
 			}
 		}
 		return super.update(parsedValue);
