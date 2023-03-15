@@ -142,12 +142,11 @@ export class TemplateResult {
 
 	/**
 	 * @param {String[]} strings
-	 * @param {Number} expectedLength
-	 * @return {*[]}
+	 * @return {(() => String)[]}
 	 */
-	parse(strings, expectedLength) {
+	parse(strings) {
 		const html = createTemplateString(strings, '\x04');
-		const updates = [];
+		const parts = [];
 		let i = 0;
 		let match = null;
 		while ((match = interpolation.exec(html))) {
@@ -156,7 +155,7 @@ export class TemplateResult {
 			if (match[2]) {
 				// ChildNodePart
 				const index = match[2];
-				updates.push((value) => `${pre}<!--dom-part-${index}-->${getValue(value)}<!--/dom-part-${index}-->`);
+				parts.push((value) => `${pre}<!--dom-part-${index}-->${getValue(value)}<!--/dom-part-${index}-->`);
 			} else if (match[4]) {
 				// AttributePart with single interpolation or the first interpolation right after the attribute=
 				const isSingleValue = match[5] !== undefined;
@@ -164,7 +163,7 @@ export class TemplateResult {
 				switch (true) {
 					case name[0] === '?':
 						const booleanName = name.slice(1).toLowerCase();
-						updates.push((value) => {
+						parts.push((value) => {
 							let result = pre;
 							if (value) result += ` ${booleanName}`;
 							return result;
@@ -172,7 +171,7 @@ export class TemplateResult {
 						break;
 					case name[0] === '.':
 						const lower = name.slice(1).toLowerCase();
-						updates.push((value) => {
+						parts.push((value) => {
 							let result = pre;
 							// null, undefined, and false are not shown at all
 							if (value === null || value === undefined || value === '') {
@@ -187,12 +186,12 @@ export class TemplateResult {
 					case name[0] === '@':
 						name = 'on' + name.slice(1);
 					case name[0] === 'o' && name[1] === 'n':
-						updates.push((value) => {
+						parts.push((value) => {
 							return pre;
 						});
 						break;
 					default:
-						updates.push((value) => {
+						parts.push((value) => {
 							let result = pre;
 							if (value != null) {
 								result += attribute(name, value, isSingleValue);
@@ -203,7 +202,7 @@ export class TemplateResult {
 				}
 			} else {
 				// AttributePart in the middle of an attribute value
-				updates.push((value) => {
+				parts.push((value) => {
 					let result = pre;
 					if (value != null) {
 						result += encodeAttribute(isObjectLike(value) ? JSON.stringify(value) : value);
@@ -212,13 +211,26 @@ export class TemplateResult {
 				});
 			}
 		}
-		if (updates.length !== expectedLength) throw new Error(`invalid template ${strings}`);
-		if (updates.length) {
-			const last = updates[updates.length - 1];
+
+		// We couldn't correctly parse parts from the template
+		if (parts.length !== strings.length - 1) {
+			throw {
+				name: 'ParseTemplateError',
+				message: 'Could not parse parts from template correctly. Parts length has not the expected length.',
+				strings,
+				templateString: html,
+				parts,
+			};
+		}
+
+		if (parts.length) {
+			const last = parts[parts.length - 1];
 			const chunk = html.slice(i);
-			updates[updates.length - 1] = (value) => last(value) + chunk;
-		} else updates.push(() => html);
-		return updates;
+			parts[parts.length - 1] = (value) => last(value) + chunk;
+		} else {
+			parts.push(() => html);
+		}
+		return parts;
 	}
 
 	/**
@@ -234,33 +246,34 @@ export class TemplateResult {
 			template.append(childNode.cloneNode(true));
 		}
 
-		const tw = globalThis.document?.createTreeWalker(template, 128);
+		const treeWalker = globalThis.document?.createTreeWalker(template, 128);
 		const parts = [];
-		const length = this.strings.length - 1;
-		let i = 0;
-		let placeholder = `${prefix}${i}`;
-		// search for parts through numbered placeholders
-		// <div dom-part-0="attribute" dom-part-1="another-attribute"><!--dom-part-2--><span><!--dom-part-3--</span></div>
-		while (i < length) {
-			const node = tw.nextNode();
-
-			// TODO: this is not a good way to handle this...
-			// because the template string looks perfectly fine - it is rather not a real DocumentFragment?!
-			if (!node) {
-				console.log('bad template:', this, fragment);
-				throw `bad template: ${this.templateString}`;
-			}
-
-			if (node.data === `${placeholder}`) {
+		// search for parts through numbered comment nodes with placeholders
+		let node = treeWalker.currentNode;
+		while ((node = treeWalker.nextNode())) {
+			if (/^dom-part-\d+$/.test(node.data)) {
 				parts.push({ type: 'node', path: getNodePath(node) });
-				placeholder = `${prefix}${++i}`;
-			} else if (node.data.includes(`${placeholder}:`)) {
+			}
+			if (/^dom-part-\d+:/.test(node.data)) {
 				const [_, attribute] = node.data.split(':');
 				const [name, initialValue] = attribute.split('=');
 				parts.push({ type: 'attribute', path: getNodePath(node), name: name, initialValue });
-				placeholder = `${prefix}${++i}`;
 			}
 		}
+
+		// We couldn't correctly parse parts from the template
+		if (parts.length !== this.strings.length - 1) {
+			throw {
+				name: 'ParseTemplateError',
+				message: 'Could not parse parts from template correctly. Parts length has not the expected length.',
+				strings: this.strings,
+				templateString: this.templateString,
+				fragment,
+				template,
+				parts,
+			};
+		}
+
 		return parts;
 	}
 
@@ -278,7 +291,7 @@ export class TemplateResult {
 		let updates = parsedUpdates.get(this.strings);
 
 		if (!updates) {
-			updates = this.parse(this.strings, this.values.length);
+			updates = this.parse(this.strings);
 			parsedUpdates.set(this.strings, updates);
 		}
 
