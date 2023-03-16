@@ -2,6 +2,7 @@ import { fixture, assert } from '@open-wc/testing';
 import { createTemplateString } from '../../src/renderer/vanilla/util/TemplateResult.js';
 import { html } from '../../src/renderer/vanilla/util/html.js';
 import { convertStringToTemplate } from '../../src/util/DOMHelper';
+import { PersistentFragment } from '../../src/renderer/vanilla/util/PersistentFragment';
 
 export const stripWhitespace = (html) => html.replace(/\s+/g, ' ').replaceAll('> ', '>').trim();
 
@@ -71,13 +72,54 @@ describe(`TemplateResult.createTemplateString()`, () => {
 
 describe('TemplateResult.parseParts()', () => {
 	it('creates no parts if no comment markers are present', async () => {
-		const documentFragment = convertStringToTemplate(`<div>Text</div>`);
 		const templateResult = html`<div>Text</div>`;
+		const documentFragment = convertStringToTemplate(templateResult.templateString);
 		const parts = templateResult.parseParts(documentFragment);
 		assert.deepEqual(parts, []);
 	});
 
-	// TODO: add tests
+	it('creates a node part for text interpolation inside a node', async () => {
+		const templateResult = html`<div>${'Text'}</div>`;
+		const documentFragment = convertStringToTemplate(templateResult.templateString);
+		const persistentFragment = new PersistentFragment(documentFragment);
+		/*console.log('persistentFragment childNodes', persistentFragment.childNodes);
+		console.log('persistentFragment childNodes', persistentFragment.childNodes[2].childNodes);*/
+		const parts = templateResult.parseParts(persistentFragment);
+		assert.deepEqual(parts, [{ type: 'node', path: [1, 2], parts: [] }]);
+	});
+
+	it('creates an attribute part for an interpolation inside an attribute', async () => {
+		const templateResult = html`<div class="${'active'}">Text</div>`;
+		const documentFragment = convertStringToTemplate(templateResult.templateString);
+		const persistentFragment = new PersistentFragment(documentFragment);
+		/*console.log('persistentFragment childNodes', persistentFragment.childNodes);*/
+		const parts = templateResult.parseParts(persistentFragment);
+		assert.deepEqual(parts, [{ type: 'attribute', path: [2], name: 'class', initialValue: '\x03' }]);
+	});
+
+	it('creates multiple attribute parts for interpolations inside an attributes', async () => {
+		const templateResult = html`<div id="${1}" class="${'active'}">Text</div>`;
+		const documentFragment = convertStringToTemplate(templateResult.templateString);
+		const persistentFragment = new PersistentFragment(documentFragment);
+		/*console.log('persistentFragment childNodes', persistentFragment.childNodes);*/
+		const parts = templateResult.parseParts(persistentFragment);
+		assert.deepEqual(parts, [
+			{ type: 'attribute', path: [2], name: 'id', initialValue: '\x03' },
+			{ type: 'attribute', path: [4], name: 'class', initialValue: '\x03' },
+		]);
+	});
+
+	it('creates multiple attribute parts for interpolations inside an one attributes', async () => {
+		const templateResult = html`<div class="${'some'} other ${'name'}">Text</div>`;
+		const documentFragment = convertStringToTemplate(templateResult.templateString);
+		const persistentFragment = new PersistentFragment(documentFragment);
+		/*console.log('persistentFragment childNodes', persistentFragment.childNodes);*/
+		const parts = templateResult.parseParts(persistentFragment);
+		assert.deepEqual(parts, [
+			{ type: 'attribute', path: [2], name: 'class', initialValue: '\x03 other \x03' },
+			{ type: 'attribute', path: [3], name: 'class', initialValue: '\x03 other \x03' },
+		]);
+	});
 });
 
 describe('TemplateResult.toString()', () => {

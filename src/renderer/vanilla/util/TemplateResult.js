@@ -232,7 +232,7 @@ export class TemplateResult {
 
 	/**
 	 * @param {PersistentFragment} fragment
-	 * @return {Part[]}
+	 * @return {object[]}
 	 */
 	parseParts(fragment) {
 		// we always create a template fragment so that we can start at the root for traversing the node path
