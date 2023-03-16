@@ -349,8 +349,7 @@ class BaseElement extends HTMLElement {
 		// define context provider
 		const providedKeys = Object.keys(this.provideProperties());
 		if (providedKeys.length > 0) {
-			//this.addEventListener('request-context', this.onRequestContext);
-			this.getRoot().addEventListener('request-context', (e) => this.onRequestContext(e));
+			this.addEventListener('request-context', this.onRequestContext);
 			// check if there are already connected elements in child dom and restart requests
 			getAllElementChildren(this.getRoot(), BaseElement).forEach((customChild) => {
 				// if injectProperties?.() is defined it means that the child got connected BEFORE the parent (Runtime Issue)

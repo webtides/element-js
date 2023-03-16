@@ -1,11 +1,13 @@
 <html>
 	<body>
-		<parent-context-element>
-			<request-context-element id="primary"></request-context-element>
-			<shadow-provider>
-				<request-context-element id="secondary"></request-context-element>
-			</shadow-provider>
-		</parent-context-element>
+		<ancestor-context-element>
+			<parent-context-element>
+				<request-context-element id="primary"></request-context-element>
+				<shadow-provider>
+					<request-context-element id="secondary"></request-context-element>
+				</shadow-provider>
+			</parent-context-element>
+		</ancestor-context-element>
 
 		<script type="module">
 			/* eslint-disable no-unused-expressions */
@@ -18,17 +20,18 @@
 				RequestContextElement,
 				ShadowProvider,
 				primitiveStore,
+				AncestorContextElement,
 			} from './context-protocol.definitions';
 
-			defineElement('shadow-provider', ShadowProvider);
-			defineElement('parent-context-element', ParentContextElement);
-			defineElement('request-context-element', RequestContextElement);
-
-			runTests(() => {
+			runTests(async () => {
 				const shadowProvider = document.querySelector('shadow-provider');
 				const secondary = document.getElementById('secondary');
 				const primary = document.getElementById('primary');
 				// Provider needs to be declared before Requester
+				defineElement('shadow-provider', ShadowProvider);
+				defineElement('ancestor-context-element', AncestorContextElement);
+				defineElement('parent-context-element', ParentContextElement);
+				defineElement('request-context-element', RequestContextElement);
 
 				it('Shadow DOM Provider also receives requested Values', async () => {
 					expect(shadowProvider.simpleContext).to.equal(ParentContextElement.SIMPLE_CONTEXT);
@@ -40,7 +43,6 @@
 					expect(shadow.shadowContext).to.equal(ShadowProvider.SHADOW_CONTEXT);
 				});
 
-				// TODO finalize test and decide what to expect !? -- naive expectation would be to work, but its not
 				it('Light / Slotted DOM Receiver receive values from a provider', async () => {
 					expect(secondary.shadowContext).to.equal(ShadowProvider.SHADOW_CONTEXT);
 				});
