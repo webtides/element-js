@@ -22,11 +22,10 @@ class ExampleTestElement extends TemplateElement {
 		}
 		const p = document.createElement('p');
 		p.textContent = 'DOM Element';
-		return html`
-			<div class="test">
+		/*<div class="test">
 				${[...list, 1, 'Text', html`<span>Foo</span>`, html`<span>${this.count}</span>`, () => 'Function', p]}
-			</div>
-		`;
+			</div>*/
+		return html` ${'<span>Test</span>'} `;
 	}
 }
 defineElement('example-test-element', ExampleTestElement);

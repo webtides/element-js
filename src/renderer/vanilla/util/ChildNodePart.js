@@ -68,6 +68,12 @@ export class ChildNodePart extends Part {
 		}
 		if (!serverSideRendered) {
 			this.updateParts(value);
+			// TODO: for template results that only contain a single interpolation
+			// when calling super.update... it will actually create the text node
+			// but this.endNode.parentNode is not the same as this.fragment.childNodes...
+			// WTF?!
+			// find a way and place to write a test for this
+			// and find out why the fragments are not the same...
 			super.update(initialValue);
 		}
 	}
