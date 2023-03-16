@@ -132,10 +132,7 @@ export class TemplateResult {
 			if (!serverSideRendered) {
 				domNode.replaceChildren(...childNodePart.fragment.childNodes);
 			}
-		}
-
-		// TODO; if this is expensive - performance wise - we could have a hydrate only method instead of calling renderInto for all the cases?!
-		if (!serverSideRendered) {
+		} else {
 			childNodePart.update(this);
 		}
 	}

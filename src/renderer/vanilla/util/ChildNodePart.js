@@ -62,7 +62,10 @@ export class ChildNodePart extends Part {
 			this.endNode = endNode;
 		}
 		const initialValue = this.parseValue(value);
-		if (this.endNode) this.processor = processNodePart(this.endNode, serverSideRendered ? initialValue : undefined);
+		if (this.endNode) {
+			this.processor = processNodePart(this.endNode, serverSideRendered ? initialValue : undefined);
+			if (!serverSideRendered) super.update(initialValue);
+		}
 	}
 
 	/**
@@ -85,7 +88,6 @@ export class ChildNodePart extends Part {
 	 * @return {*}
 	 */
 	update(value) {
-		// TODO: when doing it for the first time, parseValue will be done twice.. (1. in constructor)
 		const parsedValue = this.parseValue(value);
 		if (value instanceof TemplateResult || Array.isArray(value)) {
 			const values = Array.isArray(value) ? value : value.values;
