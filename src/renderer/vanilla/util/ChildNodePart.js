@@ -62,9 +62,13 @@ export class ChildNodePart extends Part {
 			this.endNode = endNode;
 		}
 		const initialValue = this.parseValue(value);
+
 		if (this.endNode) {
 			this.processor = processNodePart(this.endNode, serverSideRendered ? initialValue : undefined);
-			if (!serverSideRendered) super.update(initialValue);
+		}
+		if (!serverSideRendered) {
+			this.updateParts(value);
+			super.update(initialValue);
 		}
 	}
 
@@ -89,6 +93,11 @@ export class ChildNodePart extends Part {
 	 */
 	update(value) {
 		const parsedValue = this.parseValue(value);
+		this.updateParts(value);
+		return super.update(parsedValue);
+	}
+
+	updateParts(value) {
 		if (value instanceof TemplateResult || Array.isArray(value)) {
 			const values = Array.isArray(value) ? value : value.values;
 
@@ -96,7 +105,6 @@ export class ChildNodePart extends Part {
 				this.parts[index]?.update(values[index]);
 			}
 		}
-		return super.update(parsedValue);
 	}
 
 	/**
@@ -157,6 +165,7 @@ export class ChildNodePart extends Part {
 			}
 
 			// TODO: maybe move this as method somewhere else?!
+			// TODO: or we could maybe move this whole parseTemplateResult?!
 			/** @type AttributePart */
 			let previousAttributePart = undefined;
 			this.parts = parts.map((part, index) => {
