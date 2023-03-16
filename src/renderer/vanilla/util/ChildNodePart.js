@@ -39,6 +39,7 @@ export class ChildNodePart extends Part {
 
 		super(startNode);
 
+		let serverSideRendered = false;
 		if (startNode) {
 			const placeholder = startNode.data;
 			const childNodes = [startNode];
@@ -51,13 +52,17 @@ export class ChildNodePart extends Part {
 			const endNode = childNode;
 			childNodes.push(endNode);
 
+			// if not SSRed, childNodes will only ever have two comment nodes, the start and the end marker
+			if (childNodes.length > 2) {
+				serverSideRendered = true;
+			}
+
 			this.fragment = new PersistentFragment(childNodes);
 			this.startNode = startNode;
 			this.endNode = endNode;
 		}
 		const initialValue = this.parseValue(value);
-		// TODO: if SSRed, we probably need to set the initialValue?!
-		if (this.endNode) this.processor = processNodePart(this.endNode, undefined);
+		if (this.endNode) this.processor = processNodePart(this.endNode, serverSideRendered ? initialValue : undefined);
 	}
 
 	/**

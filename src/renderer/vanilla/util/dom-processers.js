@@ -274,11 +274,7 @@ export const processNodePart = (comment, initialValue) => {
 					}
 					// or diff if they contain nodes or fragments
 					else {
-						nodes = oldValue || [];
-						// nodes = diff(comment, nodes, newValue);
-						// TODO: when rendering server side, nodes is empty :(
-						// How do we get the nodes?! WTF?!
-						nodes = diffNodes(comment.parentNode, nodes, newValue, comment);
+						nodes = diffNodes(comment.parentNode, oldValue || [], newValue, comment);
 					}
 					oldValue = newValue;
 					break;
