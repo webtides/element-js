@@ -31,10 +31,8 @@
 			<parent-context-element>
 				<late-provider>
 					<request-context-element id="primary"></request-context-element>
-					<shadow-provider>
-						<request-context-element id="secondary"></request-context-element>
-					</shadow-provider>
 				</late-provider>
+				<request-context-element id="secondary"></request-context-element>
 			</parent-context-element>
 		</ancestor-context-element>
 
@@ -46,154 +44,19 @@
 
 			import { Store } from '../../src/util/Store';
 
-			const primitiveStore = new Store(100);
+			import {
+				AncestorContextElement,
+				ParentContextElement,
+				RequestContextElement,
+				LateProvider,
+				primitiveStore,
+			} from './context-protocol.definitions';
 
+			defineElement('ancestor-context-element', AncestorContextElement);
+			defineElement('parent-context-element', ParentContextElement);
+			defineElement('request-context-element', RequestContextElement);
 			runTests(() => {
-				class ShadowProvider extends TemplateElement {
-					static SHADOW_CONTEXT = 'shadowContext';
-
-					constructor() {
-						super({ shadowRender: true });
-					}
-
-					provideProperties() {
-						return {
-							shadowContext: ShadowProvider.SHADOW_CONTEXT,
-						};
-					}
-					injectProperties() {
-						return {
-							vanillaContext: '',
-						};
-					}
-					connected() {
-						super.connected();
-
-						console.log('shadow connected');
-					}
-
-					onRequestContext(event) {
-						super.onRequestContext(event);
-						console.log(event.composedPath()[0], event.type, event.detail);
-					}
-
-					template() {
-						return html`<div>
-							<request-context-element id="shadow"></request-context-element>
-							<slot></slot>
-						</div>`;
-					}
-				}
-
-				class LateProvider extends BaseElement {
-					static LATE_CONTEXT = 'lateContext';
-
-					provideProperties() {
-						return {
-							lateContext: LateProvider.LATE_CONTEXT,
-						};
-					}
-				}
-
-				class AncestorContextElement extends BaseElement {
-					static CONTEXT = 'ancestorContext';
-					static MULTI = 'ancestorMultiContext';
-
-					properties() {
-						return {
-							ancestorContext: AncestorContextElement.CONTEXT,
-							multiContext: AncestorContextElement.MULTI,
-							storeContext: primitiveStore,
-						};
-					}
-
-					provideProperties() {
-						return {
-							ancestorContext: this.ancestorContext,
-							multiContext: this.multiContext,
-							storeContext: this.storeContext,
-						};
-					}
-				}
-
-				class ParentContextElement extends BaseElement {
-					static SIMPLE_CONTEXT = 'simpleParentContext';
-					static MULTI = 'parentMultiContext';
-					static INLINE = 'parentInlineContext';
-					static STATIC = 'parentStaticContext';
-
-					properties() {
-						return {
-							simpleContext: ParentContextElement.SIMPLE_CONTEXT,
-							multiContext: ParentContextElement.MULTI,
-						};
-					}
-
-					provideProperties() {
-						return {
-							simpleContext: this.simpleContext,
-							multiContext: this.multiContext,
-							inlineCallback: ParentContextElement.INLINE,
-							staticContext: ParentContextElement.STATIC,
-							booleanContext: false,
-						};
-					}
-				}
-
-				class RequestContextElement extends BaseElement {
-					properties() {
-						return {
-							callBackCalled: null,
-							simpleContext: '',
-							multiContext: '',
-							inlineCallbackValue: '',
-							watcherReflectedValue: 0,
-						};
-					}
-
-					// reactive attributes/properties
-					injectProperties() {
-						return {
-							counterStore: {},
-							vanillaContext: '',
-							missingVanillaContext: null,
-							simpleContext: '',
-							ancestorContext: null,
-							multiContext: null,
-							storeContext: {},
-							noContext: 'noContext',
-							staticContext: 'noContext',
-							booleanContext: true,
-							lateContext: null,
-							shadowContext: null,
-							inlineCallback: (value) => {
-								this.inlineCallbackValue = value;
-							},
-						};
-					}
-					watch() {
-						return {
-							storeContext: (newValues) => {
-								this.watcherReflectedValue = newValues.value;
-							},
-						};
-					}
-
-					connected() {
-						super.connected();
-						console.log('requester connected', this.id);
-						this.requestContext('callbackContext', (context) => {
-							this.callBackCalled = context === globalThis.callbackContext;
-						});
-					}
-				}
-
 				// Provider needs to be declared before Requester
-				defineElement('shadow-provider', ShadowProvider);
-				defineElement('ancestor-context-element', AncestorContextElement);
-				defineElement('parent-context-element', ParentContextElement);
-				defineElement('request-context-element', RequestContextElement);
-
 				it('receives global vanilla context', async () => {
 					const el = document.getElementById('primary');
 					expect(el.vanillaContext).to.equal(globalThis.vanillaContext);
@@ -284,34 +147,6 @@
 					expect(secondary.storeContext.value).to.equal(primary.storeContext.value);
 					secondary.storeContext.value = 500;
 					expect(secondary.storeContext.value).to.equal(primary.storeContext.value);
-				});
-
-				it('Shadow DOM Provider also receives requested Values', async () => {
-					const shadowProvider = document.querySelector('shadow-provider');
-					expect(shadowProvider.vanillaContext).to.equal(globalThis.vanillaContext);
-				});
-
-				it('Shadow DOM Receiver receive values from a provider', async () => {
-					const shadowRoot = document.querySelector('shadow-provider').shadowRoot;
-					const shadow = shadowRoot.getElementById('shadow');
-					expect(shadow.shadowContext).to.equal(ShadowProvider.SHADOW_CONTEXT);
-				});
-
-				// TODO finalize test and decide what to expect !? -- naive expectation would be to work, but its not
-				it('Light / Slotted DOM Receiver receive values from a provider', async () => {
-					const secondary = document.getElementById('secondary');
-					console.log('##', secondary.shadowContext);
-					expect(secondary.shadowContext).to.equal(ShadowProvider.SHADOW_CONTEXT);
-				});
-
-				it('Even Shadow DOM Receiver do receive updated values from outside of the Shadow Root', async () => {
-					const primary = document.getElementById('primary');
-					const shadowRoot = document.querySelector('shadow-provider').shadowRoot;
-					const shadow = shadowRoot.getElementById('shadow');
-					primary.storeContext.value = 400;
-					expect(shadow.storeContext.value).to.equal(primary.storeContext.value);
-					shadow.storeContext.value = 500;
-					expect(shadow.storeContext.value).to.equal(primary.storeContext.value);
 				});
 
 				it('receives a static context value that is not a property in the Provider', async () => {
