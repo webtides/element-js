@@ -85,6 +85,7 @@ export class RequestContextElement extends BaseElement {
 			storeContext: {},
 			noContext: 'noContext',
 			staticContext: 'noContext',
+			shadowContext: 'noContext',
 			booleanContext: true,
 			lateContext: null,
 			inlineCallback: (value) => {
@@ -102,7 +103,7 @@ export class RequestContextElement extends BaseElement {
 	}
 
 	connected() {
-		console.log('requester connected', this.id);
+		// console.log('requester connected', this.id);
 		super.connected();
 		this.requestContext('callbackContext', (context) => {
 			this.callBackCalled = context === globalThis.callbackContext;
@@ -129,13 +130,15 @@ export class ShadowProvider extends TemplateElement {
 		};
 	}
 	connected() {
-		console.log('shadow connected');
+		// console.log('shadow connected');
 		super.connected();
 	}
 
 	onRequestContext(event) {
 		super.onRequestContext(event);
-		// console.log(event.composedPath()[0], event.type, event.detail);
+		// if (event.detail.shadowContext) {
+		// 	console.log(event.composedPath()[0], event.type, event.detail);
+		// }
 	}
 
 	template() {
