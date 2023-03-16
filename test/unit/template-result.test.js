@@ -1,6 +1,7 @@
 import { fixture, assert } from '@open-wc/testing';
 import { createTemplateString } from '../../src/renderer/vanilla/util/TemplateResult.js';
 import { html } from '../../src/renderer/vanilla/util/html.js';
+import { convertStringToTemplate } from '../../src/util/DOMHelper';
 
 export const stripWhitespace = (html) => html.replace(/\s+/g, ' ').replaceAll('> ', '>').trim();
 
@@ -68,7 +69,18 @@ describe(`TemplateResult.createTemplateString()`, () => {
 	});
 });
 
-describe('TemplateResult.parse()', () => {
+describe('TemplateResult.parseParts()', () => {
+	it('creates no parts if no comment markers are present', async () => {
+		const documentFragment = convertStringToTemplate(`<div>Text</div>`);
+		const templateResult = html`<div>Text</div>`;
+		const parts = templateResult.parseParts(documentFragment);
+		assert.deepEqual(parts, []);
+	});
+
+	// TODO: add tests
+});
+
+describe('TemplateResult.toString()', () => {
 	it('wraps the template in matching "template-part" comment nodes', async () => {
 		const templateResult = html`<div>Text</div>`;
 		assert.equal(
