@@ -247,19 +247,36 @@ export class TemplateResult {
 		}
 
 		const treeWalker = globalThis.document?.createTreeWalker(template, 128);
-		const parts = [];
-		// search for parts through numbered comment nodes with placeholders
 		let node = treeWalker.currentNode;
-		while ((node = treeWalker.nextNode())) {
-			if (/^dom-part-\d+$/.test(node.data)) {
-				parts.push({ type: 'node', path: getNodePath(node) });
+
+		// this is kinda freaky because the tree walker is shared throughout the recursion - but YOLO
+		const getParts = () => {
+			const parts = [];
+			let currentPart = undefined;
+			// search for parts through numbered comment nodes with placeholders
+			while ((node = treeWalker.nextNode())) {
+				if (/^template-part$/.test(node.data) && currentPart) {
+					// start recursion -> add nested parts to previous part
+					currentPart.parts = getParts();
+				}
+				if (/^\/template-part$/.test(node.data)) {
+					// end recursion
+					return parts;
+				}
+				if (/^dom-part-\d+$/.test(node.data)) {
+					parts.push((currentPart = { type: 'node', path: getNodePath(node), parts: [] }));
+				}
+				if (/^dom-part-\d+:/.test(node.data)) {
+					const [_, attribute] = node.data.split(':');
+					const [name, initialValue] = attribute.split('=');
+					currentPart = undefined;
+					parts.push({ type: 'attribute', path: getNodePath(node), name: name, initialValue });
+				}
 			}
-			if (/^dom-part-\d+:/.test(node.data)) {
-				const [_, attribute] = node.data.split(':');
-				const [name, initialValue] = attribute.split('=');
-				parts.push({ type: 'attribute', path: getNodePath(node), name: name, initialValue });
-			}
-		}
+			return parts;
+		};
+
+		const parts = getParts();
 
 		// We couldn't correctly parse parts from the template
 		if (parts.length !== this.strings.length - 1) {

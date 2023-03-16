@@ -158,6 +158,7 @@ export class ChildNodePart extends Part {
 
 				if (part.type === 'node') {
 					return new ChildNodePart(node, templateResult.values[index]);
+					// TODO: the nodes in the parts array also have nested parts information... we could start creating the nested parts here as well
 				}
 				if (part.type === 'attribute') {
 					// If we have multiple attribute parts with the same name, it means we have multiple
