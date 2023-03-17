@@ -1,5 +1,4 @@
 import { isObjectLike, deepEquals } from './AttributeParser.js';
-import { BaseElement } from '../BaseElement';
 import { isBaseElement } from './instanceOfHelper';
 
 export class Store {
