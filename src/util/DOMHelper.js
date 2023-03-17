@@ -1,3 +1,5 @@
+import { isShadowRoot } from './instanceOfHelper';
+
 export function getAllParentNodes(domNode) {
 	let node = domNode.parentElement;
 	let parents = [];
@@ -11,12 +13,12 @@ export function getAllParentNodes(domNode) {
 
 // https://stackoverflow.com/questions/27453617/how-can-i-tell-if-an-element-is-in-a-shadow-dom
 export function getShadowParentOrBody(element) {
-	if (element instanceof ShadowRoot) {
+	if (isShadowRoot(element)) {
 		return element;
 	}
 
 	while (element.parentNode && (element = element.parentNode)) {
-		if (element instanceof ShadowRoot) {
+		if (isShadowRoot(element)) {
 			return element;
 		}
 	}
@@ -33,11 +35,9 @@ export function getClosestParentCustomElementNode(domNode) {
 	return customElementParents.pop();
 }
 
-export function getAllElementChildren(domNode, instanceOfFilter = HTMLElement) {
+export function getAllElementChildren(domNode, filterFunction = (node) => true) {
 	const nodeIterator = document.createNodeIterator(domNode, NodeFilter.SHOW_ELEMENT, (node) =>
-		node.nodeName.includes('-') && node instanceof instanceOfFilter
-			? NodeFilter.FILTER_ACCEPT
-			: NodeFilter.FILTER_REJECT,
+		node.nodeName.includes('-') && filterFunction(node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT,
 	);
 	const customElements = [];
 	let currentNode;

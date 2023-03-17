@@ -1,5 +1,6 @@
 import { isObjectLike, deepEquals } from './AttributeParser.js';
 import { BaseElement } from '../BaseElement';
+import { isBaseElement } from './instanceOfHelper';
 
 export class Store {
 	_observer = new Set();
@@ -70,7 +71,7 @@ export class Store {
 
 	requestUpdate() {
 		this._observer.forEach(async (observer) => {
-			if (observer instanceof BaseElement) {
+			if (isBaseElement(observer)) {
 				await observer.requestUpdate();
 				// check if store is watched by an observer
 				if (Object.keys(observer.watch() ?? {}).length > 0) {

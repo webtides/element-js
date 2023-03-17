@@ -1,6 +1,6 @@
 import { parseAttribute, isNaN, dashToCamel, camelToDash, isObjectLike } from './util/AttributeParser.js';
 import { getAllElementChildren, getClosestParentCustomElementNode, isOfSameNodeType } from './util/DOMHelper.js';
-import { Store } from './util/Store.js';
+import { isBaseElement, isStore } from './util/instanceOfHelper';
 
 export { defineElement } from './util/defineElement.js';
 export { toString } from './util/toString.js';
@@ -108,7 +108,7 @@ class BaseElement extends HTMLElement {
 
 		// unsubscribe from stores
 		Object.values(this.properties()).forEach((property) => {
-			if (property instanceof Store) {
+			if (isStore(property)) {
 				property.unsubscribe(this);
 			}
 		});
@@ -213,7 +213,7 @@ class BaseElement extends HTMLElement {
 	 * Will trigger update() when a property was changed
 	 */
 	defineProperty(property, value, reflectAttribute = false) {
-		if (value instanceof Store) {
+		if (isStore(value)) {
 			value.subscribe(this);
 		}
 
@@ -244,7 +244,7 @@ class BaseElement extends HTMLElement {
 				if (JSON.stringify(oldValue) !== newValueString) {
 					this._state[property] = newValue;
 
-					if (newValue instanceof Store) {
+					if (isStore(newValue)) {
 						newValue.subscribe(this);
 					}
 
@@ -350,7 +350,7 @@ class BaseElement extends HTMLElement {
 		if (providedKeys.length > 0) {
 			this.addEventListener('request-context', this.onRequestContext);
 			// check if there are already connected elements in child dom and restart requests
-			getAllElementChildren(this.getRoot(), BaseElement).forEach((customChild) => {
+			getAllElementChildren(this.getRoot(), (node) => isBaseElement(node)).forEach((customChild) => {
 				// if injectProperties?.() is defined it means that the child got connected BEFORE the parent (Runtime Issue)
 				const requestedProperties = customChild.injectProperties?.() ?? {};
 				Object.entries(requestedProperties).forEach(([key, value]) => {
