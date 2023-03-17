@@ -1,5 +1,3 @@
-import { BaseElement } from '../BaseElement';
-
 export function getAllParentNodes(domNode) {
 	let node = domNode.parentElement;
 	let parents = [];
@@ -35,9 +33,9 @@ export function getClosestParentCustomElementNode(domNode) {
 	return customElementParents.pop();
 }
 
-export function getAllElementChildren(domNode) {
+export function getAllElementChildren(domNode, instanceOfFilter = HTMLElement) {
 	const nodeIterator = document.createNodeIterator(domNode, NodeFilter.SHOW_ELEMENT, (node) =>
-		node.nodeName.includes('-') && node instanceof BaseElement
+		node.nodeName.includes('-') && node instanceof instanceOfFilter
 			? NodeFilter.FILTER_ACCEPT
 			: NodeFilter.FILTER_REJECT,
 	);
