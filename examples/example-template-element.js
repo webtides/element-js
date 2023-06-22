@@ -1,6 +1,8 @@
 import { defineElement } from '../src/BaseElement';
 // import { TemplateElement, html } from '../src/TemplateElement';
-import { TemplateElement, html } from '../src/renderer/vanilla/TemplateElement.js';
+// import { TemplateElement, html } from '../src/renderer/vanilla/TemplateElement.js';
+import { TemplateElement, html } from '../src/renderer/jtml/TemplateElement.js';
+// import { TemplateElement, html } from '../src/renderer/jtml-github/TemplateElement.js';
 
 function _random(max) {
 	return Math.round(Math.random() * 1000) % max;
