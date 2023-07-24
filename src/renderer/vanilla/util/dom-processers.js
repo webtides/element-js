@@ -1,5 +1,5 @@
-import { COMMENT_NODE, DOCUMENT_FRAGMENT_NODE, ELEMENT_NODE } from '../../../util/DOMHelper.js';
-import { PersistentFragment } from './PersistentFragment.js';
+import { COMMENT_NODE, ELEMENT_NODE } from '../../../util/DOMHelper.js';
+import { ChildNodePart } from './ChildNodePart.js';
 
 /**
  * @param {Element} node
@@ -103,8 +103,13 @@ const diffNodes = function (parentNode, domChildNodes, templateChildNodes, ancho
 		// If the DOM node doesn't exist, append/copy the template node
 		if (!domChildNode) {
 			// operation = 1
-			if (templateChildNode instanceof PersistentFragment) {
+			// TODO: this is kind of duplicate because these checks are also done in processNode?!
+			if (templateChildNode instanceof ChildNodePart) {
 				anchorNode.before(...templateChildNode.childNodes);
+			} else if (Array.isArray(templateChildNode)) {
+				// TODO: this was not needed with PersistentFragment?! And I think this is really slow...
+				anchorNode.before(...templateChildNode);
+				// TODO: this is kind of duplicate because these checks are also done in processNode?!
 			} else if (typeof templateChildNode === 'object' && 'ELEMENT_NODE' in templateChildNode) {
 				parentNode.insertBefore(templateChildNode, anchorNode);
 			} else {
@@ -210,7 +215,7 @@ const diffNodes = function (parentNode, domChildNodes, templateChildNodes, ancho
 export const processNodePart = (comment, initialValue) => {
 	let nodes = [];
 	let oldValue =
-		typeof initialValue === 'object' && initialValue.nodeType === DOCUMENT_FRAGMENT_NODE
+		typeof initialValue === 'object' && initialValue instanceof ChildNodePart
 			? [...initialValue.childNodes]
 			: initialValue;
 	// this is for string values to be inserted into the DOM. A cached TextNode will be used so that we don't have to constantly create new DOM nodes.
@@ -286,8 +291,7 @@ export const processNodePart = (comment, initialValue) => {
 						nodes = diffNodes(
 							comment.parentNode,
 							nodes,
-							// TODO: could we also use .valueOf() here ?!
-							newValue.nodeType === DOCUMENT_FRAGMENT_NODE ? [...newValue.childNodes] : [newValue],
+							newValue instanceof ChildNodePart ? [...newValue.childNodes] : [newValue],
 							comment,
 						);
 					} else {

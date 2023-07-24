@@ -1,7 +1,6 @@
 import { COMMENT_NODE, getNodePath } from '../../../util/DOMHelper';
 import { encodeAttribute, isObjectLike } from '../../../util/AttributeParser.js';
 import { ChildNodePart } from './ChildNodePart.js';
-import { PersistentFragment } from './PersistentFragment.js';
 
 // the prefix is used to tag and reference nodes and attributes to create parts with updates
 // attributes: dom-part-1="attribute-name"
@@ -130,7 +129,7 @@ export class TemplateResult {
 			childNodeParts.set(domNode, childNodePart);
 
 			if (!serverSideRendered) {
-				domNode.replaceChildren(...childNodePart.fragment.childNodes);
+				domNode.replaceChildren(...childNodePart.childNodes);
 			}
 		} else {
 			childNodePart.update(this);
@@ -234,14 +233,14 @@ export class TemplateResult {
 	}
 
 	/**
-	 * @param {PersistentFragment} fragment
+	 * @param {Node[]} childNodes
 	 * @return {object[]}
 	 */
-	parseParts(fragment) {
+	parseParts(childNodes) {
 		// we always create a template fragment so that we can start at the root for traversing the node path
 		// TODO: if we wanted to use real dom, we need to specify a limit/end node
 		const template = globalThis.document?.createDocumentFragment();
-		for (const childNode of fragment.childNodes) {
+		for (const childNode of childNodes) {
 			// TODO: maybe use a range to create a fragment faster?!
 			template.append(childNode.cloneNode(true));
 		}

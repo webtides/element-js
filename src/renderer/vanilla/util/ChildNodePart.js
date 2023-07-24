@@ -1,15 +1,13 @@
-import { COMMENT_NODE, convertStringToTemplate } from '../../../util/DOMHelper.js';
+import { COMMENT_NODE, ELEMENT_NODE, convertStringToTemplate } from '../../../util/DOMHelper.js';
 import { Part } from './Part.js';
 import { processNodePart } from './dom-processers.js';
 import { TemplateResult } from './TemplateResult.js';
-import { PersistentFragment } from './PersistentFragment.js';
 import { AttributePart } from './AttributePart.js';
 
 /** @type {Map<TemplateStringsArray, Part[]>} */
 const partsCache = new WeakMap();
 
-// TODO: don't allow DocumentFragments to be inserted here
-/** @type {Map<TemplateStringsArray, PersistentFragment | DocumentFragment>} */
+/** @type {Map<TemplateStringsArray, DocumentFragment>} */
 const fragmentsCache = new WeakMap();
 
 // TODO: I think that the proposals have some kind of root part
@@ -28,11 +26,12 @@ export class ChildNodePart extends Part {
 	/** @type {TemplateStringsArray} */
 	strings = undefined;
 
-	/** @type {PersistentFragment} */
-	fragment = undefined;
-
 	/** @type {Node[]} */
 	childNodes = [];
+
+	get ELEMENT_NODE() {
+		return ELEMENT_NODE;
+	}
 
 	/**
 	 * @param {Node} startNode - the start comment marker node
@@ -86,7 +85,7 @@ export class ChildNodePart extends Part {
 
 	/**
 	 * @param {TemplateResult | any[] | any} value
-	 * @return {any[] | PersistentFragment | any}
+	 * @return {any[] | Node[] | any}
 	 */
 	parseValue(value) {
 		if (Array.isArray(value)) {
@@ -94,7 +93,7 @@ export class ChildNodePart extends Part {
 		}
 		if (value instanceof TemplateResult) {
 			this.parseTemplateResult(value);
-			return this.fragment;
+			return this.childNodes;
 		}
 		return value;
 	}
@@ -132,7 +131,7 @@ export class ChildNodePart extends Part {
 			if (value instanceof TemplateResult || Array.isArray(value)) {
 				let childNodePart = this.parts[index];
 				if (!childNodePart) {
-					const templatePartCommentNodes = this.fragment?.childNodes?.filter(
+					const templatePartCommentNodes = this.childNodes?.filter(
 						(node) => node && node.nodeType === COMMENT_NODE && node.data === 'template-part',
 					);
 					const startNode = templatePartCommentNodes[index];
@@ -161,18 +160,20 @@ export class ChildNodePart extends Part {
 			// and won't get updated ever again...
 			// TODO: the || check should not be needed :(
 			// but if the nested TemplateResult has values the strings will never ever be rendered...
-			if (!this.fragment || templateResult.values.length === 0) {
+			// if (!this.fragment || templateResult.values.length === 0) {
+			if (this.childNodes.length === 0 || templateResult.values.length === 0) {
 				let fragment = fragmentsCache.get(templateResult.strings);
 				if (!fragment) {
 					fragment = this.parseFragment(templateResult);
 					fragmentsCache.set(templateResult.strings, fragment);
 				}
-				this.fragment = new PersistentFragment(fragment);
+				const importedFragment = globalThis.document?.importNode(fragment, true);
+				this.childNodes = [...importedFragment.childNodes];
 			}
 
 			let parts = partsCache.get(templateResult.strings);
 			if (!parts) {
-				parts = templateResult.parseParts(this.fragment);
+				parts = templateResult.parseParts(this.childNodes);
 				partsCache.set(templateResult.strings, parts);
 			}
 
@@ -182,7 +183,7 @@ export class ChildNodePart extends Part {
 			let previousAttributePart = undefined;
 			this.parts = parts.map((part, index) => {
 				// We currently need the path because the fragment will be cloned via importNode and therefore the node will be a different one
-				const node = part.path.reduceRight(({ childNodes }, i) => childNodes[i], this.fragment);
+				const node = part.path.reduceRight(({ childNodes }, i) => childNodes[i], this);
 
 				if (part.type === 'node') {
 					return new ChildNodePart(node, templateResult.values[index]);
@@ -215,10 +216,10 @@ export class ChildNodePart extends Part {
 	}
 
 	/**
-	 * @return {any[] | PersistentFragment}
+	 * @return {any[] | Node[]}
 	 */
 	valueOf() {
 		// TemplateResult | Array
-		return Array.isArray(this.value) ? this.value : this.fragment;
+		return Array.isArray(this.value) ? this.value : this.childNodes;
 	}
 }
