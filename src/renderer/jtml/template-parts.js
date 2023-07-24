@@ -149,17 +149,26 @@ export const defaultProcessor = {
 					// isIterable
 					if (part instanceof NodeTemplatePart) {
 						const nodes = [];
+						let itemIndex = 0;
 						for (const item of value) {
 							if (item instanceof TemplateResult) {
-								// TODO: this will always create new fragments and never reuse the ones already rendered
-								const fragment = document.createDocumentFragment();
+								let fragment = part.fragments[itemIndex];
+								if (!fragment) {
+									fragment = document.createDocumentFragment();
+									part.fragments[itemIndex] = fragment;
+								}
 								item.renderInto(fragment);
+								// TODO: the fragments will be empty for subsequent updates... :(
+								// TODO: this will cost when diffing.. we need to get the actual childNodes from the DOM
 								nodes.push(...fragment.childNodes);
 							} else if (item instanceof DocumentFragment) {
 								nodes.push(...item.childNodes);
+								part.fragments[itemIndex] = undefined;
 							} else {
 								nodes.push(String(item));
+								part.fragments[itemIndex] = undefined;
 							}
+							itemIndex++;
 						}
 						if (nodes.length) part.replace(...nodes);
 					} else {
@@ -241,6 +250,8 @@ export class AttributeTemplatePart extends TemplatePart {
 }
 
 export class NodeTemplatePart extends TemplatePart {
+	// TODO: think about the best name for this... as these are not always fragments...
+	fragments = [];
 	#nodes = [new Text()];
 	get replacementNodes() {
 		return this.#nodes;
@@ -280,6 +291,7 @@ export class NodeTemplatePart extends TemplatePart {
 		// since template instance could've inserted, parent node refers to empty document fragment
 		this.#nodes = updateNodes(this.#nodes[0].parentNode, this.#nodes, nodes, this.nextSibling);
 	}
+
 	replaceHTML(html) {
 		const fragment = this.parentNode.cloneNode();
 		fragment.innerHTML = html;
@@ -345,7 +357,7 @@ export class TemplateResult {
 		// console.log('renderInto', element);
 		const template = this.template;
 		if (renderedTemplates.get(element) !== template) {
-			console.log('renderInto NO TEMPLATE');
+			// console.log('renderInto NO TEMPLATE');
 			renderedTemplates.set(element, template);
 			const instance = new TemplateInstance(template, this.values, this.processor);
 			renderedTemplateInstances.set(element, instance);
