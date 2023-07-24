@@ -12,6 +12,9 @@ const partsCache = new WeakMap();
 /** @type {Map<TemplateStringsArray, PersistentFragment | DocumentFragment>} */
 const fragmentsCache = new WeakMap();
 
+// TODO: I think that the proposals have some kind of root part
+// where the root part takes care of the fragment parsing and stuff
+// and the childNode only handles arrays, text nodes and such
 export class ChildNodePart extends Part {
 	/** @type {Node | undefined} */
 	startNode = undefined;
@@ -27,6 +30,9 @@ export class ChildNodePart extends Part {
 
 	/** @type {PersistentFragment} */
 	fragment = undefined;
+
+	/** @type {Node[]} */
+	childNodes = [];
 
 	/**
 	 * @param {Node} startNode - the start comment marker node
@@ -57,7 +63,7 @@ export class ChildNodePart extends Part {
 				serverSideRendered = true;
 			}
 
-			this.fragment = new PersistentFragment(childNodes);
+			this.childNodes = childNodes;
 			this.startNode = startNode;
 			this.endNode = endNode;
 		}

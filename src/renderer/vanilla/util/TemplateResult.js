@@ -137,6 +137,9 @@ export class TemplateResult {
 		}
 	}
 
+	// TODO: think about if we could use this for both SSR and CSR ?!
+	// but in CSR we actually need the dom nodes to know where to make the updates
+	// but maybe instead of "duplicate" update functions, we could somehow use the same update function that the parts are using?
 	/**
 	 * @param {String[]} strings
 	 * @return {(() => String)[]}
