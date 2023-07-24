@@ -29,8 +29,19 @@ export class ChildNodePart extends Part {
 	/** @type {Node[]} */
 	childNodes = [];
 
+	// TODO: get rid of this...
 	get ELEMENT_NODE() {
 		return ELEMENT_NODE;
+	}
+
+	// TODO: get rid of this...
+	get firstChild() {
+		return this.childNodes[0];
+	}
+
+	// TODO: get rid of this...
+	get lastChild() {
+		return this.childNodes[this.childNodes.length - 1];
 	}
 
 	/**
@@ -93,7 +104,7 @@ export class ChildNodePart extends Part {
 		}
 		if (value instanceof TemplateResult) {
 			this.parseTemplateResult(value);
-			return this.childNodes;
+			return this;
 		}
 		return value;
 	}
@@ -220,6 +231,6 @@ export class ChildNodePart extends Part {
 	 */
 	valueOf() {
 		// TemplateResult | Array
-		return Array.isArray(this.value) ? this.value : this.childNodes;
+		return Array.isArray(this.value) ? this.value : this;
 	}
 }

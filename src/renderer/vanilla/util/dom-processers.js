@@ -80,8 +80,10 @@ const processAttribute = (node, name) => {
  */
 const remove = (node) => {
 	const range = globalThis.document?.createRange();
-	range.setStartAfter(node.firstChild);
-	range.setEndAfter(node.lastChild);
+	const firstChild = Array.isArray(node) ? node[0] : node.firstChild;
+	const lastChild = Array.isArray(node) ? node[node.length - 1] : node.lastChild;
+	range.setStartAfter(firstChild);
+	range.setEndAfter(lastChild);
 	range.deleteContents();
 	return node.firstChild;
 };

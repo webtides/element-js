@@ -188,6 +188,7 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 
 		// TODO: add ?|.|@|on* attributes tests
 
+		// TODO: add test back in...
 		/*it('can render special boolean bindings inside attributes', async () => {
 			const el = document.createElement('div');
 			let hidden = true;
@@ -242,6 +243,28 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 				'CSR template does not match SSR template',
 			);
 		});
+
+		// TODO: this is not working... :(
+		// it('can remove items from lists with looped bindings', async () => {
+		// 	const el = document.createElement('div');
+		// 	const colors = ['red', 'green', 'blue'];
+		// 	let templateResult = html`<ul>
+		// 		${colors.map((color) => html`<li>${color}</li>`)}
+		// 	</ul>`;
+		// 	render(templateResult, el);
+		// 	assert.equal(stripCommentMarkers(el.innerHTML), '<ul><li>red</li><li>green</li><li>blue</li></ul>');
+		// 	assert.equal(
+		// 		stripCommentMarkers(el.innerHTML),
+		// 		stripCommentMarkers(templateResult.toString()),
+		// 		'CSR template does not match SSR template',
+		// 	);
+		//
+		// 	templateResult = html`<ul>
+		// 		${['red', 'green'].map((color) => html`<li>${color}</li>`)}
+		// 	</ul>`;
+		// 	render(templateResult, el);
+		// 	assert.equal(stripCommentMarkers(el.innerHTML), '<ul><li>red</li><li>green</li></ul>');
+		// });
 
 		// TODO:
 		/*it('can switch between primitive values and template literals', async () => {
