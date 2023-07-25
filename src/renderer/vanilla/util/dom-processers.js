@@ -8,8 +8,10 @@ import { ChildNodePart } from './ChildNodePart.js';
  * @return {(function(*): void)|*}
  */
 const processBooleanAttribute = (node, name, oldValue) => {
+	// TODO: It would be better if the ?boolean= attribute would not be there in the first place...
+	node.removeAttribute(`?${name}`);
 	return (newValue) => {
-		const value = !!newValue?.valueOf();
+		const value = !!newValue?.valueOf() && newValue !== 'false';
 		if (oldValue !== value) {
 			node.toggleAttribute(name, (oldValue = !!value));
 		}
@@ -22,6 +24,8 @@ const processBooleanAttribute = (node, name, oldValue) => {
  * @return {(function(*): void)|*}
  */
 const processPropertyAttribute = (node, name) => {
+	// TODO: It would be better if the .property= attribute would not be there in the first place...
+	node.removeAttribute(`.${name}`);
 	return (value) => {
 		node[name] = value;
 	};
@@ -33,15 +37,16 @@ const processPropertyAttribute = (node, name) => {
  * @return {(function(*): void)|*}
  */
 const processEventAttribute = (node, name) => {
-	let oldValue,
-		lower,
-		type = name.slice(2);
-	if (!(name in node) && (lower = name.toLowerCase()) in node) type = lower.slice(2);
+	// TODO: It would be better if the event attribute would not be there in the first place...
+	node.removeAttribute(name);
+
+	let oldValue = undefined;
+	let type = name.startsWith('@') ? name.slice(1) : name.toLowerCase().slice(2);
+
 	return (newValue) => {
-		const info = Array.isArray(newValue) ? newValue : [newValue, false];
-		if (oldValue !== info[0]) {
-			if (oldValue) node.removeEventListener(type, oldValue, info[1]);
-			if ((oldValue = info[0])) node.addEventListener(type, oldValue, info[1]);
+		if (oldValue !== newValue) {
+			if (oldValue) node.removeEventListener(type, oldValue);
+			if ((oldValue = newValue)) node.addEventListener(type, oldValue);
 		}
 	};
 };
@@ -327,13 +332,8 @@ export const processAttributePart = (node, name) => {
 		return processPropertyAttribute(node, name.slice(1));
 	}
 
-	// event attribute: @event=${...}
-	if (name.startsWith('@')) {
-		return processEventAttribute(node, 'on' + name.slice(1));
-	}
-
-	// "old school" event attribute: onevent=${...}
-	if (name.startsWith('on')) {
+	// event attribute: @event=${...} || "old school" event attribute: onevent=${...}
+	if (name.startsWith('@') || name.startsWith('on')) {
 		return processEventAttribute(node, name);
 	}
 

@@ -29,6 +29,12 @@ export class AttributePart extends Part {
 	}
 
 	update(value) {
+		// If we only have one sole interpolation, we can just apply the update
+		if (this.initialValue === '\x03') {
+			super.update(value);
+			return;
+		}
+
 		// Instead of applying the update immediately, we check if the part has multiple interpolations
 		// and store the values for each interpolation in a list
 		this.values[this.currentValueIndex++] = value;
@@ -38,6 +44,7 @@ export class AttributePart extends Part {
 		if (this.interpolations === this.currentValueIndex) {
 			this.currentValueIndex = 0;
 			let replaceIndex = 0;
+			// Note: this will coarse the values into strings, but it's probably ok since there can only be multiple values in string attributes?!
 			const parsedValue = this.initialValue.replace(/\x03/g, () => this.values[replaceIndex++]);
 			super.update(parsedValue);
 		}

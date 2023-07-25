@@ -163,9 +163,8 @@ export class TemplateResult {
 					case name[0] === '?':
 						const booleanName = name.slice(1).toLowerCase();
 						parts.push((value) => {
-							let result = pre;
-							if (value) result += ` ${booleanName}`;
-							return result;
+							if (!value) return '';
+							return `${pre} ${booleanName}=""`;
 						});
 						break;
 					case name[0] === '.':

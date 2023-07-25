@@ -172,12 +172,13 @@ describe('TemplateResult.toString()', () => {
 		const templateResult = html`<div ?disabled="${true}" ?hidden="${false}">Text</div>`;
 		assert.equal(
 			stripWhitespace(templateResult.toString()),
-			'<!--template-part--><!--dom-part-0:?disabled=\x03--><!--dom-part-1:?hidden=\x03--><div disabled >Text</div><!--/template-part-->',
+			'<!--template-part--><!--dom-part-0:?disabled=\x03--><!--dom-part-1:?hidden=\x03--><div disabled="">Text</div><!--/template-part-->',
 		);
 	});
 
 	it('evaluates property attributes as stringified values', async () => {
 		const templateResult = html`<div .data="${{ foo: 'bar' }}">Text</div>`;
+		// TODO: make sure that this is the correct and wanted behaviour?! Because in CSR we do not render it as an attribute
 		assert.equal(
 			stripWhitespace(templateResult.toString()),
 			'<!--template-part--><!--dom-part-0:.data=\x03--><div data="{&quot;foo&quot;:&quot;bar&quot;}">Text</div><!--/template-part-->',
