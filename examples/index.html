@@ -19,263 +19,263 @@
 	<body>
 		<!--		<h1>Test</h1>-->
 		<!--		<example-base-element family-name="Smith"></example-base-element>-->
-		<!--		<example-input-element></example-input-element>-->
-		<example-directivesNOT enabled="true" choose="home" items="[1,2,3]"></example-directivesNOT>
-		<example-slotted-elementNOT name="Jane"></example-slotted-elementNOT>
-		<!-- TODO: when we have more than one of the same element/template, there will be problems -->
-		<example-template-element name="Jane" items="1" array="[1,2,3,4]"></example-template-element>
-		<example-template-elementNOT name="Jane" items="1" array="[1,2,3,4]">
-			<!--template-part-->
-			<div class="container">
-				<div class="flex flex-wrap bg-gray-300 p-4 gap-4">
-					<button type="button" class="btn" id="run" data-count="10">Create 10 rows</button>
-					<button type="button" class="btn" id="run" data-count="100">Create 100 rows</button>
-					<button type="button" class="btn" id="run" data-count="1000">Create 1,000 rows</button>
-					<button type="button" class="btn" id="runlots">Create 10,000 rows</button>
-					<button type="button" class="btn" id="add">Append 1,000 rows</button>
-					<button type="button" class="btn" id="update">Update every 10th row</button>
-					<button type="button" class="btn" id="swaprows">Swap Rows</button>
-					<button type="button" class="btn" id="clear">Clear</button>
-				</div>
-				<table class="min-w-full divide-y divide-gray-300">
-					<tbody class="divide-y divide-gray-200 bg-white">
-						<!--dom-part-0-->
-						<!--template-part-->
-						<!--dom-part-0:id=-->
-						<!--dom-part-1:class=-->
-						<tr id="1" class="bg-white even:bg-gray-100" ssr="true">
-							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<!--dom-part-2-->1<!--/dom-part-2-->
-							</td>
-							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<a class="select block w-full hover:cursor-pointer hover:underline">
-									<!--dom-part-3-->big brown sandwich from SSR<!--/dom-part-3-->
-								</a>
-							</td>
-							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<btn
-									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"
-								>
-									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"
-										>x</span
-									>
-								</btn>
-							</td>
-						</tr>
-						<!--/template-part-->
-						<!--template-part-->
-						<!--dom-part-0:id=-->
-						<!--dom-part-1:class=-->
-						<tr id="2" class="bg-white even:bg-gray-100">
-							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<!--dom-part-2-->2<!--/dom-part-2-->
-							</td>
-							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<a class="select block w-full hover:cursor-pointer hover:underline">
-									<!--dom-part-3-->cheap yellow mouse<!--/dom-part-3-->
-								</a>
-							</td>
-							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<btn
-									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"
-								>
-									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"
-										>x</span
-									>
-								</btn>
-							</td>
-						</tr>
-						<!--/template-part-->
-						<!--template-part-->
-						<!--dom-part-0:id=-->
-						<!--dom-part-1:class=-->
-						<tr id="3" class="bg-white even:bg-gray-100">
-							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<!--dom-part-2-->3<!--/dom-part-2-->
-							</td>
-							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<a class="select block w-full hover:cursor-pointer hover:underline">
-									<!--dom-part-3-->tall red keyboard<!--/dom-part-3-->
-								</a>
-							</td>
-							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<btn
-									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"
-								>
-									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"
-										>x</span
-									>
-								</btn>
-							</td>
-						</tr>
-						<!--/template-part-->
-						<!--template-part-->
-						<!--dom-part-0:id=-->
-						<!--dom-part-1:class=-->
-						<tr id="4" class="bg-white even:bg-gray-100">
-							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<!--dom-part-2-->4<!--/dom-part-2-->
-							</td>
-							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<a class="select block w-full hover:cursor-pointer hover:underline">
-									<!--dom-part-3-->small white burger<!--/dom-part-3-->
-								</a>
-							</td>
-							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<btn
-									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"
-								>
-									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"
-										>x</span
-									>
-								</btn>
-							</td>
-						</tr>
-						<!--/template-part-->
-						<!--template-part-->
-						<!--dom-part-0:id=-->
-						<!--dom-part-1:class=-->
-						<tr id="5" class="bg-white even:bg-gray-100">
-							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<!--dom-part-2-->5<!--/dom-part-2-->
-							</td>
-							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<a class="select block w-full hover:cursor-pointer hover:underline">
-									<!--dom-part-3-->handsome red bbq<!--/dom-part-3-->
-								</a>
-							</td>
-							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<btn
-									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"
-								>
-									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"
-										>x</span
-									>
-								</btn>
-							</td>
-						</tr>
-						<!--/template-part-->
-						<!--template-part-->
-						<!--dom-part-0:id=-->
-						<!--dom-part-1:class=-->
-						<tr id="6" class="bg-white even:bg-gray-100">
-							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<!--dom-part-2-->6<!--/dom-part-2-->
-							</td>
-							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<a class="select block w-full hover:cursor-pointer hover:underline">
-									<!--dom-part-3-->large black pony<!--/dom-part-3-->
-								</a>
-							</td>
-							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<btn
-									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"
-								>
-									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"
-										>x</span
-									>
-								</btn>
-							</td>
-						</tr>
-						<!--/template-part-->
-						<!--template-part-->
-						<!--dom-part-0:id=-->
-						<!--dom-part-1:class=-->
-						<tr id="7" class="bg-white even:bg-gray-100">
-							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<!--dom-part-2-->7<!--/dom-part-2-->
-							</td>
-							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<a class="select block w-full hover:cursor-pointer hover:underline">
-									<!--dom-part-3-->inexpensive brown pony<!--/dom-part-3-->
-								</a>
-							</td>
-							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<btn
-									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"
-								>
-									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"
-										>x</span
-									>
-								</btn>
-							</td>
-						</tr>
-						<!--/template-part-->
-						<!--template-part-->
-						<!--dom-part-0:id=-->
-						<!--dom-part-1:class=-->
-						<tr id="8" class="bg-white even:bg-gray-100">
-							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<!--dom-part-2-->8<!--/dom-part-2-->
-							</td>
-							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<a class="select block w-full hover:cursor-pointer hover:underline">
-									<!--dom-part-3-->expensive white cookie<!--/dom-part-3-->
-								</a>
-							</td>
-							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<btn
-									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"
-								>
-									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"
-										>x</span
-									>
-								</btn>
-							</td>
-						</tr>
-						<!--/template-part-->
-						<!--template-part-->
-						<!--dom-part-0:id=-->
-						<!--dom-part-1:class=-->
-						<tr id="9" class="bg-white even:bg-gray-100">
-							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<!--dom-part-2-->9<!--/dom-part-2-->
-							</td>
-							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<a class="select block w-full hover:cursor-pointer hover:underline">
-									<!--dom-part-3-->plain brown pizza<!--/dom-part-3-->
-								</a>
-							</td>
-							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<btn
-									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"
-								>
-									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"
-										>x</span
-									>
-								</btn>
-							</td>
-						</tr>
-						<!--/template-part-->
-						<!--template-part-->
-						<!--dom-part-0:id=-->
-						<!--dom-part-1:class=-->
-						<tr id="10" class="bg-white even:bg-gray-100">
-							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<!--dom-part-2-->10<!--/dom-part-2-->
-							</td>
-							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<a class="select block w-full hover:cursor-pointer hover:underline">
-									<!--dom-part-3-->short purple sandwich<!--/dom-part-3-->
-								</a>
-							</td>
-							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
-								<btn
-									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"
-								>
-									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"
-										>x</span
-									>
-								</btn>
-							</td>
-						</tr>
-						<!--/template-part-->
-						<!--/dom-part-0-->
-					</tbody>
-				</table>
-			</div>
-			<!--/template-part-->
-		</example-template-elementNOT>
+<!--				<example-input-element></example-input-element>-->
+<!--		<example-directivesNOT enabled="true" choose="home" items="[1,2,3]"></example-directivesNOT>-->
+<!--		<example-slotted-elementNOT name="Jane"></example-slotted-elementNOT>-->
+<!--		&lt;!&ndash; TODO: when we have more than one of the same element/template, there will be problems &ndash;&gt;-->
+<!--		<example-template-element name="Jane" items="1" array="[1,2,3,4]"></example-template-element>-->
+<!--		<example-template-elementNOT name="Jane" items="1" array="[1,2,3,4]">-->
+<!--			&lt;!&ndash;template-part&ndash;&gt;-->
+<!--			<div class="container">-->
+<!--				<div class="flex flex-wrap bg-gray-300 p-4 gap-4">-->
+<!--					<button type="button" class="btn" id="run" data-count="10">Create 10 rows</button>-->
+<!--					<button type="button" class="btn" id="run" data-count="100">Create 100 rows</button>-->
+<!--					<button type="button" class="btn" id="run" data-count="1000">Create 1,000 rows</button>-->
+<!--					<button type="button" class="btn" id="runlots">Create 10,000 rows</button>-->
+<!--					<button type="button" class="btn" id="add">Append 1,000 rows</button>-->
+<!--					<button type="button" class="btn" id="update">Update every 10th row</button>-->
+<!--					<button type="button" class="btn" id="swaprows">Swap Rows</button>-->
+<!--					<button type="button" class="btn" id="clear">Clear</button>-->
+<!--				</div>-->
+<!--				<table class="min-w-full divide-y divide-gray-300">-->
+<!--					<tbody class="divide-y divide-gray-200 bg-white">-->
+<!--						&lt;!&ndash;dom-part-0&ndash;&gt;-->
+<!--						&lt;!&ndash;template-part&ndash;&gt;-->
+<!--						&lt;!&ndash;dom-part-0:id=&ndash;&gt;-->
+<!--						&lt;!&ndash;dom-part-1:class=&ndash;&gt;-->
+<!--						<tr id="1" class="bg-white even:bg-gray-100" ssr="true">-->
+<!--							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								&lt;!&ndash;dom-part-2&ndash;&gt;1&lt;!&ndash;/dom-part-2&ndash;&gt;-->
+<!--							</td>-->
+<!--							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								<a class="select block w-full hover:cursor-pointer hover:underline">-->
+<!--									&lt;!&ndash;dom-part-3&ndash;&gt;big brown sandwich from SSR&lt;!&ndash;/dom-part-3&ndash;&gt;-->
+<!--								</a>-->
+<!--							</td>-->
+<!--							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								<btn-->
+<!--									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"-->
+<!--								>-->
+<!--									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"-->
+<!--										>x</span-->
+<!--									>-->
+<!--								</btn>-->
+<!--							</td>-->
+<!--						</tr>-->
+<!--						&lt;!&ndash;/template-part&ndash;&gt;-->
+<!--						&lt;!&ndash;template-part&ndash;&gt;-->
+<!--						&lt;!&ndash;dom-part-0:id=&ndash;&gt;-->
+<!--						&lt;!&ndash;dom-part-1:class=&ndash;&gt;-->
+<!--						<tr id="2" class="bg-white even:bg-gray-100">-->
+<!--							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								&lt;!&ndash;dom-part-2&ndash;&gt;2&lt;!&ndash;/dom-part-2&ndash;&gt;-->
+<!--							</td>-->
+<!--							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								<a class="select block w-full hover:cursor-pointer hover:underline">-->
+<!--									&lt;!&ndash;dom-part-3&ndash;&gt;cheap yellow mouse&lt;!&ndash;/dom-part-3&ndash;&gt;-->
+<!--								</a>-->
+<!--							</td>-->
+<!--							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								<btn-->
+<!--									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"-->
+<!--								>-->
+<!--									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"-->
+<!--										>x</span-->
+<!--									>-->
+<!--								</btn>-->
+<!--							</td>-->
+<!--						</tr>-->
+<!--						&lt;!&ndash;/template-part&ndash;&gt;-->
+<!--						&lt;!&ndash;template-part&ndash;&gt;-->
+<!--						&lt;!&ndash;dom-part-0:id=&ndash;&gt;-->
+<!--						&lt;!&ndash;dom-part-1:class=&ndash;&gt;-->
+<!--						<tr id="3" class="bg-white even:bg-gray-100">-->
+<!--							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								&lt;!&ndash;dom-part-2&ndash;&gt;3&lt;!&ndash;/dom-part-2&ndash;&gt;-->
+<!--							</td>-->
+<!--							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								<a class="select block w-full hover:cursor-pointer hover:underline">-->
+<!--									&lt;!&ndash;dom-part-3&ndash;&gt;tall red keyboard&lt;!&ndash;/dom-part-3&ndash;&gt;-->
+<!--								</a>-->
+<!--							</td>-->
+<!--							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								<btn-->
+<!--									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"-->
+<!--								>-->
+<!--									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"-->
+<!--										>x</span-->
+<!--									>-->
+<!--								</btn>-->
+<!--							</td>-->
+<!--						</tr>-->
+<!--						&lt;!&ndash;/template-part&ndash;&gt;-->
+<!--						&lt;!&ndash;template-part&ndash;&gt;-->
+<!--						&lt;!&ndash;dom-part-0:id=&ndash;&gt;-->
+<!--						&lt;!&ndash;dom-part-1:class=&ndash;&gt;-->
+<!--						<tr id="4" class="bg-white even:bg-gray-100">-->
+<!--							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								&lt;!&ndash;dom-part-2&ndash;&gt;4&lt;!&ndash;/dom-part-2&ndash;&gt;-->
+<!--							</td>-->
+<!--							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								<a class="select block w-full hover:cursor-pointer hover:underline">-->
+<!--									&lt;!&ndash;dom-part-3&ndash;&gt;small white burger&lt;!&ndash;/dom-part-3&ndash;&gt;-->
+<!--								</a>-->
+<!--							</td>-->
+<!--							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								<btn-->
+<!--									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"-->
+<!--								>-->
+<!--									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"-->
+<!--										>x</span-->
+<!--									>-->
+<!--								</btn>-->
+<!--							</td>-->
+<!--						</tr>-->
+<!--						&lt;!&ndash;/template-part&ndash;&gt;-->
+<!--						&lt;!&ndash;template-part&ndash;&gt;-->
+<!--						&lt;!&ndash;dom-part-0:id=&ndash;&gt;-->
+<!--						&lt;!&ndash;dom-part-1:class=&ndash;&gt;-->
+<!--						<tr id="5" class="bg-white even:bg-gray-100">-->
+<!--							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								&lt;!&ndash;dom-part-2&ndash;&gt;5&lt;!&ndash;/dom-part-2&ndash;&gt;-->
+<!--							</td>-->
+<!--							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								<a class="select block w-full hover:cursor-pointer hover:underline">-->
+<!--									&lt;!&ndash;dom-part-3&ndash;&gt;handsome red bbq&lt;!&ndash;/dom-part-3&ndash;&gt;-->
+<!--								</a>-->
+<!--							</td>-->
+<!--							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								<btn-->
+<!--									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"-->
+<!--								>-->
+<!--									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"-->
+<!--										>x</span-->
+<!--									>-->
+<!--								</btn>-->
+<!--							</td>-->
+<!--						</tr>-->
+<!--						&lt;!&ndash;/template-part&ndash;&gt;-->
+<!--						&lt;!&ndash;template-part&ndash;&gt;-->
+<!--						&lt;!&ndash;dom-part-0:id=&ndash;&gt;-->
+<!--						&lt;!&ndash;dom-part-1:class=&ndash;&gt;-->
+<!--						<tr id="6" class="bg-white even:bg-gray-100">-->
+<!--							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								&lt;!&ndash;dom-part-2&ndash;&gt;6&lt;!&ndash;/dom-part-2&ndash;&gt;-->
+<!--							</td>-->
+<!--							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								<a class="select block w-full hover:cursor-pointer hover:underline">-->
+<!--									&lt;!&ndash;dom-part-3&ndash;&gt;large black pony&lt;!&ndash;/dom-part-3&ndash;&gt;-->
+<!--								</a>-->
+<!--							</td>-->
+<!--							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								<btn-->
+<!--									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"-->
+<!--								>-->
+<!--									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"-->
+<!--										>x</span-->
+<!--									>-->
+<!--								</btn>-->
+<!--							</td>-->
+<!--						</tr>-->
+<!--						&lt;!&ndash;/template-part&ndash;&gt;-->
+<!--						&lt;!&ndash;template-part&ndash;&gt;-->
+<!--						&lt;!&ndash;dom-part-0:id=&ndash;&gt;-->
+<!--						&lt;!&ndash;dom-part-1:class=&ndash;&gt;-->
+<!--						<tr id="7" class="bg-white even:bg-gray-100">-->
+<!--							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								&lt;!&ndash;dom-part-2&ndash;&gt;7&lt;!&ndash;/dom-part-2&ndash;&gt;-->
+<!--							</td>-->
+<!--							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								<a class="select block w-full hover:cursor-pointer hover:underline">-->
+<!--									&lt;!&ndash;dom-part-3&ndash;&gt;inexpensive brown pony&lt;!&ndash;/dom-part-3&ndash;&gt;-->
+<!--								</a>-->
+<!--							</td>-->
+<!--							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								<btn-->
+<!--									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"-->
+<!--								>-->
+<!--									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"-->
+<!--										>x</span-->
+<!--									>-->
+<!--								</btn>-->
+<!--							</td>-->
+<!--						</tr>-->
+<!--						&lt;!&ndash;/template-part&ndash;&gt;-->
+<!--						&lt;!&ndash;template-part&ndash;&gt;-->
+<!--						&lt;!&ndash;dom-part-0:id=&ndash;&gt;-->
+<!--						&lt;!&ndash;dom-part-1:class=&ndash;&gt;-->
+<!--						<tr id="8" class="bg-white even:bg-gray-100">-->
+<!--							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								&lt;!&ndash;dom-part-2&ndash;&gt;8&lt;!&ndash;/dom-part-2&ndash;&gt;-->
+<!--							</td>-->
+<!--							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								<a class="select block w-full hover:cursor-pointer hover:underline">-->
+<!--									&lt;!&ndash;dom-part-3&ndash;&gt;expensive white cookie&lt;!&ndash;/dom-part-3&ndash;&gt;-->
+<!--								</a>-->
+<!--							</td>-->
+<!--							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								<btn-->
+<!--									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"-->
+<!--								>-->
+<!--									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"-->
+<!--										>x</span-->
+<!--									>-->
+<!--								</btn>-->
+<!--							</td>-->
+<!--						</tr>-->
+<!--						&lt;!&ndash;/template-part&ndash;&gt;-->
+<!--						&lt;!&ndash;template-part&ndash;&gt;-->
+<!--						&lt;!&ndash;dom-part-0:id=&ndash;&gt;-->
+<!--						&lt;!&ndash;dom-part-1:class=&ndash;&gt;-->
+<!--						<tr id="9" class="bg-white even:bg-gray-100">-->
+<!--							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								&lt;!&ndash;dom-part-2&ndash;&gt;9&lt;!&ndash;/dom-part-2&ndash;&gt;-->
+<!--							</td>-->
+<!--							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								<a class="select block w-full hover:cursor-pointer hover:underline">-->
+<!--									&lt;!&ndash;dom-part-3&ndash;&gt;plain brown pizza&lt;!&ndash;/dom-part-3&ndash;&gt;-->
+<!--								</a>-->
+<!--							</td>-->
+<!--							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								<btn-->
+<!--									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"-->
+<!--								>-->
+<!--									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"-->
+<!--										>x</span-->
+<!--									>-->
+<!--								</btn>-->
+<!--							</td>-->
+<!--						</tr>-->
+<!--						&lt;!&ndash;/template-part&ndash;&gt;-->
+<!--						&lt;!&ndash;template-part&ndash;&gt;-->
+<!--						&lt;!&ndash;dom-part-0:id=&ndash;&gt;-->
+<!--						&lt;!&ndash;dom-part-1:class=&ndash;&gt;-->
+<!--						<tr id="10" class="bg-white even:bg-gray-100">-->
+<!--							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								&lt;!&ndash;dom-part-2&ndash;&gt;10&lt;!&ndash;/dom-part-2&ndash;&gt;-->
+<!--							</td>-->
+<!--							<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								<a class="select block w-full hover:cursor-pointer hover:underline">-->
+<!--									&lt;!&ndash;dom-part-3&ndash;&gt;short purple sandwich&lt;!&ndash;/dom-part-3&ndash;&gt;-->
+<!--								</a>-->
+<!--							</td>-->
+<!--							<td data-interaction="delete" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">-->
+<!--								<btn-->
+<!--									class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"-->
+<!--								>-->
+<!--									<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"-->
+<!--										>x</span-->
+<!--									>-->
+<!--								</btn>-->
+<!--							</td>-->
+<!--						</tr>-->
+<!--						&lt;!&ndash;/template-part&ndash;&gt;-->
+<!--						&lt;!&ndash;/dom-part-0&ndash;&gt;-->
+<!--					</tbody>-->
+<!--				</table>-->
+<!--			</div>-->
+<!--			&lt;!&ndash;/template-part&ndash;&gt;-->
+<!--		</example-template-elementNOT>-->
 		<example-test-element count="2" foo="bar" bar="baz" text="John Done"></example-test-element>
 	</body>
 </html>

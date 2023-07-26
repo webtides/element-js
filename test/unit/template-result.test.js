@@ -57,7 +57,16 @@ describe(`TemplateResult.createTemplateString()`, () => {
 		);
 	});
 
-	// TODO: what if attributes don't have quotes?! Test it!
+	// TODO: I have built a better regex and it works when validating in regexer.com... but it does not in the browser :(
+	// it('can use double, single or no quotes for attributes', async () => {
+	// 	// prettier-ignore
+	// 	const templateResult = html`<div id='${1}' class="${'some-class'}" foo="bar">Text</div>`;
+	// 	const templateString = createTemplateString(templateResult.strings, '\x03');
+	// 	assert.equal(
+	// 		stripWhitespace(templateString),
+	// 		'<!--template-part--><!--dom-part-0:id=\x03--><!--dom-part-1:class=\x03--><!--dom-part-2:foo=\x03--><div id=\'\x03\' class="\x03" foo=\x03>Text</div><!--/template-part-->',
+	// 	);
+	// });
 
 	it('adds the correct amount of placeholders as comment nodes for each variable', async () => {
 		const templateResult = html`<div id="${1}" class="${'some'}">${'Text'}</div>`;
@@ -158,7 +167,15 @@ describe('TemplateResult.toString()', () => {
 		);
 	});
 
-	// TODO: what if attributes don't have quotes?! Test it!
+	// TODO: I have built a better regex and it works when validating in regexer.com... but it does not in the browser :(
+	// it('can use double, single or no quotes for attributes', async () => {
+	// 	// prettier-ignore
+	// 	const templateResult = html`<div id='${1}' class="${'some-class'}" foo=bar>Text</div>`;
+	// 	assert.equal(
+	// 		stripWhitespace(templateResult.toString()),
+	// 		'<!--template-part--><!--dom-part-0:id=\x03--><!--dom-part-1:class=\x03--><!--dom-part-2:foo=\x03--><div id=\'\x03\' class="\x03" foo=\x03>Text</div><!--/template-part-->',
+	// 	);
+	// });
 
 	it('adds the correct amount of placeholders as comment nodes for each variable', async () => {
 		const templateResult = html`<div id="${1}" class="${'some'}">${'Text'}</div>`;

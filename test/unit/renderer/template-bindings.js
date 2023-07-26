@@ -125,8 +125,7 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 			);
 		});
 
-		// TODO: fix and add test back in...
-		/*it('correctly sanitizes an array of unsafe strings', async () => {
+		it('correctly sanitizes an array of unsafe strings', async () => {
 			const el = document.createElement('div');
 			const parts = [`<strong>First part</strong>`, `<strong>Second part</strong>`];
 			render(html`<div>${parts}</div>`, el);
@@ -134,17 +133,18 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 				stripCommentMarkers(el.innerHTML),
 				'<div>&lt;strong&gt;First part&lt;/strong&gt;&lt;strong&gt;Second part&lt;/strong&gt;</div>',
 			);
-		});*/
+		});
 
 		// TODO: fix and add test back in...
-		/*it('allows unsafe html input with the "unsafeHTML" directive in arrays', async () => {
-			const el = await fixture(`<${templateTag}></${templateTag}>`);
-
-			const parts = [unsafeHTML(`<strong>First part</strong>`), unsafeHTML(`<strong>Second part</strong>`)];
-			await el.updateTemplate(html`${parts}`);
-
-			assert.lightDom.equal(el, '<strong>First part</strong><strong>Second part</strong>');
-		});*/
+		// it('allows unsafe html input with the "unsafeHTML" directive in arrays', async () => {
+		// 	const el = await fixture(`<${templateTag}></${templateTag}>`);
+		// 	const parts = [unsafeHTML(`<strong>First part</strong>`), unsafeHTML(`<strong>Second part</strong>`)];
+		// 	render(html`<div>${parts}</div>`, el);
+		// 	assert.equal(
+		// 		stripCommentMarkers(el.innerHTML),
+		// 		'<div>&lt;strong&gt;First part&lt;/strong&gt;&lt;strong&gt;Second part&lt;/strong&gt;</div>',
+		// 	);
+		// });
 
 		it('can render single bindings inside attributes', async () => {
 			const el = document.createElement('div');
@@ -287,7 +287,7 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 			);
 		});
 
-		// TODO: this is not working... :(
+		// TODO: it is actually working but somehow in the tests the DOM element won't update...
 		// it('can remove items from lists with looped bindings', async () => {
 		// 	const el = document.createElement('div');
 		// 	const colors = ['red', 'green', 'blue'];
@@ -309,17 +309,16 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 		// 	assert.equal(stripCommentMarkers(el.innerHTML), '<ul><li>red</li><li>green</li></ul>');
 		// });
 
-		// TODO:
+		// TODO: it is actually working but somehow in the tests the DOM element won't update...
 		// it('can switch between primitive values and template literals', async () => {
-		// 	const fragment = new DocumentFragment();
 		// 	const el = document.createElement('div');
-		// 	fragment.append(el);
-		// 	console.log('fragment', fragment.childNodes);
 		// 	const primitiveValue = 'Test';
-		// 	render(html`<div>${primitiveValue}</div>`, el);
+		// 	let templateResult = html`<div>${primitiveValue}</div>`;
+		// 	render(templateResult, el);
 		// 	assert.equal(stripCommentMarkers(el.innerHTML), '<div>Test</div>');
 		//
-		// 	render(html`<div>${html`<span>${primitiveValue}</span>`}</div>`, el);
+		// 	templateResult = html`<div>${html`<span>${primitiveValue}</span>`}</div>`;
+		// 	render(templateResult, el);
 		// 	assert.equal(stripCommentMarkers(el.innerHTML), '<div><span>Test</span></div>');
 		//
 		// 	render(html`<div>${primitiveValue}</div>`, el);
