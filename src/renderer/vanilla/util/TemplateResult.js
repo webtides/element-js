@@ -9,18 +9,8 @@ export const prefix = 'dom-part-';
 
 const empty = /^(?:area|base|br|col|embed|hr|img|input|keygen|link|menuitem|meta|param|source|track|wbr)$/i;
 const elements = /<([a-z]+[a-z0-9:._-]*)([^>]*?)(\/?)>/g;
-const attributes = /([^\s\\>"'=]+)=(['"]?([^"]*)['"]?)/g;
-// const attributes = /([^\s\\>"'=]+)=(['"]?)(.*?)\2(?=\s|\/?>)/g;
-// TODO: ^ this should work but does not..
-// But if found something interesting...
-/*
-` class="foo bar baz" foo="bar" bar='baz' baz=blup`.match(/([^\s\\>"'=]+)=(['"]?)(.*?)\2(?=\s|\/?>)/g)
-Array(3) [ 'class="foo bar baz"', 'foo="bar"', "bar='baz'" ]
-
-` foo="bar" bar='baz' baz=blup class="foo bar baz"`.match(/([^\s\\>"'=]+)=(['"]?)(.*?)\2(?=\s|\/?>)/g)
-Array(4) [ 'foo="bar"', "bar='baz'", "baz=blup", 'class="foo' ]
- */
-// Both are actually wrong... but why would it matter where I place the class attribute (beginning or end) ?!
+// TODO: v this will not match any values with escaped quotes like onClick='console.log("\'test")'
+const attributes = /([^\s]*)=((?:")[^"]*(?:")|(?:')[^']*(?:')|[^\s\/>]*)/g;
 const partPositions = /[\x01\x02]/g;
 // \x01 Node.ELEMENT_NODE
 // \x02 Node.ATTRIBUTE_NODE
@@ -44,7 +34,11 @@ export const createTemplateString = (template, attributePlaceholders = '') => {
 		.replace(elements, (_, name, attrs, selfClosing) => {
 			let ml = name + attrs.replaceAll('\x01', attributePlaceholders).trimEnd();
 			if (selfClosing.length) ml += empty.test(name) ? ' /' : '></' + name;
-			const attributeParts = attrs.replace(attributes, (attribute, name, valueWithQuotes, value) => {
+			const attributeParts = attrs.replace(attributes, (attribute, name, valueWithQuotes) => {
+				const value =
+					valueWithQuotes.startsWith('"') || valueWithQuotes.startsWith("'")
+						? valueWithQuotes.slice(1, -1)
+						: valueWithQuotes;
 				const count = (attribute.match(/\x01/g) || []).length;
 				const parts = [];
 				for (let j = 0; j < count; j++) {

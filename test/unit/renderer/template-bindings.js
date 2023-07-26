@@ -1,6 +1,7 @@
 import { fixture, assert, nextFrame, oneEvent } from '@open-wc/testing';
 import { render } from '../../../src/renderer/vanilla/util/render';
 
+// TODO: for testing that SSR and CSR will render the same thing, it would be good to test with whitespace and comment markers to make sure that they perfectly match!
 export const stripCommentMarkers = (html) =>
 	html
 		.replace(/<!--(\/)?(dom|template)-part(-\d+)?(:(@|.|\?)?\w+(=.*)?)?-->/g, '')
@@ -9,8 +10,6 @@ export const stripCommentMarkers = (html) =>
 		.trim();
 
 export const testTemplateBindings = function (name, templateTag, html, unsafeHTML) {
-	// TODO: for testing that SSR and CSR will render the same thing, it would be good to test with whitespace and comment markers to make sure that they perfectly match!
-
 	describe(`template bindings for ${name}`, () => {
 		it('creates the correct string from the literal', async () => {
 			const el = document.createElement('div');
@@ -40,25 +39,25 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 			);
 		});
 
-		// TODO: add test back in
-		/*it('correctly sanitizes html input', async () => {
+		it('correctly sanitizes html input', async () => {
 			const el = document.createElement('div');
-			const templateResult = html`${'<strong>Unsafe HTML</strong>'}`;
+			const templateResult = html`<div>${'<strong>Unsafe HTML</strong>'}</div>`;
 			render(templateResult, el);
-			assert.equal(stripCommentMarkers(el.innerHTML), '&lt;strong&gt;Unsafe HTML&lt;/strong&gt;');
+			assert.equal(stripCommentMarkers(el.innerHTML), '<div>&lt;strong&gt;Unsafe HTML&lt;/strong&gt;</div>');
 			assert.equal(
 				stripCommentMarkers(el.innerHTML),
 				stripCommentMarkers(templateResult.toString()),
 				'CSR template does not match SSR template',
 			);
-		});*/
+		});
 
-		// TODO:
-		/*it('allows unsafe html input with the "unsafeHTML" directive', async () => {
-			const el = document.createElement('div');
-			render(html`${unsafeHTML(`<strong>Unsafe HTML</strong>`)}`, el);
-			assert.equal(stripCommentMarkers(el.innerHTML), '<strong>Unsafe HTML</strong>');
-		});*/
+		// TODO: fix
+		// it('allows unsafe html input with the "unsafeHTML" directive', async () => {
+		// 	const el = document.createElement('div');
+		// 	const templateResult = html`<div>${unsafeHTML(`<strong>Unsafe HTML</strong>`)}</div>`;
+		// 	render(templateResult, el);
+		// 	assert.equal(stripCommentMarkers(el.innerHTML), '<div><strong>Unsafe HTML</strong></div>');
+		// });
 
 		it('can have functions as bindings', async () => {
 			const el = document.createElement('div');
@@ -135,7 +134,7 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 			);
 		});
 
-		// TODO: fix and add test back in...
+		// TODO: fix
 		// it('allows unsafe html input with the "unsafeHTML" directive in arrays', async () => {
 		// 	const el = await fixture(`<${templateTag}></${templateTag}>`);
 		// 	const parts = [unsafeHTML(`<strong>First part</strong>`), unsafeHTML(`<strong>Second part</strong>`)];
