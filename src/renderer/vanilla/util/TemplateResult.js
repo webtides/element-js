@@ -294,7 +294,7 @@ export class TemplateResult {
 				message: 'Could not parse parts from template correctly. Parts length has not the expected length.',
 				strings: this.strings,
 				templateString: this.templateString,
-				fragment,
+				childNodes,
 				template,
 				parts,
 			};
