@@ -158,16 +158,15 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 			);
 		});
 
-		// TODO: fix
-		// it('allows unsafe html input with the "unsafeHTML" directive in arrays', async () => {
-		// 	const el = document.createElement('div');
-		// 	const parts = [unsafeHTML(`<strong>First part</strong>`), unsafeHTML(`<strong>Second part</strong>`)];
-		// 	render(html`<div>${parts}</div>`, el);
-		// 	assert.equal(
-		// 		stripCommentMarkers(el.innerHTML),
-		// 		'<div>&lt;strong&gt;First part&lt;/strong&gt;&lt;strong&gt;Second part&lt;/strong&gt;</div>',
-		// 	);
-		// });
+		it('allows unsafe html input with the "unsafeHTML" directive in arrays', async () => {
+			const el = document.createElement('div');
+			const parts = [unsafeHTML(`<strong>First part</strong>`), unsafeHTML(`<strong>Second part</strong>`)];
+			render(html`<div>${parts}</div>`, el);
+			assert.equal(
+				stripCommentMarkers(el.innerHTML),
+				'<div><strong>First part</strong><strong>Second part</strong></div>',
+			);
+		});
 
 		it('can render single bindings inside attributes', async () => {
 			const el = document.createElement('div');

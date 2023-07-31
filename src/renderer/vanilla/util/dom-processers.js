@@ -104,8 +104,16 @@ const diffNodes = function (parentNode, domChildNodes, templateChildNodes, ancho
 	// Diff each node in the child node lists
 	let length = Math.max(templateChildNodes.length, domChildNodes.length);
 	for (let index = 0; index < length; index++) {
-		const domChildNode = domChildNodes[index];
-		const templateChildNode = templateChildNodes[index];
+		let domChildNode = domChildNodes[index];
+		let templateChildNode = templateChildNodes[index];
+
+		// TODO: I think it would be better to handle functions in processNodeValue at the array position...
+		if (typeof domChildNode === 'function') {
+			domChildNode = domChildNode();
+		}
+		if (typeof templateChildNode === 'function') {
+			templateChildNode = templateChildNode();
+		}
 
 		// If the DOM node doesn't exist, append/copy the template node
 		if (!domChildNode) {
@@ -122,12 +130,7 @@ const diffNodes = function (parentNode, domChildNodes, templateChildNodes, ancho
 			} else {
 				// TODO: this might not be performant?! Can we maybe handle this in processDomNode?!
 				// TODO: I think that we need to make ChildNodeParts from all primitive values as well
-				parentNode.insertBefore(
-					document.createTextNode(
-						typeof templateChildNode === 'function' ? templateChildNode() : templateChildNode,
-					),
-					anchorNode,
-				);
+				parentNode.insertBefore(document.createTextNode(templateChildNode), anchorNode);
 			}
 			continue;
 		}

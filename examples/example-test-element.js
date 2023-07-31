@@ -1,5 +1,5 @@
 import { defineElement } from '../src/BaseElement';
-import { TemplateElement, html } from '../src/renderer/vanilla/TemplateElement.js';
+import { TemplateElement, html, unsafeHTML } from '../src/renderer/vanilla/TemplateElement.js';
 
 class ExampleTestElement extends TemplateElement {
 	constructor() {
@@ -22,9 +22,11 @@ class ExampleTestElement extends TemplateElement {
 		}
 		const p = document.createElement('p');
 		p.textContent = 'DOM Element';
-		/*<div class="test">
-				${[...list, 1, 'Text', html`<span>Foo</span>`, html`<span>${this.count}</span>`, () => 'Function', p]}
-			</div>*/
+		// return html`
+		// 	<div class="test">
+		// 		${[this.count, 1, 'Text', html`<span>Foo</span>`, html`<span>${this.count}</span>`, () => 'Function', p]}
+		// 	</div>
+		// `;
 		//return html` ${'<span>Test</span>'} `;
 		// return html`
 		// 	<ul>
@@ -33,7 +35,10 @@ class ExampleTestElement extends TemplateElement {
 		// `;
 		// prettier-ignore
 		// return html` <div foo="${'bar'}" bar='${'baz'}' baz=${'blup'} class="link active disabled"></div> `;
-		return html`${this.text}`;
+		// return html`${this.text}`;
+		return html`
+			<div>${[unsafeHTML(`<strong>First part</strong>`), unsafeHTML(`<strong>Second part</strong>`)]}</div>
+		`
 	}
 }
 defineElement('example-test-element', ExampleTestElement);
