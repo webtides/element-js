@@ -39,6 +39,19 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 			);
 		});
 
+		it('can have just a variable as template', async () => {
+			const el = document.createElement('div');
+			let name = 'John';
+			const templateResult = html`${name}`;
+			render(templateResult, el);
+			assert.equal(stripCommentMarkers(el.innerHTML), 'John');
+			assert.equal(
+				stripCommentMarkers(el.innerHTML),
+				stripCommentMarkers(templateResult.toString()),
+				'CSR template does not match SSR template',
+			);
+		});
+
 		it('correctly sanitizes html input', async () => {
 			const el = document.createElement('div');
 			const templateResult = html`<div>${'<strong>Unsafe HTML</strong>'}</div>`;
@@ -57,6 +70,18 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 		// 	const templateResult = html`<div>${unsafeHTML(`<strong>Unsafe HTML</strong>`)}</div>`;
 		// 	render(templateResult, el);
 		// 	assert.equal(stripCommentMarkers(el.innerHTML), '<div><strong>Unsafe HTML</strong></div>');
+		// });
+
+		// TODO: fix
+		// it('correctly updates values with unsafe input', async () => {
+		// 	const el = document.createElement('div');
+		// 	let count = 0;
+		// 	const templateResult = html`<div>${unsafeHTML(`<strong>Unsafe HTML</strong>${count}`)}</div>`;
+		// 	render(templateResult, el);
+		// 	assert.equal(stripCommentMarkers(el.innerHTML), '<div><strong>Unsafe HTML</strong>0</div>');
+		// 	count++;
+		// 	render(templateResult, el);
+		// 	assert.equal(stripCommentMarkers(el.innerHTML), '<div><strong>Unsafe HTML</strong>1</div>');
 		// });
 
 		it('can have functions as bindings', async () => {

@@ -32,7 +32,8 @@ class ExampleTestElement extends TemplateElement {
 		// 	</ul>
 		// `;
 		// prettier-ignore
-		return html` <div foo="${'bar'}" bar='${'baz'}' baz=${'blup'} class="link active disabled"></div> `;
+		// return html` <div foo="${'bar'}" bar='${'baz'}' baz=${'blup'} class="link active disabled"></div> `;
+		return html`${this.text}`;
 	}
 }
 defineElement('example-test-element', ExampleTestElement);

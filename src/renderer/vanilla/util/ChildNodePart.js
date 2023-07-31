@@ -84,12 +84,8 @@ export class ChildNodePart extends Part {
 		}
 		if (!serverSideRendered) {
 			this.updateParts(value);
-			// TODO: for template results that only contain a single interpolation
-			// when calling super.update... it will actually create the text node
-			// but this.endNode.parentNode is not the same as this.fragment.childNodes...
-			// WTF?!
-			// find a way and place to write a test for this
-			// and find out why the fragments are not the same...
+			// We need a childNodes list that is NOT live so that we don't loose elements when they get removed from the dom and we can (re)add them back in later.
+			this.childNodes = [...this.childNodes];
 			super.update(initialValue);
 		}
 	}
@@ -179,7 +175,7 @@ export class ChildNodePart extends Part {
 					fragmentsCache.set(templateResult.strings, fragment);
 				}
 				const importedFragment = globalThis.document?.importNode(fragment, true);
-				this.childNodes = [...importedFragment.childNodes];
+				this.childNodes = importedFragment.childNodes;
 			}
 
 			let parts = partsCache.get(templateResult.strings);
