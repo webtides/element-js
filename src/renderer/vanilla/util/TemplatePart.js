@@ -3,7 +3,7 @@ import { Part } from './Part.js';
 import { TemplateResult } from './TemplateResult.js';
 import { AttributePart } from './AttributePart.js';
 import { ChildNodePart } from './ChildNodePart.js';
-import { processNodePart } from "./dom-processers";
+import { processNodePart } from './dom-processers';
 
 /** @type {Map<TemplateStringsArray, Part[]>} */
 const partsCache = new WeakMap();
