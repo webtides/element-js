@@ -116,7 +116,7 @@ export class ChildNodePart extends Part {
 			}
 			// TODO: this cannot be rendered/domDiffed... should we add undefined or so?!
 			// TODO: I hope that this is not needed...
-			return this.templatePart.valueOf();
+			return this.templatePart;
 		}
 		return value;
 	}

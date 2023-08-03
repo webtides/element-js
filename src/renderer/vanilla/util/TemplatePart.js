@@ -64,23 +64,14 @@ export class TemplatePart extends Part {
 			if (childNodes.length > 2) {
 				serverSideRendered = true;
 			}
-
-			this.childNodes = childNodes;
-			this.startNode = startNode;
-			this.endNode = endNode;
 		}
 
-		const initialValue = this.parseValue(value);
-
-		if (this.endNode) {
-			this.processor = processNodePart(this.endNode, serverSideRendered ? initialValue : undefined);
-		}
+		this.parseValue(value);
 
 		if (!serverSideRendered) {
 			this.updateParts(value.values);
 			// We need a childNodes list that is NOT live so that we don't loose elements when they get removed from the dom and we can (re)add them back in later.
 			this.childNodes = [...this.childNodes];
-			super.update(initialValue);
 		}
 	}
 
@@ -161,13 +152,5 @@ export class TemplatePart extends Part {
 	parseFragment(templateResult) {
 		const templateString = templateResult.templateString;
 		return convertStringToTemplate(templateString);
-	}
-
-	// TODO: I hope that this is not needed...
-	/**
-	 * @return {any[] | Node[]}
-	 */
-	valueOf() {
-		return this;
 	}
 }
