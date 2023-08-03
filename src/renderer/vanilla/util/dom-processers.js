@@ -1,5 +1,6 @@
 import { COMMENT_NODE, ELEMENT_NODE } from '../../../util/DOMHelper.js';
 import { ChildNodePart } from './ChildNodePart.js';
+import { TemplatePart } from './TemplatePart';
 
 /**
  * @param {Element} node
@@ -119,7 +120,7 @@ const diffNodes = function (parentNode, domChildNodes, templateChildNodes, ancho
 		if (!domChildNode) {
 			// operation = 1
 			// TODO: this is kind of duplicate because these checks are also done in processNode?!
-			if (templateChildNode instanceof ChildNodePart) {
+			if (templateChildNode instanceof ChildNodePart || templateChildNode instanceof TemplatePart) {
 				anchorNode.before(...templateChildNode.childNodes);
 			} else if (Array.isArray(templateChildNode)) {
 				// TODO: this was not needed with PersistentFragment?! And I think this is really slow...

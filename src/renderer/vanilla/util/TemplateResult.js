@@ -1,6 +1,6 @@
 import { COMMENT_NODE, getNodePath } from '../../../util/DOMHelper';
 import { encodeAttribute, isObjectLike } from '../../../util/AttributeParser.js';
-import { ChildNodePart } from './ChildNodePart.js';
+import { TemplatePart } from './TemplatePart.js';
 
 // the prefix is used to tag and reference nodes and attributes to create parts with updates
 // attributes: dom-part-1="attribute-name"
@@ -104,8 +104,8 @@ const getValue = (value) => {
 /** @type {Map<TemplateStringsArray, *[]>} */
 const parsedUpdates = new WeakMap();
 
-/** @type {Map<Element, ChildNodePart>} */
-const childNodeParts = new WeakMap();
+/** @type {Map<Element, TemplatePart>} */
+const templateParts = new WeakMap();
 
 export class TemplateResult {
 	/**
@@ -122,22 +122,22 @@ export class TemplateResult {
 	 */
 	renderInto(domNode) {
 		let serverSideRendered = false;
-		let childNodePart = childNodeParts.get(domNode);
-		if (!childNodePart) {
+		let templatePart = templateParts.get(domNode);
+		if (!templatePart) {
 			const startNode = Array.from(domNode.childNodes)
 				.filter((node) => node.nodeType === COMMENT_NODE)
 				.find((node) => node.data === 'template-part');
 
 			serverSideRendered = startNode !== undefined;
 
-			childNodePart = new ChildNodePart(startNode, this);
-			childNodeParts.set(domNode, childNodePart);
+			templatePart = new TemplatePart(startNode, this);
+			templateParts.set(domNode, templatePart);
 
 			if (!serverSideRendered) {
-				domNode.replaceChildren(...childNodePart.childNodes);
+				domNode.replaceChildren(...templatePart.childNodes);
 			}
 		} else {
-			childNodePart.update(this);
+			templatePart.update(this);
 		}
 	}
 

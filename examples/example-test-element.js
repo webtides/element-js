@@ -27,18 +27,18 @@ class ExampleTestElement extends TemplateElement {
 		// 		${[this.count, 1, 'Text', html`<span>Foo</span>`, html`<span>${this.count}</span>`, () => 'Function', p]}
 		// 	</div>
 		// `;
-		//return html` ${'<span>Test</span>'} `;
-		// return html`
-		// 	<ul>
-		// 		${list.map((item) => html`<li>${item}</li>`)}
-		// 	</ul>
-		// `;
+		// return html`<div>${html`<strong>${this.text}</strong>`}</div>`;
+		return html`
+			<ul>
+				${list.map((item) => html`<li>${item}</li>`)}
+			</ul>
+		`;
 		// prettier-ignore
 		// return html` <div foo="${'bar'}" bar='${'baz'}' baz=${'blup'} class="link active disabled"></div> `;
 		// return html`${this.text}`;
-		return html`
-			<div>${[unsafeHTML(`<strong>First part</strong>`), unsafeHTML(`<strong>Second part</strong>`)]}</div>
-		`
+		// return html`
+		// 	<div>${[unsafeHTML(`<strong>First part</strong>`), unsafeHTML(`<strong>Second part</strong>`)]}</div>
+		// `;
 	}
 }
 defineElement('example-test-element', ExampleTestElement);

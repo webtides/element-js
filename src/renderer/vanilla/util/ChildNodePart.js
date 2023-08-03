@@ -1,18 +1,9 @@
-import { COMMENT_NODE, ELEMENT_NODE, convertStringToTemplate } from '../../../util/DOMHelper.js';
+import { COMMENT_NODE, ELEMENT_NODE } from '../../../util/DOMHelper.js';
 import { Part } from './Part.js';
 import { processNodePart } from './dom-processers.js';
 import { TemplateResult } from './TemplateResult.js';
-import { AttributePart } from './AttributePart.js';
+import { TemplatePart } from './TemplatePart.js';
 
-/** @type {Map<TemplateStringsArray, Part[]>} */
-const partsCache = new WeakMap();
-
-/** @type {Map<TemplateStringsArray, DocumentFragment>} */
-const fragmentsCache = new WeakMap();
-
-// TODO: I think that the proposals have some kind of root part
-// where the root part takes care of the fragment parsing and stuff
-// and the childNode only handles arrays, text nodes and such
 export class ChildNodePart extends Part {
 	/** @type {Node | undefined} */
 	startNode = undefined;
@@ -20,11 +11,12 @@ export class ChildNodePart extends Part {
 	/** @type {Node | undefined} */
 	endNode = undefined;
 
+	// TODO: this is only for array values
 	/** @type {Part[]} */
 	parts = [];
 
-	/** @type {TemplateStringsArray} */
-	strings = undefined;
+	// TODO: this is only for TemplatePart values
+	templatePart = undefined;
 
 	/** @type {Node[]} */
 	childNodes = [];
@@ -46,7 +38,7 @@ export class ChildNodePart extends Part {
 
 	/**
 	 * @param {Node} startNode - the start comment marker node
-	 * @param {TemplateResult | any[]} value
+	 * @param {any | any[]} value
 	 */
 	constructor(startNode, value) {
 		if (startNode && startNode?.nodeType !== COMMENT_NODE) {
@@ -77,21 +69,32 @@ export class ChildNodePart extends Part {
 			this.startNode = startNode;
 			this.endNode = endNode;
 		}
+
+		// value can become array | TemplatePart | any
 		const initialValue = this.parseValue(value);
 
 		if (this.endNode) {
 			this.processor = processNodePart(this.endNode, serverSideRendered ? initialValue : undefined);
 		}
+
 		if (!serverSideRendered) {
-			this.updateParts(value);
-			// We need a childNodes list that is NOT live so that we don't loose elements when they get removed from the dom and we can (re)add them back in later.
+			// TODO: it would be better to be able to simply call this.update() here!
+			if (initialValue instanceof TemplatePart) {
+				this.templatePart.update(value);
+			}
+
+			if (Array.isArray(value)) {
+				this.updateParts(value);
+			}
+
+			// We need a childNodes list that is NOT live so that we don't lose elements when they get removed from the dom and we can (re)add them back in later.
 			this.childNodes = [...this.childNodes];
 			super.update(initialValue);
 		}
 	}
 
 	/**
-	 * @param {TemplateResult | any[] | any} value
+	 * @param {any[] | any} value
 	 * @return {any[] | Node[] | any}
 	 */
 	parseValue(value) {
@@ -99,8 +102,21 @@ export class ChildNodePart extends Part {
 			return this.parseArray(value);
 		}
 		if (value instanceof TemplateResult) {
-			this.parseTemplateResult(value);
-			return this;
+			if (!this.templatePart) {
+				// const templatePartCommentNodes = this.childNodes?.filter(
+				// 	(node) => node && node.nodeType === COMMENT_NODE && node.data === 'template-part',
+				// );
+				// const startNode = templatePartCommentNodes[index];
+
+				this.templatePart = new TemplatePart(undefined, value);
+				// this.templatePart = new TemplatePart(startNode, value);
+			} else {
+				// TODO: do I actually need this?! I think this will also be done in .update()...
+				this.templatePart.parseValue(value);
+			}
+			// TODO: this cannot be rendered/domDiffed... should we add undefined or so?!
+			// TODO: I hope that this is not needed...
+			return this.templatePart.valueOf();
 		}
 		return value;
 	}
@@ -111,13 +127,24 @@ export class ChildNodePart extends Part {
 	 */
 	update(value) {
 		const parsedValue = this.parseValue(value);
-		this.updateParts(value);
+
+		if (parsedValue instanceof TemplatePart) {
+			this.templatePart.update(value);
+			// TODO: hmm... this helps! but is it right?!
+			return super.update(parsedValue.childNodes);
+		}
+
+		if (Array.isArray(value)) {
+			this.updateParts(value);
+		}
+
+		// TODO: should this only be done with primitive values? Or always?!
 		return super.update(parsedValue);
 	}
 
 	updateParts(value) {
-		if (value instanceof TemplateResult || Array.isArray(value)) {
-			const values = Array.isArray(value) ? value : value.values;
+		if (Array.isArray(value)) {
+			const values = value;
 
 			for (let index = 0; index < values.length; index++) {
 				this.parts[index]?.update(values[index]);
@@ -135,9 +162,26 @@ export class ChildNodePart extends Part {
 		for (let index = 0; index < values.length; index++) {
 			let value = values[index];
 
-			if (value instanceof TemplateResult || Array.isArray(value)) {
+			if (value instanceof TemplateResult) {
+				let templatePart = this.parts[index];
+				if (!templatePart) {
+					const templatePartCommentNodes = this.childNodes?.filter(
+						(node) => node && node.nodeType === COMMENT_NODE && node.data === 'template-part',
+					);
+					const startNode = templatePartCommentNodes[index];
+
+					templatePart = new TemplatePart(startNode, value);
+					this.parts[index] = templatePart;
+				} else {
+					templatePart.parseValue(value);
+				}
+				// TODO: this cannot be rendered/domDiffed... should we add undefined or so?!
+				// TODO: I hope that this is not needed...
+				parsedValues[index] = templatePart.valueOf();
+			} else if (Array.isArray(value)) {
 				let childNodePart = this.parts[index];
 				if (!childNodePart) {
+					// TODO: this seems not correct :(
 					const templatePartCommentNodes = this.childNodes?.filter(
 						(node) => node && node.nodeType === COMMENT_NODE && node.data === 'template-part',
 					);
@@ -148,7 +192,6 @@ export class ChildNodePart extends Part {
 				} else {
 					childNodePart.parseValue(value);
 				}
-
 				parsedValues[index] = childNodePart.valueOf();
 			} else {
 				parsedValues[index] = value;
@@ -156,70 +199,6 @@ export class ChildNodePart extends Part {
 		}
 
 		return parsedValues;
-	}
-
-	/**
-	 * @param {TemplateResult} templateResult
-	 */
-	parseTemplateResult(templateResult) {
-		if (this.strings !== templateResult.strings) {
-			// TODO: for nested TemplateResults the fragment seems to be wrong
-			// and won't get updated ever again...
-			// TODO: the || check should not be needed :(
-			// but if the nested TemplateResult has values the strings will never ever be rendered...
-			// if (!this.fragment || templateResult.values.length === 0) {
-			if (this.childNodes.length === 0 || templateResult.values.length === 0) {
-				let fragment = fragmentsCache.get(templateResult.strings);
-				if (!fragment) {
-					fragment = this.parseFragment(templateResult);
-					fragmentsCache.set(templateResult.strings, fragment);
-				}
-				const importedFragment = globalThis.document?.importNode(fragment, true);
-				this.childNodes = importedFragment.childNodes;
-			}
-
-			let parts = partsCache.get(templateResult.strings);
-			if (!parts) {
-				parts = templateResult.parseParts(this.childNodes);
-				partsCache.set(templateResult.strings, parts);
-			}
-
-			// TODO: maybe move this as method somewhere else?!
-			// TODO: or we could maybe move this whole parseTemplateResult?!
-			/** @type AttributePart */
-			let previousAttributePart = undefined;
-			this.parts = parts.map((part, index) => {
-				// We currently need the path because the fragment will be cloned via importNode and therefore the node will be a different one
-				const node = part.path.reduceRight(({ childNodes }, i) => childNodes[i], this);
-
-				if (part.type === 'node') {
-					return new ChildNodePart(node, templateResult.values[index]);
-					// TODO: the nodes in the parts array also have nested parts information... we could start creating the nested parts here as well
-				}
-				if (part.type === 'attribute') {
-					// If we have multiple attribute parts with the same name, it means we have multiple
-					// interpolations inside that attribute. Instead of creating a new part, we will return the same
-					// as before and let it defer the update until the last interpolation gets updated
-					if (previousAttributePart && previousAttributePart.name === part.name) {
-						previousAttributePart.addNode(node);
-						return previousAttributePart;
-					}
-					return (previousAttributePart = new AttributePart(node, part.name, part.initialValue));
-				}
-
-				throw `cannot map part: ${part}`;
-			});
-			this.strings = templateResult.strings;
-		}
-	}
-
-	/**
-	 * @param {TemplateResult} templateResult
-	 * @return {DocumentFragment}
-	 */
-	parseFragment(templateResult) {
-		const templateString = templateResult.templateString;
-		return convertStringToTemplate(templateString);
 	}
 
 	/**
