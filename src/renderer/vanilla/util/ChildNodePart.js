@@ -94,62 +94,50 @@ export class ChildNodePart extends Part {
 	}
 
 	/**
-	 * @param {any[] | any} value
-	 * @return {any[] | Node[] | any}
-	 */
-	parseValue(value) {
-		if (Array.isArray(value)) {
-			return this.parseArray(value);
-		}
-		if (value instanceof TemplateResult) {
-			if (!this.templatePart) {
-				// const templatePartCommentNodes = this.childNodes?.filter(
-				// 	(node) => node && node.nodeType === COMMENT_NODE && node.data === 'template-part',
-				// );
-				// const startNode = templatePartCommentNodes[index];
-
-				this.templatePart = new TemplatePart(undefined, value);
-				// this.templatePart = new TemplatePart(startNode, value);
-			} else {
-				// TODO: do I actually need this?! I think this will also be done in .update()...
-				this.templatePart.parseValue(value);
-			}
-			// TODO: this cannot be rendered/domDiffed... should we add undefined or so?!
-			// TODO: I hope that this is not needed...
-			return this.templatePart;
-		}
-		return value;
-	}
-
-	/**
 	 * @param {any} value
 	 * @return {*}
 	 */
 	update(value) {
 		const parsedValue = this.parseValue(value);
 
-		if (parsedValue instanceof TemplatePart) {
-			this.templatePart.update(value);
-			// TODO: hmm... this helps! but is it right?!
-			return super.update(parsedValue.childNodes);
-		}
-
-		if (Array.isArray(value)) {
+		if (value instanceof TemplateResult || Array.isArray(value)) {
 			this.updateParts(value);
 		}
 
-		// TODO: should this only be done with primitive values? Or always?!
+		// TODO: call domProcessro directly here to make it clear what is going on
 		return super.update(parsedValue);
 	}
 
 	updateParts(value) {
+		if (value instanceof TemplateResult) {
+			this.templatePart.update(value);
+		}
 		if (Array.isArray(value)) {
-			const values = value;
-
-			for (let index = 0; index < values.length; index++) {
-				this.parts[index]?.update(values[index]);
+			for (let index = 0; index < value.length; index++) {
+				this.parts[index]?.update(value[index]);
 			}
 		}
+	}
+
+	/**
+	 * @param {TemplateResult | any[] | any} value
+	 * @return {TemplatePart | any[] | any}
+	 */
+	parseValue(value) {
+		if (value instanceof TemplateResult) {
+			if (!this.templatePart) {
+				const templatePartCommentNodes = this.childNodes?.filter(
+					(node) => node && node.nodeType === COMMENT_NODE && node.data === 'template-part',
+				);
+				const startNode = templatePartCommentNodes[0];
+				this.templatePart = new TemplatePart(startNode, value);
+			}
+			return this.templatePart;
+		}
+		if (Array.isArray(value)) {
+			return this.parseArray(value);
+		}
+		return value;
 	}
 
 	/**
@@ -169,15 +157,10 @@ export class ChildNodePart extends Part {
 						(node) => node && node.nodeType === COMMENT_NODE && node.data === 'template-part',
 					);
 					const startNode = templatePartCommentNodes[index];
-
 					templatePart = new TemplatePart(startNode, value);
 					this.parts[index] = templatePart;
-				} else {
-					templatePart.parseValue(value);
 				}
-				// TODO: this cannot be rendered/domDiffed... should we add undefined or so?!
-				// TODO: I hope that this is not needed...
-				parsedValues[index] = templatePart.valueOf();
+				parsedValues[index] = templatePart;
 			} else if (Array.isArray(value)) {
 				let childNodePart = this.parts[index];
 				if (!childNodePart) {
@@ -186,26 +169,15 @@ export class ChildNodePart extends Part {
 						(node) => node && node.nodeType === COMMENT_NODE && node.data === 'template-part',
 					);
 					const startNode = templatePartCommentNodes[index];
-
 					childNodePart = new ChildNodePart(startNode, value);
 					this.parts[index] = childNodePart;
-				} else {
-					childNodePart.parseValue(value);
 				}
-				parsedValues[index] = childNodePart.valueOf();
+				parsedValues[index] = childNodePart;
 			} else {
 				parsedValues[index] = value;
 			}
 		}
 
 		return parsedValues;
-	}
-
-	/**
-	 * @return {any[] | Node[]}
-	 */
-	valueOf() {
-		// TemplateResult | Array
-		return Array.isArray(this.value) ? this.value : this;
 	}
 }
