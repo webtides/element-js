@@ -38,10 +38,7 @@
 		"shadow-dom"
 	],
 	"dependencies": {
-		"@github/jtml": "^0.5.1",
-		"@github/template-parts": "^0.5.4",
-		"lit-html": "^1.2.1",
-		"swapdom": "^1.1.1"
+		"lit-html": "^1.2.1"
 	},
 	"devDependencies": {
 		"@open-wc/testing": "^3.0.3",
