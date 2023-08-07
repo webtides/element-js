@@ -139,9 +139,6 @@ export class TemplateResult {
 		}
 	}
 
-	// TODO: think about if we could use this for both SSR and CSR ?!
-	// but in CSR we actually need the dom nodes to know where to make the updates
-	// but maybe instead of "duplicate" update functions, we could somehow use the same update function that the parts are using?
 	/**
 	 * @param {String[]} strings
 	 * @return {(() => String)[]}
@@ -240,7 +237,6 @@ export class TemplateResult {
 	 */
 	parseParts(childNodes) {
 		// we always create a template fragment so that we can start at the root for traversing the node path
-		// TODO: if we wanted to use real dom, we need to specify a limit/end node
 		const template = globalThis.document?.createDocumentFragment();
 		for (const childNode of childNodes) {
 			// TODO: maybe use a range to create a fragment faster?!
@@ -301,7 +297,6 @@ export class TemplateResult {
 	 * @returns {string} template with tagged placeholders for values
 	 */
 	get templateString() {
-		// TODO: this could also be cached!
 		return createTemplateString(this.strings);
 	}
 
