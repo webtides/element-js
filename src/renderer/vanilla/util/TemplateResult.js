@@ -2,7 +2,7 @@ import { COMMENT_NODE, getNodePath } from '../../../util/DOMHelper';
 import { encodeAttribute, isObjectLike } from '../../../util/AttributeParser.js';
 import { TemplatePart } from './TemplatePart.js';
 
-const empty = /^(?:area|base|br|col|embed|hr|img|input|keygen|link|menuitem|meta|param|source|track|wbr)$/i;
+const voidElements = /^(?:area|base|br|col|embed|hr|img|input|link|meta|source|track|wbr)$/i;
 const elements = /<([a-z]+[a-z0-9:._-]*)([^>]*?)(\/?)>/g;
 // TODO: v this will not match any values with escaped quotes like onClick='console.log("\'test")'
 const attributes = /([^\s]*)=((?:")[^"]*(?:")|(?:')[^']*(?:')|[^\s\/>]*)/g;
@@ -26,9 +26,9 @@ export const createTemplateString = (templateStrings, attributePlaceholders = ''
 	// join all interpolations (for values) with a special placeholder and remove any whitespace
 	let template = templateStrings.join('\x01').trim();
 	// find (match) all elements to identify their attributes
-	template = template.replace(elements, (_, name, attributesString, selfClosing) => {
+	template = template.replace(elements, (_, name, attributesString, trailingSlash) => {
 		let elementTagWithAttributes = name + attributesString.replaceAll('\x01', attributePlaceholders).trimEnd();
-		if (selfClosing.length) elementTagWithAttributes += empty.test(name) ? ' /' : '></' + name;
+		if (trailingSlash.length) elementTagWithAttributes += voidElements.test(name) ? ' /' : '></' + name;
 		// collect all attribute parts so that we can place matching comment nodes
 		const attributeParts = attributesString.replace(attributes, (attribute, name, valueWithQuotes) => {
 			// remove quotes from attribute value to normalize the value
