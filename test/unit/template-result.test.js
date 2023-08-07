@@ -39,6 +39,15 @@ describe(`TemplateResult.createTemplateString()`, () => {
 		);
 	});
 
+	it('adds placeholders as comment nodes before the node for attribute variables for self closing elements', async () => {
+		const templateResult = html`<input name="foo" value="${'bar'}" />`;
+		const templateString = createTemplateString(templateResult.strings);
+		assert.equal(
+			stripWhitespace(templateString),
+			'<!--template-part--><!--dom-part-0:value=\x03--><input name="foo" value="" /><!--/template-part-->',
+		);
+	});
+
 	it('adds multiple placeholders as comment nodes before the node for attributes with multiple variables', async () => {
 		const templateResult = html`<div id="${1}" class="${'some'} other ${'class'}">Text</div>`;
 		const templateString = createTemplateString(templateResult.strings);

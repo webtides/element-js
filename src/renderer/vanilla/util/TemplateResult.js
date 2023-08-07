@@ -2,11 +2,6 @@ import { COMMENT_NODE, getNodePath } from '../../../util/DOMHelper';
 import { encodeAttribute, isObjectLike } from '../../../util/AttributeParser.js';
 import { TemplatePart } from './TemplatePart.js';
 
-// the prefix is used to tag and reference nodes and attributes to create parts with updates
-// attributes: dom-part-1="attribute-name"
-// nodes|fragments|arrays (as comment nodes): <!--dom-part-2--><!--/dom-part-2-->
-export const prefix = 'dom-part-';
-
 const empty = /^(?:area|base|br|col|embed|hr|img|input|keygen|link|menuitem|meta|param|source|track|wbr)$/i;
 const elements = /<([a-z]+[a-z0-9:._-]*)([^>]*?)(\/?)>/g;
 // TODO: v this will not match any values with escaped quotes like onClick='console.log("\'test")'
@@ -22,46 +17,49 @@ const interpolation = new RegExp(`(<!--dom-part-(\\d+)--><!--/dom-part-(\\d+)-->
 /**
  * Given a template, find part positions as both nodes and attributes and
  * return a string with placeholders as either comment nodes or named attributes.
- * @param {string[]} template a template literal tag array
+ * @param {TemplateStringsArray | string[]} templateStrings a template literal tag array
  * @param {string} attributePlaceholders replace placeholders inside attribute values with this value
  * @returns {string} X/HTML with prefixed comments or attributes
  */
-export const createTemplateString = (template, attributePlaceholders = '') => {
-	let i = 0;
-	const templatePart = template
-		.join('\x01')
-		.trim()
-		.replace(elements, (_, name, attrs, selfClosing) => {
-			let ml = name + attrs.replaceAll('\x01', attributePlaceholders).trimEnd();
-			if (selfClosing.length) ml += empty.test(name) ? ' /' : '></' + name;
-			const attributeParts = attrs.replace(attributes, (attribute, name, valueWithQuotes) => {
-				const value =
-					valueWithQuotes.startsWith('"') || valueWithQuotes.startsWith("'")
-						? valueWithQuotes.slice(1, -1)
-						: valueWithQuotes;
-				const count = (attribute.match(/\x01/g) || []).length;
-				const parts = [];
-				for (let j = 0; j < count; j++) {
-					parts.push(`<!--\x02:${name}=${value.replaceAll('\x01', '\x03')}-->`);
-				}
-				return parts.join('');
-			});
-			return `
-				${attrs.includes('\x01') ? attributeParts : ''}
-				<${ml}>
-			`;
-		})
-		.replace(partPositions, (partPosition) => {
-			if (partPosition === '\x01') {
-				return `<!--dom-part-${i}--><!--/dom-part-${i++}-->`;
+export const createTemplateString = (templateStrings, attributePlaceholders = '') => {
+	let partIndex = 0;
+	// join all interpolations (for values) with a special placeholder and remove any whitespace
+	let template = templateStrings.join('\x01').trim();
+	// find (match) all elements to identify their attributes
+	template = template.replace(elements, (_, name, attributesString, selfClosing) => {
+		let elementTagWithAttributes = name + attributesString.replaceAll('\x01', attributePlaceholders).trimEnd();
+		if (selfClosing.length) elementTagWithAttributes += empty.test(name) ? ' /' : '></' + name;
+		// collect all attribute parts so that we can place matching comment nodes
+		const attributeParts = attributesString.replace(attributes, (attribute, name, valueWithQuotes) => {
+			// remove quotes from attribute value to normalize the value
+			const value =
+				valueWithQuotes.startsWith('"') || valueWithQuotes.startsWith("'")
+					? valueWithQuotes.slice(1, -1)
+					: valueWithQuotes;
+			const partsCount = (attribute.match(/\x01/g) || []).length;
+			const parts = [];
+			for (let index = 0; index < partsCount; index++) {
+				parts.push(`<!--\x02:${name}=${value.replaceAll('\x01', '\x03')}-->`);
 			}
-			if (partPosition === '\x02') {
-				return `dom-part-${i++}`;
-			}
+			return parts.join('');
 		});
+		return `
+				${attributesString.includes('\x01') ? attributeParts : ''}
+				<${elementTagWithAttributes}>
+			`;
+	});
+	// replace interpolation placeholders with our indexed markers
+	template = template.replace(partPositions, (partPosition) => {
+		if (partPosition === '\x01') {
+			return `<!--dom-part-${partIndex}--><!--/dom-part-${partIndex++}-->`;
+		}
+		if (partPosition === '\x02') {
+			return `dom-part-${partIndex++}`;
+		}
+	});
 	return `
 		<!--template-part-->
-		${templatePart}
+		${template}
 		<!--/template-part-->
 	`;
 	// TODO: ^ this is actually important because of the whitespace
