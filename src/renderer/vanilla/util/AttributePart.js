@@ -1,6 +1,111 @@
-import { processAttributePart } from './dom-processers.js';
 import { Part } from './Part.js';
 
+/**
+ * @param {Element} node
+ * @param {String} name
+ * @param {Boolean} oldValue
+ * @return {(function(*): void)|*}
+ */
+const processBooleanAttribute = (node, name, oldValue) => {
+	// TODO: It would be better if the ?boolean= attribute would not be there in the first place...
+	node.removeAttribute(`?${name}`);
+	return (newValue) => {
+		const value = !!newValue?.valueOf() && newValue !== 'false';
+		if (oldValue !== value) {
+			node.toggleAttribute(name, (oldValue = !!value));
+		}
+	};
+};
+
+/**
+ * @param {Element} node
+ * @param {String} name
+ * @return {(function(*): void)|*}
+ */
+const processPropertyAttribute = (node, name) => {
+	// TODO: It would be better if the .property= attribute would not be there in the first place...
+	node.removeAttribute(`.${name}`);
+	return (value) => {
+		node[name] = value;
+	};
+};
+
+/**
+ * @param {Element} node
+ * @param {String} name
+ * @return {(function(*): void)|*}
+ */
+const processEventAttribute = (node, name) => {
+	// TODO: It would be better if the event attribute would not be there in the first place...
+	node.removeAttribute(name);
+
+	let oldValue = undefined;
+	let type = name.startsWith('@') ? name.slice(1) : name.toLowerCase().slice(2);
+
+	return (newValue) => {
+		if (oldValue !== newValue) {
+			if (oldValue) node.removeEventListener(type, oldValue);
+			if ((oldValue = newValue)) node.addEventListener(type, oldValue);
+		}
+	};
+};
+
+/**
+ * @param {Element} node
+ * @param {String} name
+ * @return {(function(*): void)|*}
+ */
+const processAttribute = (node, name) => {
+	let oldValue,
+		orphan = true;
+	const attributeNode = globalThis.document?.createAttributeNS(null, name);
+	return (newValue) => {
+		const value = newValue?.valueOf();
+		if (oldValue !== value) {
+			if ((oldValue = value) == null) {
+				if (!orphan) {
+					node.removeAttributeNode(attributeNode);
+					orphan = true;
+				}
+			} else {
+				attributeNode.value = value;
+				if (orphan) {
+					node.setAttributeNodeNS(attributeNode);
+					orphan = false;
+				}
+			}
+		}
+	};
+};
+
+/**
+ * @param {Element} node
+ * @param {String} name
+ * @return {(function(*): void)|*}
+ */
+export const processAttributePart = (node, name) => {
+	// boolean attribute: ?boolean=${...}
+	if (name.startsWith('?')) {
+		return processBooleanAttribute(node, name.slice(1), false);
+	}
+
+	// property attribute: .property=${...}
+	if (name.startsWith('.')) {
+		return processPropertyAttribute(node, name.slice(1));
+	}
+
+	// event attribute: @event=${...} || "old school" event attribute: onevent=${...}
+	if (name.startsWith('@') || name.startsWith('on')) {
+		return processEventAttribute(node, name);
+	}
+
+	// normal "string" attribute: attribute=${...}
+	return processAttribute(node, name);
+};
+
+/**
+ * For updating a single attribute
+ */
 export class AttributePart extends Part {
 	name = undefined;
 	interpolations = 1;
@@ -14,7 +119,7 @@ export class AttributePart extends Part {
 	 * @param {String} initialValue
 	 */
 	constructor(node, name, initialValue) {
-		super(node);
+		super();
 		this.name = name;
 		this.initialValue = initialValue;
 		this.processor = processAttributePart(node.nextElementSibling, this.name);
@@ -28,10 +133,13 @@ export class AttributePart extends Part {
 		// TODO: what about the comment node? It will always be the first for now...
 	}
 
+	/**
+	 * @param {string | number | bigint | boolean | undefined | symbol | null} value
+	 */
 	update(value) {
 		// If we only have one sole interpolation, we can just apply the update
 		if (this.initialValue === '\x03') {
-			super.update(value);
+			this.processor(value);
 			return;
 		}
 
@@ -46,7 +154,7 @@ export class AttributePart extends Part {
 			let replaceIndex = 0;
 			// Note: this will coarse the values into strings, but it's probably ok since there can only be multiple values in string attributes?!
 			const parsedValue = this.initialValue.replace(/\x03/g, () => this.values[replaceIndex++]);
-			super.update(parsedValue);
+			this.processor(parsedValue);
 		}
 	}
 }

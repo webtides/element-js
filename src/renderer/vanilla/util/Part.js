@@ -1,21 +1,12 @@
+/**
+ * @abstract
+ */
 export class Part {
-	node = undefined;
 	processor = undefined;
 
 	/**
-	 * @param {Node} node
+	 * @abstract
+	 * @param {TemplateResult | any[] | any} value
 	 */
-	constructor(node) {
-		this.node = node;
-	}
-
-	/**
-	 * @param {any} value
-	 * @return {*}
-	 */
-	update(value) {
-		if (this.processor) {
-			return this.processor?.(value);
-		}
-	}
+	update(value) {}
 }
