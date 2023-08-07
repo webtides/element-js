@@ -41,7 +41,6 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
 
 		// If the DOM node doesn't exist, append/copy the template node
 		if (!domChildNode) {
-			// operation = 1
 			// TODO: this is kind of duplicate because these checks are also done in processNode?!
 			if (templateChildNode instanceof ChildNodePart || templateChildNode instanceof TemplatePart) {
 				anchorNode.before(...templateChildNode.childNodes);
@@ -61,7 +60,6 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
 
 		// If the template node doesn't exist, remove the node in the DOM
 		if (!templateChildNode) {
-			// operation = -1
 			parentNode.removeChild(removeChildNodes(domChildNode));
 			continue;
 		}
@@ -71,54 +69,6 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
 		if (domChildNode === templateChildNode) {
 			continue;
 		}
-
-		// the following two checks don't have to be correct, but it could bring as back to the fast path
-		// in the worst case we still have to compare and swap all the elements
-		// but in the best case we find the one element that should actually be inserted or removed
-		// and from there on, every node that comes after should be equal again
-
-		// fast path for removing DOM nodes - we delete the node now instead of at the end
-		// if (parentNode.childNodes.length > templateNode.childNodes.length) {
-		// 	domChildNodes.splice(index, 1);
-		// 	parentNode.removeChild(domChildNode);
-		// 	// because domChildNodes will get shorter by splicing it, everything moves up by one
-		// 	// so the (actual) next element will have the same index now as we currently have
-		// 	// therefore we have to adjust our counters
-		// 	length--;
-		// 	index--;
-		//
-		// 	// we might have corrected everything and the parent nodes could be equal again
-		// 	// if so, we can skip the rest of the child node checks
-		// 	if (
-		// 		parentNode.childNodes.length === templateNode.childNodes.length &&
-		// 		parentNode.isEqualNode(templateNode)
-		// 	) {
-		// 		return;
-		// 	}
-		//
-		// 	continue;
-		// }
-
-		// fast path for adding DOM nodes - we insert the node now instead of at the end
-		// but NOT if we already are at the end of the list of child nodes
-		// if (
-		// 	index !== parentNode.childNodes.length - 1 &&
-		// 	parentNode.childNodes.length < templateNode.childNodes.length
-		// ) {
-		// 	domChildNodes.splice(index, 0, templateChildNode);
-		// 	parentNode.insertBefore(templateChildNode, domChildNode);
-		//
-		// 	// we might have corrected everything and the parent nodes could be equal again
-		// 	// if so, we can skip the rest of the child node checks
-		// 	if (
-		// 		parentNode.childNodes.length === templateNode.childNodes.length &&
-		// 		parentNode.isEqualNode(templateNode)
-		// 	) {
-		// 		return;
-		// 	}
-		//
-		// 	continue;
-		// }
 
 		// If node types are not the same, replace the DOM node with the template node
 		if (templateChildNode.nodeType !== domChildNode.nodeType) {
