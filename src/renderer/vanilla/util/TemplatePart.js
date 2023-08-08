@@ -96,12 +96,7 @@ export class TemplatePart extends Part {
 	 */
 	parseValue(templateResult) {
 		if (this.strings !== templateResult.strings) {
-			// TODO: for nested TemplateResults the fragment seems to be wrong
-			// and won't get updated ever again...
-			// TODO: the || check should not be needed :(
-			// but if the nested TemplateResult has values the strings will never ever be rendered...
-			// if (!this.fragment || templateResult.values.length === 0) {
-			if (this.childNodes.length === 0 || templateResult.values.length === 0) {
+			if (this.childNodes.length === 0) {
 				let fragment = fragmentsCache.get(templateResult.strings);
 				if (!fragment) {
 					fragment = this.parseFragment(templateResult);
@@ -125,7 +120,7 @@ export class TemplatePart extends Part {
 
 				if (part.type === 'node') {
 					return new ChildNodePart(node, templateResult.values[index]);
-					// TODO: the nodes in the parts array also have nested parts information... we could start creating the nested parts here as well
+					// TODO: the nodes in the parts array also have nested parts information... could we start creating the nested parts here as well?
 				}
 				if (part.type === 'attribute') {
 					// If we have multiple attribute parts with the same name, it means we have multiple

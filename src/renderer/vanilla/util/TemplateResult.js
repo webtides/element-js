@@ -71,8 +71,11 @@ export const createTemplateString = (templateStrings, attributePlaceholders = ''
  * @param {Boolean} isSingleValue
  * @return {String}
  */
-const attribute = (name, value, isSingleValue = true) =>
-	` ${name}="${encodeAttribute(isObjectLike(value) ? JSON.stringify(value) : value)}${isSingleValue ? '"' : ''}`;
+const attribute = (name, value, isSingleValue = true) => {
+	return ` ${name}="${encodeAttribute(isObjectLike(value) ? JSON.stringify(value) : value)}${
+		isSingleValue ? '"' : ''
+	}`;
+};
 
 /**
  * @param {any} value
