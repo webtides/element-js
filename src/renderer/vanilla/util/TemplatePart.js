@@ -29,7 +29,7 @@ export class TemplatePart extends Part {
 			throw new Error('TemplatePart: startNode is not a comment node');
 		}
 
-		super(startNode);
+		super();
 
 		let serverSideRendered = false;
 		if (startNode) {
@@ -47,6 +47,7 @@ export class TemplatePart extends Part {
 			// if not SSRed, childNodes will only ever have two comment nodes, the start and the end marker
 			if (childNodes.length > 2) {
 				serverSideRendered = true;
+				this.childNodes = childNodes;
 			}
 		}
 
