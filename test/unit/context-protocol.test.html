@@ -128,7 +128,6 @@
 			watch() {
 				return {
 					storeContext: (newValues) => {
-						console.log('change', newValues.value, this.storeContext.value)
 						this.watcherReflectedValue = newValues.value;
 					}
 				}

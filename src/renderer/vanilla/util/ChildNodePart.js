@@ -54,21 +54,11 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
 		let domChildNode = domChildNodes[index];
 		let templateChildNode = templateChildNodes[index];
 
-		// TODO: I think it would be better to handle functions in processNodeValue at the array position...
-		if (typeof domChildNode === 'function') {
-			domChildNode = domChildNode();
-		}
-		if (typeof templateChildNode === 'function') {
-			templateChildNode = templateChildNode();
-		}
-
 		// If the DOM node doesn't exist, append/copy the template node
 		if (!domChildNode) {
 			if (templateChildNode instanceof TemplatePart) {
-				// TODO: this is kind of duplicate because these checks are also done in processNode?! But I think this comes from the array handling
 				anchorNode.before(...templateChildNode.childNodes);
 			} else if (typeof templateChildNode === 'object' && 'ELEMENT_NODE' in templateChildNode) {
-				// TODO: this is kind of duplicate because these checks are also done in processNode?! But I think this comes from the array handling
 				parentNode.insertBefore(templateChildNode, anchorNode);
 			} else {
 				// TODO: this might not be performant?! Can we maybe handle this in processDomNode?!
@@ -174,8 +164,7 @@ export const processNodePart = (comment, initialValue) => {
 						oldValue = newValue;
 						nodes = diffChildNodes(comment.parentNode, nodes, [...newValue.childNodes], comment);
 					} else {
-						const value = newValue.valueOf();
-						if (value !== newValue) processNodeValue(value);
+						console.warn('Could not process value', newValue);
 					}
 				}
 				break;
@@ -345,7 +334,7 @@ export class ChildNodePart extends Part {
 				}
 				parsedValues[index] = childNodePart;
 			} else {
-				parsedValues[index] = value;
+				parsedValues[index] = typeof value === 'function' ? value() : value;
 			}
 		}
 
