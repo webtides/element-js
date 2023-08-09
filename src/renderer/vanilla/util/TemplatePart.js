@@ -20,21 +20,6 @@ export class TemplatePart extends Part {
 	/** @type {Node[]} */
 	childNodes = [];
 
-	// TODO: get rid of this...
-	get ELEMENT_NODE() {
-		return ELEMENT_NODE;
-	}
-
-	// TODO: get rid of this...
-	get firstChild() {
-		return this.childNodes[0];
-	}
-
-	// TODO: get rid of this...
-	get lastChild() {
-		return this.childNodes[this.childNodes.length - 1];
-	}
-
 	/**
 	 * @param {Node} startNode - the start comment marker node
 	 * @param {TemplateResult} value

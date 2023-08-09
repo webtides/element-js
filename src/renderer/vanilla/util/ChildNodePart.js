@@ -4,25 +4,48 @@ import { TemplateResult } from './TemplateResult.js';
 import { TemplatePart } from './TemplatePart.js';
 
 /**
- * @param {Element} node
+ * @param {Node | TemplatePart | any[]} node
  * @return {ChildNode}
  */
 const removeChildNodes = (node) => {
 	const range = globalThis.document?.createRange();
-	const firstChild = Array.isArray(node) ? node[0] : node.firstChild;
-	const lastChild = Array.isArray(node) ? node[node.length - 1] : node.lastChild;
+	const firstChild = Array.isArray(node)
+		? node[0]
+		: node instanceof TemplatePart
+		? node.childNodes[0]
+		: node.firstChild;
+	const lastChild = Array.isArray(node)
+		? node[node.length - 1]
+		: node instanceof TemplatePart
+		? node.childNodes[node.childNodes.length - 1]
+		: node.lastChild;
 	range.setStartAfter(firstChild);
 	range.setEndAfter(lastChild);
 	range.deleteContents();
-	return node.firstChild;
+	return firstChild;
 };
 
 /**
- * @param {Element} parentNode
- * @param {Element[]} domChildNodes
- * @param {Element[]} templateChildNodes
- * @param {Element} anchorNode
- * @return {Element[]}
+ * @param {Element} commentNode
+ */
+const removeNodesBetweenComments = (commentNode) => {
+	while (commentNode.previousSibling) {
+		if (
+			commentNode.previousSibling.nodeType === COMMENT_NODE &&
+			commentNode.previousSibling.data === commentNode.data.replace('/', '')
+		) {
+			break;
+		}
+		commentNode.parentNode.removeChild(commentNode.previousSibling);
+	}
+};
+
+/**
+ * @param {Node} parentNode
+ * @param {Node[]} domChildNodes
+ * @param {Node[]} templateChildNodes
+ * @param {Node} anchorNode
+ * @return {Node[]}
  */
 const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, anchorNode) {
 	// Diff each node in the child node lists
@@ -41,14 +64,11 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
 
 		// If the DOM node doesn't exist, append/copy the template node
 		if (!domChildNode) {
-			// TODO: this is kind of duplicate because these checks are also done in processNode?!
-			if (templateChildNode instanceof ChildNodePart || templateChildNode instanceof TemplatePart) {
+			if (templateChildNode instanceof TemplatePart) {
+				// TODO: this is kind of duplicate because these checks are also done in processNode?! But I think this comes from the array handling
 				anchorNode.before(...templateChildNode.childNodes);
-			} else if (Array.isArray(templateChildNode)) {
-				// TODO: this was not needed with PersistentFragment?! And I think this is really slow...
-				anchorNode.before(...templateChildNode);
-				// TODO: this is kind of duplicate because these checks are also done in processNode?!
 			} else if (typeof templateChildNode === 'object' && 'ELEMENT_NODE' in templateChildNode) {
+				// TODO: this is kind of duplicate because these checks are also done in processNode?! But I think this comes from the array handling
 				parentNode.insertBefore(templateChildNode, anchorNode);
 			} else {
 				// TODO: this might not be performant?! Can we maybe handle this in processDomNode?!
@@ -93,15 +113,12 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
 
 /**
  * @param {Node} comment
- * @param {any} initialValue
+ * @param {TemplatePart | any[] | any} initialValue
  * @return {(function(*): void)|*}
  */
 export const processNodePart = (comment, initialValue) => {
 	let nodes = [];
-	let oldValue =
-		typeof initialValue === 'object' && initialValue instanceof ChildNodePart
-			? [...initialValue.childNodes]
-			: initialValue;
+	let oldValue = initialValue instanceof TemplatePart ? [...initialValue.childNodes] : initialValue;
 	// this is for string values to be inserted into the DOM. A cached TextNode will be used so that we don't have to constantly create new DOM nodes.
 	let cachedTextNode = undefined;
 
@@ -130,39 +147,19 @@ export const processNodePart = (comment, initialValue) => {
 			// null (= typeof "object") and undefined are used to clean up previous content
 			case 'object':
 			case 'undefined':
-				if (newValue == null) {
-					if (oldValue != newValue) {
+				if (newValue === null || newValue === undefined) {
+					if (oldValue !== newValue) {
 						oldValue = newValue;
-						// remove all child nodes
-						while (comment.previousSibling) {
-							if (
-								comment.previousSibling.nodeType === COMMENT_NODE &&
-								comment.previousSibling.data.includes('dom-part-')
-							) {
-								break;
-							}
-							comment.parentNode.removeChild(comment.previousSibling);
-						}
+						removeNodesBetweenComments(comment);
 						nodes = [];
 					}
 					break;
 				}
 				if (Array.isArray(newValue)) {
 					if (newValue.length === 0) {
-						// remove all child nodes
-						while (comment.previousSibling) {
-							if (
-								comment.previousSibling.nodeType === COMMENT_NODE &&
-								comment.previousSibling.data === comment.data.replace('/', '')
-							) {
-								break;
-							}
-							comment.parentNode.removeChild(comment.previousSibling);
-						}
+						removeNodesBetweenComments(comment);
 						nodes = [];
-					}
-					// or diff if they contain nodes or fragments
-					else {
+					} else {
 						nodes = diffChildNodes(comment.parentNode, oldValue || [], newValue, comment);
 					}
 					oldValue = newValue;
@@ -172,12 +169,10 @@ export const processNodePart = (comment, initialValue) => {
 				if (oldValue !== newValue) {
 					if ('ELEMENT_NODE' in newValue) {
 						oldValue = newValue;
-						nodes = diffChildNodes(
-							comment.parentNode,
-							nodes,
-							newValue instanceof ChildNodePart ? [...newValue.childNodes] : [newValue],
-							comment,
-						);
+						nodes = diffChildNodes(comment.parentNode, nodes, [newValue], comment);
+					} else if (newValue instanceof TemplatePart) {
+						oldValue = newValue;
+						nodes = diffChildNodes(comment.parentNode, nodes, [...newValue.childNodes], comment);
 					} else {
 						const value = newValue.valueOf();
 						if (value !== newValue) processNodeValue(value);
@@ -210,23 +205,10 @@ export class ChildNodePart extends Part {
 	// TODO: this is only for TemplatePart values
 	templatePart = undefined;
 
+	// TODO: maybe we can store a generic vale|parsedValue that can be either parts[] | templatePart | any
+
 	/** @type {Node[]} */
 	childNodes = [];
-
-	// TODO: get rid of this...
-	get ELEMENT_NODE() {
-		return ELEMENT_NODE;
-	}
-
-	// TODO: get rid of this...
-	get firstChild() {
-		return this.childNodes[0];
-	}
-
-	// TODO: get rid of this...
-	get lastChild() {
-		return this.childNodes[this.childNodes.length - 1];
-	}
 
 	/**
 	 * @param {Node} startNode - the start comment marker node
