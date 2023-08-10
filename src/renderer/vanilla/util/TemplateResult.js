@@ -240,11 +240,10 @@ export class TemplateResult {
 	 */
 	parseParts(childNodes) {
 		// we always create a template fragment so that we can start at the root for traversing the node path
-		const template = globalThis.document?.createDocumentFragment();
-		for (const childNode of childNodes) {
-			// TODO: maybe use a range to create a fragment faster?!
-			template.append(childNode.cloneNode(true));
-		}
+		const range = globalThis.document?.createRange();
+		range.setStartBefore(childNodes[0]);
+		range.setEndAfter(childNodes[childNodes.length - 1]);
+		const template = range.cloneContents();
 
 		const treeWalker = globalThis.document?.createTreeWalker(template, 128);
 		let node = treeWalker.currentNode;
