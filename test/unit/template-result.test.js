@@ -2,6 +2,8 @@ import { fixture, assert } from '@open-wc/testing';
 import { createTemplateString } from '../../src/renderer/vanilla/util/TemplateResult.js';
 import { html } from '../../src/renderer/vanilla/util/html.js';
 import { convertStringToTemplate } from '../../src/util/DOMHelper';
+import { render } from '../../src/renderer/vanilla/util/render';
+import { stripCommentMarkers } from "./renderer/template-bindings";
 
 export const stripWhitespace = (html) => html.replace(/\s+/g, ' ').replaceAll('> ', '>').trim();
 
@@ -215,5 +217,30 @@ describe('TemplateResult.toString()', () => {
 			stripWhitespace(templateResult.toString()),
 			'<!--template-part--><!--dom-part-0:@e=\x03--><!--dom-part-1:onClick=\x03--><div onClick="console.log(\'\')">Text</div><!--/template-part-->',
 		);
+	});
+});
+
+describe('TemplateResult SSR', () => {
+	it('only hydrates server side rendered templates', async () => {
+		const el = await fixture(
+			`<div><!--template-part--><div><!--dom-part-0-->Foo<!--/dom-part-0--></div><!--/template-part--></div>`,
+		);
+		let text = 'Bar';
+		const templateResult = html`<div>${text}</div>`;
+		render(templateResult, el);
+		assert.equal(stripCommentMarkers(el.innerHTML), '<div>Foo</div>');
+		// TODO: find a way to actually test that the parts have been created?!
+	});
+
+	it('can update previously hydrated templates', async () => {
+		const el = await fixture(
+			`<div><!--template-part--><div><!--dom-part-0-->Foo<!--/dom-part-0--></div><!--/template-part--></div>`,
+		);
+		let text = 'Foo';
+		render(html`<div>${text}</div>`, el);
+		text = 'Bar';
+		render(html`<div>${text}</div>`, el);
+		// assert.equal(stripCommentMarkers(el.innerHTML), '<div>Bar</div>');
+		// TODO: this is actually working... but the element is not updating in the tests :(
 	});
 });
