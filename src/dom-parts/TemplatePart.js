@@ -1,4 +1,4 @@
-import { COMMENT_NODE, convertStringToTemplate } from '../../../util/DOMHelper.js';
+import { COMMENT_NODE, convertStringToTemplate } from '../util/DOMHelper.js';
 import { Part } from './Part.js';
 import { TemplateResult } from './TemplateResult.js';
 import { AttributePart } from './AttributePart.js';

@@ -1,9 +1,9 @@
 import { fixture, assert } from '@open-wc/testing';
-import { createTemplateString } from '../../src/renderer/vanilla/util/TemplateResult.js';
-import { html } from '../../src/renderer/vanilla/util/html.js';
+import { createTemplateString } from '../../src/dom-parts/TemplateResult.js';
+import { html } from '../../src/dom-parts/html.js';
 import { convertStringToTemplate } from '../../src/util/DOMHelper';
-import { render } from '../../src/renderer/vanilla/util/render';
-import { stripCommentMarkers } from "./renderer/template-bindings";
+import { render } from '../../src/dom-parts/render';
+import { stripCommentMarkers } from './renderer/template-bindings.js';
 
 export const stripWhitespace = (html) => html.replace(/\s+/g, ' ').replaceAll('> ', '>').trim();
 

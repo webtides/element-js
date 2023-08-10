@@ -1,7 +1,5 @@
 import { defineElement } from '../src/BaseElement';
-// import { TemplateElement, html } from '../src/TemplateElement';
-import { TemplateElement, html } from '../src/renderer/vanilla/TemplateElement.js';
-//import { TemplateElement, html } from '../src/renderer/uhtml/TemplateElement.js';
+import { TemplateElement, html } from '../src/TemplateElement';
 
 class TestElement extends TemplateElement {
 	properties() {

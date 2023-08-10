@@ -1,5 +1,5 @@
 import { BaseElement, defineElement } from '../src/BaseElement.js';
-import { TemplateElement, html } from '../src/renderer/vanilla/TemplateElement.js';
+import { TemplateElement, html } from '../src/TemplateElement.js';
 
 class UnimportantElement extends BaseElement {}
 defineElement('unimportant-element', UnimportantElement);

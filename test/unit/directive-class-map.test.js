@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-expressions */
 import { fixture, defineCE, assert } from '@open-wc/testing';
-import { classMap } from '../../src/renderer/vanilla/util/directives.js';
+import { classMap } from '../../src/dom-parts/directives.js';
 
 describe('classMap directive', () => {
 	it('maps a list of classes from an object to a string', async () => {

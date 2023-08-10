@@ -1,5 +1,5 @@
 import { fixture, assert, nextFrame, oneEvent } from '@open-wc/testing';
-import { render } from '../../../src/renderer/vanilla/util/render';
+import { render } from '../../../src/dom-parts/render';
 
 // TODO: for testing that SSR and CSR will render the same thing, it would be good to test with whitespace and comment markers to make sure that they perfectly match!
 export const stripCommentMarkers = (html) =>

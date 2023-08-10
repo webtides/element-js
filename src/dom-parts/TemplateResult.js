@@ -1,5 +1,5 @@
-import { COMMENT_NODE, getNodePath } from '../../../util/DOMHelper';
-import { encodeAttribute, isObjectLike } from '../../../util/AttributeParser.js';
+import { COMMENT_NODE, getNodePath } from '../util/DOMHelper';
+import { encodeAttribute, isObjectLike } from '../util/AttributeParser.js';
 import { TemplatePart } from './TemplatePart.js';
 
 const voidElements = /^(?:area|base|br|col|embed|hr|img|input|link|meta|source|track|wbr)$/i;

@@ -1,5 +1,6 @@
 import { assert, defineCE, fixture } from '@open-wc/testing';
-import { TemplateElement, html, unsafeHTML } from '../../src/renderer/vanilla/TemplateElement.js';
+import { TemplateElement, html } from '../../src/TemplateElement.js';
+import { unsafeHTML } from '../../src/dom-parts/directives.js';
 import { testTemplateBindings } from './renderer/template-bindings.js';
 import { testTemplateRendering } from './renderer/template-rendering.js';
 

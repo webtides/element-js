@@ -1,13 +1,6 @@
 import { defineElement } from '../src/BaseElement.js';
-import { TemplateElement, html } from '../src/renderer/vanilla/TemplateElement.js';
-import {
-	choose,
-	classMap,
-	styleMap,
-	when,
-	unsafeHTML,
-	spreadAttributes,
-} from '../src/renderer/vanilla/util/directives.js';
+import { TemplateElement, html } from '../src/TemplateElement.js';
+import { choose, classMap, styleMap, when, unsafeHTML, spreadAttributes } from '../src/dom-parts/directives.js';
 
 class ExampleDirectives extends TemplateElement {
 	properties() {

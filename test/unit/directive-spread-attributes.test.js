@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-expressions */
 import { fixture, defineCE, assert } from '@open-wc/testing';
-import { spreadAttributes } from '../../src/renderer/vanilla/util/directives.js';
+import { spreadAttributes } from '../../src/dom-parts/directives.js';
 
 describe('spreadAttributes directive', () => {
 	it('maps primitive values to string attributes', async () => {

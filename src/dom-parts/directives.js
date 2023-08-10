@@ -1,6 +1,6 @@
-import { camelToDash, decodeAttribute, encodeAttribute } from '../../../util/AttributeParser.js';
+import { camelToDash, decodeAttribute, encodeAttribute } from '../util/AttributeParser.js';
 import { TemplateResult } from './TemplateResult';
-import { convertStringToHTML } from '../../../util/DOMHelper';
+import { convertStringToHTML } from '../util/DOMHelper';
 
 /**
  * Maps a list of classes to an element from an object.

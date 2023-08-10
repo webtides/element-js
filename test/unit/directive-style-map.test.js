@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-expressions */
 import { fixture, defineCE, assert } from '@open-wc/testing';
-import { styleMap } from '../../src/renderer/vanilla/util/directives.js';
+import { styleMap } from '../../src/dom-parts/directives.js';
 
 describe('styleMap directive', () => {
 	it('maps a list of styles from an object to a string', async () => {

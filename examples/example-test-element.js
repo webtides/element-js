@@ -1,5 +1,5 @@
 import { defineElement } from '../src/BaseElement';
-import { TemplateElement, html, unsafeHTML } from '../src/renderer/vanilla/TemplateElement.js';
+import { TemplateElement, html } from '../src/TemplateElement.js';
 
 class ExampleTestElement extends TemplateElement {
 	constructor() {

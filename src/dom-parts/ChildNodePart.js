@@ -1,4 +1,4 @@
-import { COMMENT_NODE, ELEMENT_NODE } from '../../../util/DOMHelper.js';
+import { COMMENT_NODE, ELEMENT_NODE } from '../util/DOMHelper.js';
 import { Part } from './Part.js';
 import { TemplateResult } from './TemplateResult.js';
 import { TemplatePart } from './TemplatePart.js';
