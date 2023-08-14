@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Changed
 
 -   _BRAKING_ Uses a new custom renderer for the `TemplateElement`. It replaces the old `lit-html` renderer. The API and usage should be exactly the same. The only thing to do/change is the use of the old `lit-html` directives. For detailed instructions see the upgrade guide. ([#67](https://github.com/webtides/element-js/pull/67))
+-   _BREAKING_ `element-js` will now also trigger the `afterUpdate` hook right after the `connected` hook. This is to reduce the cases where you had to do the same things in `connected` and `afterUpdate`. You can now remove those duplicate calls from the `connected` hook. ([#60](https://github.com/webtides/element-js/pull/60))
 
 ### Removed
 
