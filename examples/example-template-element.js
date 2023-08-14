@@ -1,6 +1,5 @@
 import { defineElement } from '../src/BaseElement';
-// import { TemplateElement, html } from '../src/TemplateElement';
-import { TemplateElement, html } from '../src/renderer/vanilla/TemplateElement.js';
+import { TemplateElement, html } from '../src/TemplateElement';
 
 function _random(max) {
 	return Math.round(Math.random() * 1000) % max;
@@ -8,10 +7,51 @@ function _random(max) {
 
 class Store {
 	constructor() {
-		this.data = [];
+		this.data = [
+			{
+				id: 1,
+				label: 'big brown sandwich from CSR',
+			},
+			{
+				id: 2,
+				label: 'cheap yellow mouse',
+			},
+			{
+				id: 3,
+				label: 'tall red keyboard',
+			},
+			{
+				id: 4,
+				label: 'small white burger',
+			},
+			{
+				id: 5,
+				label: 'handsome red bbq',
+			},
+			{
+				id: 6,
+				label: 'large black pony',
+			},
+			{
+				id: 7,
+				label: 'inexpensive brown pony',
+			},
+			{
+				id: 8,
+				label: 'expensive white cookie',
+			},
+			{
+				id: 9,
+				label: 'plain brown pizza',
+			},
+			{
+				id: 10,
+				label: 'short purple sandwich',
+			},
+		];
 		this.backup = null;
 		this.selected = null;
-		this.id = 1;
+		this.id = 11;
 	}
 	buildData(count = 1000) {
 		var adjectives = [
@@ -143,7 +183,7 @@ class ExampleTemplateElement extends TemplateElement {
 
 	properties() {
 		return {
-			data: [],
+			data: this.store.data,
 			selected: null,
 		};
 	}
@@ -200,7 +240,7 @@ class ExampleTemplateElement extends TemplateElement {
 					<tbody class="divide-y divide-gray-200 bg-white">
 						${this.data.map(
 							(item) => html` <tr
-								id=${item.id}
+								id="${item.id}"
 								class="${this.selected === item.id ? 'bg-purple-200' : 'bg-white even:bg-gray-100'}"
 							>
 								<td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">${item.id}</td>
@@ -213,7 +253,9 @@ class ExampleTemplateElement extends TemplateElement {
 									<btn
 										class="remove inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-300 hover:bg-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 hover:cursor-pointer"
 									>
-										<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true">x</span>
+										<span class="glyphicon glyphicon-remove pointer-events-none" aria-hidden="true"
+											>x</span
+										>
 									</btn>
 								</td>
 							</tr>`,

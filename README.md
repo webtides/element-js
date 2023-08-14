@@ -1,10 +1,10 @@
 # element-js
 
-Simple and lightweight base classes for web components with a beautiful API
+Simple and lightweight base classes for web components with a beautiful API. Dependency free.
 
 ## Introduction
 
-`element-js` lets you write simple, declarative and beautiful web components without the boilerplate. It uses `lit-html` for rendering.
+`element-js` lets you write simple, declarative and beautiful web components without the boilerplate.
 
 ## How to use
 

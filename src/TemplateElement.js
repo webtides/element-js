@@ -1,6 +1,6 @@
 import { StyledElement } from './StyledElement.js';
-import { html } from 'lit-html';
-import { render } from 'lit-html/lib/shady-render.js';
+import { html } from './dom-parts/html.js';
+import { render } from './dom-parts/render.js';
 export { i18n } from './util/i18n.js';
 
 class TemplateElement extends StyledElement {
@@ -35,11 +35,7 @@ class TemplateElement extends StyledElement {
 			// just a plain string literal. no lit-html required
 			this.getRoot().innerHTML = `${template}`;
 		} else {
-			// render via lit-html
-			render(html` ${template} `, this.getRoot(), {
-				scopeName: this.localName,
-				eventContext: this,
-			});
+			render(template, this.getRoot());
 		}
 	}
 

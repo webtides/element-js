@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-expressions */
 import { fixture, defineCE, assert } from '@open-wc/testing';
-import { choose } from '../../src/renderer/vanilla/util/directives.js';
+import { choose } from '../../src/dom-parts/directives.js';
 
 describe('choose directive', () => {
 	it('renders the matching key for the given value', async () => {
