@@ -30,9 +30,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Removed
 
 -   _BREAKING_ Removed the `lit-html` dependency. `element-js` is now officially dependency free! ([#67](https://github.com/webtides/element-js/pull/67))
--   _BREAKING_ Removed the deprecated `BaseElement` constructor option `childListUpdate`. Please use the "mutationObserverOptions" dictionary instead. See the docs for more info.
--   _BREAKING_ Removed the `hooks` map in the `BaseElement`. Using the hooks() map for lifecycle hooks is deprecated! Please overwrite the existing lifecycle hook functions. See the docs for more info.
--   _BREAKING_ Removed the `computed` map in the `BaseElement`. Using the computed() map for computed properties is deprecated! Please use regular JS getters and return the computed value. See the docs for more info.
+-   _BREAKING_ Removed the deprecated `BaseElement` constructor option `childListUpdate`. Please use the "mutationObserverOptions" dictionary instead. See the docs for more info. ([#99](https://github.com/webtides/element-js/pull/99))
+-   _BREAKING_ Removed the `hooks` map in the `BaseElement`. Using the hooks() map for lifecycle hooks is deprecated! Please overwrite the existing lifecycle hook functions. See the docs for more info. ([#99](https://github.com/webtides/element-js/pull/99))
+-   _BREAKING_ Removed the `computed` map in the `BaseElement`. Using the computed() map for computed properties is deprecated! Please use regular JS getters and return the computed value. See the docs for more info. ([#99](https://github.com/webtides/element-js/pull/99))
 
 ## [0.7.3] - 2023-03-07
 
