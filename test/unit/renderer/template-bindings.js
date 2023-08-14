@@ -343,7 +343,6 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 			const directive = defineDirective(
 				class extends Directive {
 					update(foo) {
-						console.log('foo attribute', this.node.getAttribute('foo'));
 						this.node.setAttribute('foo', foo);
 					}
 				},
