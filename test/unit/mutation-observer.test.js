@@ -26,14 +26,6 @@ const subtreeObserverTag = defineCE(
 	},
 );
 
-const deprecatedChildListUpdateTag = defineCE(
-	class extends UpdateCountElement {
-		constructor() {
-			super({ childListUpdate: false });
-		}
-	},
-);
-
 describe('mutation-observer', () => {
 	it('requests an update when an attribute is changed from outside', async () => {
 		const el = await fixture(`<${tag} count="0"></${tag}>`);
@@ -87,17 +79,5 @@ describe('mutation-observer', () => {
 		el.removeChild(el.querySelector('#remove'));
 		await oneEvent(el, 'afterUpdate');
 		assert.equal(el.updateCount, 1);
-	});
-
-	// TODO: remove test once "childListUpdate" has been removed from options completely
-	it('can disable requesting updates when a child node has been added via deprecated "childListUpdate" option', async () => {
-		const el = await fixture(`<${deprecatedChildListUpdateTag}></${deprecatedChildListUpdateTag}>`);
-		el.innerHTML = `<span>i am nested</span>`;
-		// TODO: is it correct or even right that the "requestUpdate" in combination with mutation observer will take two animation frames ?!
-		// from my research the mutation observer should call the callback within the same frame
-		// to test this behaviour remove one call to "nextFrame" and comment out the workaround in BaseElement.js:28
-		await nextFrame();
-		await nextFrame();
-		assert.equal(el.updateCount, 0);
 	});
 });

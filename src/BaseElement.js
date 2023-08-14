@@ -26,13 +26,6 @@ class BaseElement extends HTMLElement {
 			propertyOptions: {},
 			...options,
 		};
-
-		if (options.childListUpdate !== undefined && options.childListUpdate !== null) {
-			this._options.mutationObserverOptions.childList = options.childListUpdate;
-			console.warn(
-				`[${this.localName}] Using the "childListUpdate" option is deprecated and will be removed before 1.0! Please use the "mutationObserverOptions" dictionary instead. See the docs for more info`,
-			);
-		}
 	}
 
 	connectedCallback() {
@@ -41,9 +34,6 @@ class BaseElement extends HTMLElement {
 
 		// define all properties to "this"
 		this.defineProperties();
-
-		// define all computed properties to "this"
-		this.defineComputedProperties();
 
 		// define context
 		this.definePropertyInjection();
@@ -389,11 +379,6 @@ class BaseElement extends HTMLElement {
 		});
 	}
 
-	// Deprecated
-	hooks() {
-		return {};
-	}
-
 	// Connected lifecycle hook
 	connected() {}
 
@@ -408,14 +393,6 @@ class BaseElement extends HTMLElement {
 
 	// Triggers a lifecycle hook based on the name
 	triggerHook(name) {
-		if (this.hooks && name in this.hooks()) {
-			console.warn(
-				`[${this.localName}] Using the hooks() map for lifecycle hooks is deprecated! Please overwrite the existing lifecycle hook functions. See the docs for more info`,
-			);
-			this.hooks()[name]();
-			return;
-		}
-
 		if (name in this) {
 			this[name]();
 		}
@@ -430,25 +407,6 @@ class BaseElement extends HTMLElement {
 	 */
 	watch() {
 		return {};
-	}
-
-	// Deprecated
-	computed() {
-		return {};
-	}
-
-	// Deprecated
-	defineComputedProperties() {
-		Object.keys(this.computed()).forEach((prop) => {
-			if (!this.hasOwnProperty(prop)) {
-				console.warn(
-					`[${this.localName}] Using the computed() map for computed properties is deprecated! Please use regular JS getters and return the computed value. See the docs for more info`,
-				);
-				Object.defineProperty(this, prop, {
-					get: () => this.computed()[prop](),
-				});
-			}
-		});
 	}
 
 	/**
