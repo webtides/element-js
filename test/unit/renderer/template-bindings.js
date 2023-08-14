@@ -1,10 +1,11 @@
 import { fixture, assert, nextFrame, oneEvent } from '@open-wc/testing';
 import { render } from '../../../src/dom-parts/render';
+import { defineDirective, Directive } from '../../../src/util/Directive';
 
 // TODO: for testing that SSR and CSR will render the same thing, it would be good to test with whitespace and comment markers to make sure that they perfectly match!
 export const stripCommentMarkers = (html) =>
 	html
-		.replace(/<!--(\/)?(dom|template)-part(-\d+)?(:(@|.|\?)?\w+(=.*)?)?-->/g, '')
+		.replace(/<!--(\/)?(dom|template)-part(-\d+)?(:(@|.|\?)?\w+(=.*)?)?|(\$)?-->/g, '')
 		.replace(/\s+/g, ' ')
 		.replaceAll('> ', '>')
 		.trim();
@@ -307,6 +308,51 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 				stripCommentMarkers(templateResult.toString()),
 				'CSR template does not match SSR template',
 			);
+		});
+
+		it('does not render anything for empty directives', async () => {
+			const el = document.createElement('div');
+			const directive = defineDirective(class extends Directive {});
+			const templateResult = html`<div ${directive()}>Text</div>`;
+			render(templateResult, el);
+			assert.equal(stripCommentMarkers(el.innerHTML), '<div>Text</div>');
+			assert.equal(
+				stripCommentMarkers(el.innerHTML.replace('<div>', '<div >')),
+				stripCommentMarkers(templateResult.toString()),
+				'CSR template does not match SSR template',
+			);
+		});
+
+		it('can have directives at attribute positions that modify the node/element', async () => {
+			const el = document.createElement('div');
+			const directive = defineDirective(
+				class extends Directive {
+					update(foo) {
+						this.node.setAttribute('foo', foo);
+					}
+				},
+			);
+			const templateResult = html`<div ${directive('bar')}>Text</div>`;
+			render(templateResult, el);
+			assert.equal(stripCommentMarkers(el.innerHTML), '<div foo="bar">Text</div>');
+			// Note: we don't test SSR = CSR here because directives probably need DOM methods to do things and should not run on the server.
+		});
+
+		it('can have update directives at attribute positions that modify the node/element', async () => {
+			const el = document.createElement('div');
+			const directive = defineDirective(
+				class extends Directive {
+					update(foo) {
+						console.log('foo attribute', this.node.getAttribute('foo'));
+						this.node.setAttribute('foo', foo);
+					}
+				},
+			);
+			render(html`<div ${directive('bar')}>Text</div>`, el);
+			assert.equal(stripCommentMarkers(el.innerHTML), '<div foo="bar">Text</div>');
+
+			render(html`<div ${directive('baz')}>Text</div>`, el);
+			assert.equal(stripCommentMarkers(el.innerHTML), '<div foo="baz">Text</div>');
 		});
 
 		// TODO: it is actually working but somehow in the tests the DOM element won't update...

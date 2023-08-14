@@ -3,6 +3,7 @@ import { Part } from './Part.js';
 import { TemplateResult } from './TemplateResult.js';
 import { AttributePart } from './AttributePart.js';
 import { ChildNodePart } from './ChildNodePart.js';
+import { NodePart } from './NodePart.js';
 
 /** @type {Map<TemplateStringsArray, Part[]>} */
 const partsCache = new WeakMap();
@@ -117,6 +118,9 @@ export class TemplatePart extends Part {
 						return previousAttributePart;
 					}
 					return (previousAttributePart = new AttributePart(node, part.name, part.initialValue));
+				}
+				if (part.type === 'directive') {
+					return new NodePart(node, templateResult.values[index]);
 				}
 
 				throw `cannot map part: ${part}`;

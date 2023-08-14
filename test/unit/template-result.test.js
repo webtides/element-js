@@ -4,6 +4,7 @@ import { html } from '../../src/dom-parts/html.js';
 import { convertStringToTemplate } from '../../src/util/DOMHelper';
 import { render } from '../../src/dom-parts/render';
 import { stripCommentMarkers } from './renderer/template-bindings.js';
+import { defineDirective, Directive } from "../../src/util/Directive";
 
 export const stripWhitespace = (html) => html.replace(/\s+/g, ' ').replaceAll('> ', '>').trim();
 
@@ -86,6 +87,16 @@ describe(`TemplateResult.createTemplateString()`, () => {
 			'<!--template-part--><!--dom-part-0:id=\x03--><!--dom-part-1:class=\x03--><div id="" class=""><!--dom-part-2--><!--/dom-part-2--></div><!--/template-part-->',
 		);
 	});
+
+	it('adds placeholders as comment nodes before the node for directives at attribute positions', async () => {
+		const directive = defineDirective(class extends Directive {});
+		const templateResult = html`<div ${directive()}>Text</div>`;
+		const templateString = createTemplateString(templateResult.strings);
+		assert.equal(
+			stripWhitespace(templateString),
+			'<!--template-part--><!--dom-part-0$--><div>Text</div><!--/template-part-->',
+		);
+	});
 });
 
 describe('TemplateResult.parseParts()', () => {
@@ -113,7 +124,7 @@ describe('TemplateResult.parseParts()', () => {
 		assert.deepEqual(parts, [{ type: 'attribute', path: [2], name: 'class', initialValue: '\x03' }]);
 	});
 
-	it('creates multiple attribute parts for interpolations inside an attributes', async () => {
+	it('creates multiple attribute parts for interpolations inside multiple attributes', async () => {
 		const templateResult = html`<div id="${1}" class="${'active'}">Text</div>`;
 		const documentFragment = convertStringToTemplate(templateResult.templateString);
 		const childNodes = [...documentFragment.childNodes];
@@ -124,7 +135,7 @@ describe('TemplateResult.parseParts()', () => {
 		]);
 	});
 
-	it('creates multiple attribute parts for interpolations inside an one attributes', async () => {
+	it('creates multiple attribute parts for interpolations inside a single attributes', async () => {
 		const templateResult = html`<div class="${'some'} other ${'name'}">Text</div>`;
 		const documentFragment = convertStringToTemplate(templateResult.templateString);
 		const childNodes = [...documentFragment.childNodes];
@@ -133,6 +144,15 @@ describe('TemplateResult.parseParts()', () => {
 			{ type: 'attribute', path: [2], name: 'class', initialValue: '\x03 other \x03' },
 			{ type: 'attribute', path: [3], name: 'class', initialValue: '\x03 other \x03' },
 		]);
+	});
+
+	it('creates a node part for an interpolation at an attribute position', async () => {
+		const directive = defineDirective(class extends Directive {});
+		const templateResult = html`<div ${directive()}>Text</div>`;
+		const documentFragment = convertStringToTemplate(templateResult.templateString);
+		const childNodes = [...documentFragment.childNodes];
+		const parts = templateResult.parseParts(childNodes);
+		assert.deepEqual(parts, [{ type: 'directive', path: [2] }]);
 	});
 });
 
@@ -191,6 +211,15 @@ describe('TemplateResult.toString()', () => {
 		assert.equal(
 			stripWhitespace(templateResult.toString()),
 			'<!--template-part--><!--dom-part-0:id=\x03--><!--dom-part-1:class=\x03--><div id="1" class="some"><!--dom-part-2-->Text<!--/dom-part-2--></div><!--/template-part-->',
+		);
+	});
+
+	it('adds placeholders as comment nodes before the node for directives at attribute positions', async () => {
+		const directive = defineDirective(class extends Directive {});
+		const templateResult = html`<div ${directive()}>Directive</div>`;
+		assert.equal(
+			stripWhitespace(templateResult.toString()),
+			'<!--template-part--><!--dom-part-0$--><div >Directive</div><!--/template-part-->',
 		);
 	});
 

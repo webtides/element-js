@@ -5,7 +5,7 @@ import { TemplatePart } from './TemplatePart.js';
 const voidElements = /^(?:area|base|br|col|embed|hr|img|input|link|meta|source|track|wbr)$/i;
 const elements = /<([a-z]+[a-z0-9:._-]*)([^>]*?)(\/?)>/g;
 // TODO: v this will not match any values with escaped quotes like onClick='console.log("\'test")'
-const attributes = /([^\s]*)=((?:")[^"]*(?:")|(?:')[^']*(?:')|[^\s\/>]*)/g;
+const attributes = /([^\s]*)=((?:")[^"]*(?:")|(?:')[^']*(?:')|[^\s\/>]*)|([^\s\/>]*)/g;
 const partPositions = /[\x01\x02]/g;
 // \x01 Node.ELEMENT_NODE
 // \x02 Node.ATTRIBUTE_NODE
@@ -22,6 +22,7 @@ const interpolation = new RegExp(`(<!--dom-part-(\\d+)--><!--/dom-part-(\\d+)-->
  * @returns {string} X/HTML with prefixed comments or attributes
  */
 export const createTemplateString = (templateStrings, attributePlaceholders = '') => {
+	// TODO: make it easier to identify attribute and node parts for SSR and leave the comments at those positions to be replaced in toString()
 	let partIndex = 0;
 	// join all interpolations (for values) with a special placeholder and remove any whitespace
 	let template = templateStrings.join('\x01').trim();
@@ -30,10 +31,14 @@ export const createTemplateString = (templateStrings, attributePlaceholders = ''
 		let elementTagWithAttributes = name + attributesString.replaceAll('\x01', attributePlaceholders).trimEnd();
 		if (trailingSlash.length) elementTagWithAttributes += voidElements.test(name) ? ' /' : '></' + name;
 		// collect all attribute parts so that we can place matching comment nodes
-		const attributeParts = attributesString.replace(attributes, (attribute, name, valueWithQuotes) => {
+		const attributeParts = attributesString.replace(attributes, (attribute, name, valueWithQuotes, directive) => {
+			if (directive) {
+				return `<!--\x02$-->`;
+			}
+
 			// remove quotes from attribute value to normalize the value
 			const value =
-				valueWithQuotes.startsWith('"') || valueWithQuotes.startsWith("'")
+				valueWithQuotes?.startsWith('"') || valueWithQuotes?.startsWith("'")
 					? valueWithQuotes.slice(1, -1)
 					: valueWithQuotes;
 			const partsCount = (attribute.match(/\x01/g) || []).length;
@@ -202,10 +207,14 @@ export class TemplateResult {
 						break;
 				}
 			} else {
-				// AttributePart in the middle of an attribute value
+				// AttributePart in the middle of an attribute value or NodePart
 				parts.push((value) => {
 					let result = pre;
-					if (value != null) {
+					// TODO: we currently cannot distinguish between NodeParts and AttributeParts before
+					if (isObjectLike(value) && value.directiveClass) {
+						// NodePart
+						// result += encodeAttribute(isObjectLike(value) ? JSON.stringify(value) : value);
+					} else if (value != null) {
 						result += encodeAttribute(isObjectLike(value) ? JSON.stringify(value) : value);
 					}
 					return result;
@@ -271,6 +280,10 @@ export class TemplateResult {
 					currentPart = undefined;
 					parts.push({ type: 'attribute', path: getNodePath(node), name: name, initialValue });
 				}
+				if (/^dom-part-\d+\$/.test(node.data)) {
+					currentPart = undefined;
+					parts.push({ type: 'directive', path: getNodePath(node) });
+				}
 			}
 			return parts;
 		};
@@ -281,12 +294,15 @@ export class TemplateResult {
 		if (parts.length !== this.strings.length - 1) {
 			throw {
 				name: 'ParseTemplateError',
-				message: 'Could not parse parts from template correctly. Parts length has not the expected length.',
-				strings: this.strings,
-				templateString: this.templateString,
-				childNodes,
-				template,
-				parts,
+				message:
+					'Could not parse parts from template correctly. Parts length has not the expected length. -> ' +
+					JSON.stringify({
+						strings: this.strings,
+						templateString: this.templateString,
+						childNodes,
+						template,
+						parts,
+					}),
 			};
 		}
 
