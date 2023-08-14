@@ -4,9 +4,7 @@
  * @param {Element} domNode
  */
 const render = (template, domNode) => {
-	console.time('diff');
 	template.renderInto(domNode);
-	console.timeEnd('diff');
 };
 
 export { render };
