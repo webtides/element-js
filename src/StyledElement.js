@@ -33,14 +33,6 @@ class StyledElement extends BaseElement {
 		if (supportsAdoptingStyleSheets() && this._options.shadowRender) {
 			// adopting does only make sense in shadow dom. Fall back to append for light elements
 			this.adoptStyleSheets();
-		} else if (this._options.shadowRender && window.ShadyCSS !== undefined) {
-			// if shadowRoot is polyfilled we use ShadyCSS to copy scoped styles to <head>
-			window.ShadyCSS.ScopingShim.prepareAdoptedCssText(this._styles, this.localName);
-		}
-
-		// if shadowRoot is polyfilled - scope element template
-		if (window.ShadyCSS !== undefined) {
-			window.ShadyCSS.styleElement(this);
 		}
 	}
 
@@ -52,7 +44,7 @@ class StyledElement extends BaseElement {
 		if (!supportsAdoptingStyleSheets() || this._options.shadowRender === false) {
 			// append stylesheets to template if not already adopted
 			const appendableStyles = [...this._styles];
-			if (this._options.shadowRender && this._options.adoptGlobalStyles && !window.ShadyCSS) {
+			if (this._options.shadowRender && this._options.adoptGlobalStyles) {
 				appendableStyles.unshift(StyledElement.globalStyles?.textContent ?? '');
 			}
 			this.appendStyleSheets(appendableStyles);
