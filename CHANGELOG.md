@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
-## [1.0.0-alpha.1] - 2023-??-??
+## [1.0.0-alpha.1] - 2023-08-15
 
 ### Added
 
