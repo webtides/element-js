@@ -39,6 +39,10 @@ class TemplateElement extends StyledElement {
 		}
 	}
 
+	/**
+	 * Get the root element - either the element or the shadow root
+	 * @returns {ShadowRoot | HTMLElement}
+	 */
 	getRoot() {
 		return this.shadowRoot !== null ? this.shadowRoot : this;
 	}

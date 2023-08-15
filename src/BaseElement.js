@@ -5,7 +5,44 @@ import { Store } from './util/Store.js';
 export { defineElement } from './util/defineElement.js';
 export { toString } from './util/toString.js';
 
+/**
+ * Options object for the BaseElement
+ * @typedef {Object} BaseElementOptions
+ * @property {boolean} [autoUpdate] - When set to true the element will call the requestUpdate() method on the instance every time a property or attribute was changed. This will re-evaluate everything on the element and trigger a re-render (if a template is provided) and trigger the watchers for the affected properties/attributes. Default is `true`
+ * @property {boolean} [deferUpdate] - When set to true the element will call the requestUpdate() method on the instance every time a property or attribute was changed. This will re-evaluate everything on the element and trigger a re-render (if a template is provided) and trigger the watchers for the affected properties/attributes. Default is `false`
+ * @property {MutationObserverOptions} [mutationObserverOptions]
+ * @property {PropertyOptions} [propertyOptions]
+ */
+
+/**
+ * Options object for the BaseElement mutationObserverOptions option
+ * @typedef {Object} MutationObserverOptions
+ * @property {boolean} [childList] - When childList is set to true the element will also call the requestUpdate method for childList modifications (eg. Adding or removing child elements). Default is `true`
+ * @property {boolean} [subtree] - Please note that observing subtree mutations might have performance implications and use it only if necessary. Default is `false`
+ */
+
+/**
+ * Options object for the BaseElement propertyOptions option
+ * @typedef {Object} PropertyOptions
+ * @property {undefined | boolean | function} [reflect] - When set to true the element will reflect property changes back to attributes if the attribute was not present when connecting the element. By default, all attributes that are present when connecting the element will be reflected anyway. Default is `undefined`
+ * @property {undefined | boolean | function} [parse] - When set to false the element will not automatically try to parse the attributes string value to a complex type (number, array, object). Default is `undefined`
+ * @property {undefined | boolean | function} [notify] - When set to true the element will dispatch CustomEvents for every property/attribute change. The event name will be the property name all lowercase and camel to dashes with a postfix of -changed. Default is `undefined`
+ */
+
+/**
+ * Options object for updating properties
+ * @typedef {Object} PropertyUpdateOptions
+ * @property {boolean} [notify] - Whether the update should trigger the lifecycle methods. The default is `true`
+ * @property {string} property - The property name
+ * @property {any} newValue - The new value for the property
+ * @property {string} newValueString - The new value as `string` for the property (for comparison reasons)
+ * @property {any} oldValue - The old value for the property
+ */
+
 class BaseElement extends HTMLElement {
+	/**
+	 * @param {BaseElementOptions} options
+	 */
 	constructor(options = {}) {
 		super();
 		this.$refs = {};
@@ -28,6 +65,9 @@ class BaseElement extends HTMLElement {
 		};
 	}
 
+	/**
+	 * Native `connectedCallback` of the HTMLElement
+	 */
 	connectedCallback() {
 		// define all attributes to "this" as properties
 		this.defineAttributesAsProperties();
@@ -54,6 +94,9 @@ class BaseElement extends HTMLElement {
 		}
 	}
 
+	/**
+	 * Define a MutationObserver on the element to get notified on attribute changes and childList updates according to the options specified via the constructor options.
+	 */
 	defineObserver() {
 		// see: https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver#Example_usage
 		this._mutationObserver = new MutationObserver((mutations) => {
@@ -86,6 +129,9 @@ class BaseElement extends HTMLElement {
 		});
 	}
 
+	/**
+	 * Native `disconnectedCallback` of the HTMLElement
+	 */
 	disconnectedCallback() {
 		// remove events for elements in the component
 		this.removeEvents();
@@ -107,6 +153,11 @@ class BaseElement extends HTMLElement {
 		this.triggerHook('disconnected');
 	}
 
+	/**
+	 * Request and batch an asynchronous update cycle
+	 * @param {PropertyUpdateOptions} options
+	 * @returns {Promise<unknown>}
+	 */
 	requestUpdate(options = { notify: true }) {
 		if (options.notify === true) {
 			this.triggerHook('beforeUpdate');
@@ -136,6 +187,7 @@ class BaseElement extends HTMLElement {
 	 * This should be called by the template component AFTER adding the template to
 	 * the DOM.
 	 * Here we will register the events and the refs for the element.
+	 * @param {PropertyUpdateOptions} options
 	 */
 	update(options = { notify: true }) {
 		this.registerEventsAndRefs();
@@ -202,6 +254,9 @@ class BaseElement extends HTMLElement {
 	 * Define a property on the element
 	 * Will trigger watch() function when a property was changed
 	 * Will trigger update() when a property was changed
+	 * @param {string} property
+	 * @param {any} value
+	 * @param {boolean} reflectAttribute
 	 */
 	defineProperty(property, value, reflectAttribute = false) {
 		if (value instanceof Store) {
@@ -265,12 +320,10 @@ class BaseElement extends HTMLElement {
 	}
 
 	/**
-	 * call the watch callbacks on property changes
-	 *
-	 * @param context is the elements instance
-	 * @param property property that changes
-	 * @param newValue
-	 * @param oldValue
+	 * Call the watch callbacks on property changes
+	 * @param {string} property property that changes
+	 * @param {any} newValue
+	 * @param {any} oldValue
 	 */
 	callPropertyWatcher(property, newValue, oldValue) {
 		// notify watched properties (after update())
@@ -279,12 +332,11 @@ class BaseElement extends HTMLElement {
 			watch[property](newValue, oldValue);
 		}
 	}
+
 	/**
-	 * notify property observer via change event
-	 *
-	 * @param context is the elements instance
-	 * @param property property that changes
-	 * @param newValue
+	 * Notify property observer via change event
+	 * @param {string} property property that changes
+	 * @param {any} newValue
 	 */
 	notifyPropertyChange(property, newValue) {
 		// dispatch change event
@@ -296,6 +348,10 @@ class BaseElement extends HTMLElement {
 		}
 	}
 
+	/**
+	 * Reflects a property as attribute on the element
+	 * @param {PropertyUpdateOptions} options
+	 */
 	reflectProperty(options) {
 		const { property, newValue } = options;
 		const newValueString = options.newValueString || JSON.stringify(newValue);
@@ -344,9 +400,8 @@ class BaseElement extends HTMLElement {
 
 	/**
 	 * Helper Function to initialize the context requests
-	 *
-	 * @param propertyName
-	 * @param valueOrCallback
+	 * @param {string} propertyName
+	 * @param {any | function} valueOrCallback
 	 */
 	requestContext(propertyName, valueOrCallback) {
 		this.dispatch('request-context', { [propertyName]: valueOrCallback }, true);
@@ -356,8 +411,7 @@ class BaseElement extends HTMLElement {
 	 * Internal Context Request Handler
 	 * This will check if the current/receiving instance actually provides a value under the requested name.
 	 * If there is something to provide it will either assign the value to the requesting element or call the callback.
-	 *
-	 * @param event
+	 * @param {CustomEvent} event
 	 */
 	onRequestContext(event) {
 		const properties = this.properties();
@@ -379,19 +433,30 @@ class BaseElement extends HTMLElement {
 		});
 	}
 
-	// Connected lifecycle hook
+	/**
+	 * Connected lifecycle hook
+	 */
 	connected() {}
 
-	// BeforeUpdate lifecycle hook
+	/**
+	 * BeforeUpdate lifecycle hook
+	 */
 	beforeUpdate() {}
 
-	// AfterUpdate lifecycle hook
+	/**
+	 * AfterUpdate lifecycle hook
+	 */
 	afterUpdate() {}
 
-	// Disconnected lifecycle hook
+	/**
+	 * Disconnected lifecycle hook
+	 */
 	disconnected() {}
 
-	// Triggers a lifecycle hook based on the name
+	/**
+	 * Triggers a lifecycle hook based on the name
+	 * @param {string} name
+	 */
 	triggerHook(name) {
 		if (name in this) {
 			this[name]();
@@ -501,7 +566,14 @@ class BaseElement extends HTMLElement {
 		this.$refs = refsMap;
 	}
 
-	// Helper function for dispatching custom events
+	/**
+	 * Helper function for dispatching custom events
+	 * @param {string} name
+	 * @param {Object} data
+	 * @param {boolean} bubble
+	 * @param {boolean} cancelable
+	 * @param {boolean} composed
+	 */
 	dispatch(name, data, bubble = false, cancelable = false, composed = false) {
 		const event = new CustomEvent(name, {
 			bubbles: bubble,
@@ -512,7 +584,10 @@ class BaseElement extends HTMLElement {
 		this.dispatchEvent(event);
 	}
 
-	// Get the root element
+	/**
+	 * Get the root element
+	 * @returns {HTMLElement}
+	 */
 	getRoot() {
 		return this;
 	}
