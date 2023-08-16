@@ -15,6 +15,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.0.0-alpha.2] - 2023-??-??
+
+### Added
+
+- Added JSDocs for everything in the codebase. This will especially be helpful when using constructor options. 
+
 ## [1.0.0-alpha.1] - 2023-08-15
 
 ### Added
