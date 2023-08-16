@@ -2,6 +2,15 @@ import { BaseElement } from './BaseElement.js';
 import { supportsAdoptingStyleSheets, getShadowParentOrBody } from './util/DOMHelper.js';
 export { i18n } from './util/i18n.js';
 
+/**
+ * Options object for the StyledElement
+ * @typedef {Object} StyledElementOptions
+ * @extends BaseElementOptions
+ * @property {boolean} [shadowRender] - When set to true the element will render the template (if provided) in the Shadow DOM and therefore encapsulate the element and styles from the rest of the document. Default is `false`
+ * @property {[]} [styles] - Via the styles option you can add multiple styles/stylesheets to your element. Default is `[]`
+ * @property {boolean} [adoptGlobalStyles] - When set to true element-js will look for a style element in the global document with an id of "globalStyles" and apply it before any custom/element styles inside the shadow DOM. Default is `true`
+ */
+
 class StyledElement extends BaseElement {
 	static globalStyles = null;
 
@@ -16,6 +25,9 @@ class StyledElement extends BaseElement {
 		}
 	}
 
+	/**
+	 * @param {StyledElementOptions} options
+	 */
 	constructor(options) {
 		super({
 			deferUpdate: false,
@@ -27,6 +39,9 @@ class StyledElement extends BaseElement {
 		this._styles = [...this._options.styles, ...this.styles()];
 	}
 
+	/**
+	 * Overrides the `connectedCallback` to adopt optional styles when the element is connected
+	 */
 	connectedCallback() {
 		super.connectedCallback();
 
@@ -36,10 +51,19 @@ class StyledElement extends BaseElement {
 		}
 	}
 
+	/**
+	 * The styles method is another way to return a list of styles to be adopted when the element is connected.
+	 * You can either provide a list in the constructor options or return it here.
+	 * @returns {string[]}
+	 */
 	styles() {
 		return [];
 	}
 
+	/**
+	 * Overrides the `update` method to adopt optional styles
+	 * @param {PropertyUpdateOptions} options
+	 */
 	update(options) {
 		if (!supportsAdoptingStyleSheets() || this._options.shadowRender === false) {
 			// append stylesheets to template if not already adopted
@@ -52,6 +76,9 @@ class StyledElement extends BaseElement {
 		super.update(options);
 	}
 
+	/**
+	 * Adopt stylesheets
+	 */
 	adoptStyleSheets() {
 		if (!this.constructor['cssStyleSheets']) {
 			this.constructor['cssStyleSheets'] = this._styles.map((style) => {
@@ -79,7 +106,10 @@ class StyledElement extends BaseElement {
 		];
 	}
 
-	// custom polyfill for constructable stylesheets by appending styles to the end of an element
+	/**
+	 * Custom polyfill for constructable stylesheets by appending styles to the end of an element
+	 * @param {string[]} styles
+	 */
 	appendStyleSheets(styles) {
 		const parentDocument = getShadowParentOrBody(this.getRoot());
 		styles.forEach((style, index) => {

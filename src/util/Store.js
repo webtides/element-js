@@ -1,11 +1,14 @@
 import { isObjectLike, deepEquals } from './AttributeParser.js';
-import { BaseElement } from '../BaseElement';
+import { BaseElement } from '../BaseElement.js';
 
 export class Store {
 	_observer = new Set();
 	_singlePropertyMode = false;
 	_state = {};
 
+	/**
+	 * @param {* | object} value
+	 */
 	constructor(value) {
 		// wrap primitives with a generic "value" field to generate getter and setter
 		this._singlePropertyMode = arguments.length > 0 && !isObjectLike(value);
@@ -33,6 +36,11 @@ export class Store {
 		});
 	}
 
+	/**
+	 * Properties to be defined and assigned on the store. Can be overridden in extended classes.
+	 * Properties defined here will also trigger an update cycle when changed.
+	 * @return {{}}
+	 */
 	properties() {
 		return {};
 	}
@@ -40,34 +48,47 @@ export class Store {
 	/**
 	 * When a property as the key was changed in the store, the callback function defined as value
 	 * will be called with `newValue` and `oldValue`
-	 * eg. { property: (oldValue, newValue) => { console.log('property changed!, oldValue, newValue); } }
 	 * @return {{}}
 	 */
 	watch() {
 		return {};
 	}
 
+	/**
+	 * Overrides `valueOf` to automatically return .value
+	 * @returns {* | {}}
+	 */
 	valueOf() {
 		return this._singlePropertyMode ? this._state.value : this._state;
 	}
 
+	/**
+	 * Overrides `toString` to automatically return .value
+	 * @returns {string}
+	 */
 	toString() {
 		return `${this._singlePropertyMode ? this._state.value : this._state}`;
 	}
 
 	/**
-	 * @param {BaseElement|Function} observer
+	 * Add an observer
+	 * @param {BaseElement | Function} observer
 	 */
 	subscribe(observer) {
 		this._observer.add(observer);
 	}
+
 	/**
-	 * @param {BaseElement|Function} observer
+	 * Remove an observer
+	 * @param {BaseElement | Function} observer
 	 */
 	unsubscribe(observer) {
 		this._observer.delete(observer);
 	}
 
+	/**
+	 * Request and batch an asynchronous update cycle
+	 */
 	requestUpdate() {
 		this._observer.forEach(async (observer) => {
 			if (observer instanceof BaseElement) {

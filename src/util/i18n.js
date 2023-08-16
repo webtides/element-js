@@ -1,9 +1,9 @@
 /**
  * Retrieves a translated key from a dictionary on the window object
  * Example: ${i18n('CustomElement.buttonLabel', 'Label')}
- * @param key to be translated
- * @param fallback to be used if key is not defined
- * @return String of the translated key or fallback or original key
+ * @param {string} key - to be translated
+ * @param {string} fallback - to be used if key is not defined
+ * @return {string} - String of the translated key or fallback or original key
  */
 export function i18n(key, fallback) {
 	try {

@@ -1,7 +1,7 @@
 /**
  * Wrapper for defining custom elements so that registering an element multiple times won't crash
- * @param name for the tag
- * @param constructor for the custom element
+ * @param {string} name - name for the element tag
+ * @param {CustomElementConstructor} constructor for the custom element
  */
 export function defineElement(name, constructor) {
 	try {

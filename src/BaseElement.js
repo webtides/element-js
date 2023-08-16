@@ -9,7 +9,7 @@ export { toString } from './util/toString.js';
  * Options object for the BaseElement
  * @typedef {Object} BaseElementOptions
  * @property {boolean} [autoUpdate] - When set to true the element will call the requestUpdate() method on the instance every time a property or attribute was changed. This will re-evaluate everything on the element and trigger a re-render (if a template is provided) and trigger the watchers for the affected properties/attributes. Default is `true`
- * @property {boolean} [deferUpdate] - When set to true the element will call the requestUpdate() method on the instance every time a property or attribute was changed. This will re-evaluate everything on the element and trigger a re-render (if a template is provided) and trigger the watchers for the affected properties/attributes. Default is `false`
+ * @property {boolean} [deferUpdate] - When set to true the element will not call the requestUpdate() method upon connecting and therefore will not render (if template was provided) initially. Default is `true`
  * @property {MutationObserverOptions} [mutationObserverOptions]
  * @property {PropertyOptions} [propertyOptions]
  */
@@ -66,7 +66,9 @@ class BaseElement extends HTMLElement {
 	}
 
 	/**
-	 * Native `connectedCallback` of the HTMLElement
+	 * Overrides the native `connectedCallback` of the HTMLElement to set up and initialize our element.
+	 * This will define the attributes and properties as reactive getters and setter,
+	 * register observers, refs and events.
 	 */
 	connectedCallback() {
 		// define all attributes to "this" as properties

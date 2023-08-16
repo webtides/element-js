@@ -8,8 +8,8 @@ export const TEXT_NODE = 3;
 export const COMMENT_NODE = 8;
 
 /**
- * Gets list of (childNode) indexes for the given node
- * @param node
+ * Gets a list of (childNode) indexes for the given node
+ * @param {Node} node
  * @return {number[]}
  */
 export const getNodePath = (node) => {
@@ -23,6 +23,11 @@ export const getNodePath = (node) => {
 	return path;
 };
 
+/**
+ * Get a list of all parent nodes up the DOM tree
+ * @param {Node} domNode
+ * @returns {Node[]}
+ */
 export function getAllParentNodes(domNode) {
 	let node = domNode.parentElement;
 	let parents = [];
@@ -34,7 +39,12 @@ export function getAllParentNodes(domNode) {
 	return parents;
 }
 
-// https://stackoverflow.com/questions/27453617/how-can-i-tell-if-an-element-is-in-a-shadow-dom
+/**
+ * Gets the parent/root element of a shadow root or the global document body if not in shadow root.
+ * https://stackoverflow.com/questions/27453617/how-can-i-tell-if-an-element-is-in-a-shadow-dom
+ * @param {Node} element
+ * @returns {ShadowRoot | HTMLElement}
+ */
 export function getShadowParentOrBody(element) {
 	if (element instanceof ShadowRoot) {
 		return element;
@@ -50,6 +60,11 @@ export function getShadowParentOrBody(element) {
 
 // TODO: add function for getClosestParentOfNodeType('custom-element')
 
+/**
+ * Get the closest/first parent node that is a custom element
+ * @param {Node} domNode
+ * @returns {Node}
+ */
 export function getClosestParentCustomElementNode(domNode) {
 	const customElementParents = getAllParentNodes(domNode).filter((node) => {
 		return node.localName && node.localName.indexOf('-') !== -1;
@@ -58,19 +73,31 @@ export function getClosestParentCustomElementNode(domNode) {
 	return customElementParents.pop();
 }
 
+/**
+ * Checks whether two nodes are of the same node type
+ * @param {Node} nodeA
+ * @param {Node} nodeB
+ * @returns {boolean}
+ */
 export function isOfSameNodeType(nodeA, nodeB) {
 	if (!nodeA && !nodeA.localName) return false;
 	if (!nodeB && !nodeB.localName) return false;
 	return nodeA.localName === nodeB.localName;
 }
 
-export const supportsAdoptingStyleSheets = () =>
-	'adoptedStyleSheets' in Document.prototype && 'replace' in CSSStyleSheet.prototype;
+/**
+ * Checks if adopting style sheets is supported in browser
+ * @returns {boolean}
+ */
+export const supportsAdoptingStyleSheets = () => {
+	return 'adoptedStyleSheets' in Document.prototype && 'replace' in CSSStyleSheet.prototype;
+};
 
-// for IE11 we are using the ShadyDOM Polyfill. With the polyfill we cannot append stylesheets to the shadowRoot
-export const supportsAppendingStyleSheets = !window.ShadyDOM;
-
-// better hasChildNodes check because the native check will also count for empty whitespace as child nodes... :(
+/**
+ * Better implementation of hasChildNodes check because the native check will also count for empty whitespace as child nodes... :(
+ * @param {Node} node
+ * @returns {boolean}
+ */
 export const hasChildNodes = (node) => {
 	const childNodesLength = node.childNodes.length;
 
@@ -86,7 +113,7 @@ export const hasChildNodes = (node) => {
 };
 
 /**
- * Parses the given template string and returns a real DOM element.
+ * Parses the given string as HTML template and returns a real DOM element
  * @param {string} template
  * @returns {HTMLElement}
  */
@@ -111,8 +138,8 @@ export const convertStringToTemplate = (string) => {
 
 /**
  * Diff the attributes for a live DOM element against a template DOM element
- * @param  {Element} templateElement The new template
- * @param  {Element} domElement The existing DOM node
+ * @param {Element} templateElement - The new template
+ * @param {Element} domElement - The existing DOM node
  */
 export const diffAttributes = function (templateElement, domElement) {
 	// remove or update previous attributes

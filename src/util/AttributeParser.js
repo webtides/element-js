@@ -1,23 +1,48 @@
+/**
+ * Tests if a value is of type `object`
+ * @param {any} value
+ * @returns {boolean}
+ */
 export function isObjectLike(value) {
 	return typeof value == 'object' && value !== null;
 }
 
-export function isJSON(str) {
+/**
+ * Tests if a value can be parsed as JSON
+ * @param {any} value
+ * @returns {boolean}
+ */
+export function isJSON(value) {
 	try {
-		return JSON.parse(str) && !!str;
+		return JSON.parse(value) && !!value;
 	} catch (e) {
 		return false;
 	}
 }
 
+/**
+ * Tests if a value is `boolean`
+ * @param {any} value
+ * @returns {boolean}
+ */
 export function isBoolean(value) {
 	return value === 'true' || value === 'false';
 }
 
+/**
+ * Parses a value to `boolean`
+ * @param {any} value
+ * @returns {boolean}
+ */
 export function parseBoolean(value) {
 	return value === 'true';
 }
 
+/**
+ * Tests if a value is of type `string`
+ * @param {any} value
+ * @returns {boolean}
+ */
 export function isString(value) {
 	return (
 		typeof value === 'string' ||
@@ -25,26 +50,40 @@ export function isString(value) {
 	);
 }
 
+/**
+ * Tests if a value is of type `number`
+ * @param {any} value
+ * @returns {boolean}
+ */
 export function isNumber(value) {
 	return new RegExp('^-?(0|0\\.\\d+|[1-9]\\d*(\\.\\d+)?)$').test(value);
 }
 
+/**
+ * Tests if a value is of type `NaN`
+ * @param {any} value
+ * @returns {boolean}
+ */
 export function isNaN(value) {
 	return Number.isNaN(value);
 }
 
 /**
- * deep compare two values primitive or complex
- *
- * @param valueA
- * @param valueB
+ * Compare two values (deep). It compares primitive or complex values with JSON stringify.
+ * @param {any} valueA
+ * @param {any} valueB
  * @returns {boolean}
  */
-
 export function deepEquals(valueA, valueB) {
 	return JSON.stringify(valueA) === JSON.stringify(valueB);
 }
 
+/**
+ * Parses an attribute value that comes in as a `string` to its corresponding type
+ * @param {string} value
+ * @param {PropertyOptions} options
+ * @returns {string | number | boolean | object | array}
+ */
 export function parseAttribute(value, options = {}) {
 	if (options.parse === false || !isString(value)) {
 		// no-op
@@ -67,7 +106,8 @@ export function parseAttribute(value, options = {}) {
 
 /**
  * Replaces dashed-expression (i.e. some-value) to a camel-cased expression (i.e. someValue)
- * @returns string
+ * @param {string} string
+ * @returns {string}
  */
 export function dashToCamel(string) {
 	if (string.indexOf('-') === -1) return string;
@@ -77,17 +117,16 @@ export function dashToCamel(string) {
 
 /**
  * Replaces camel-cased expression (i.e. someValue) to a dashed-expression (i.e. some-value)
- * @returns string
+ * @param {string} string
+ * @returns {string}
  */
 export function camelToDash(string) {
 	return string.replace(/([A-Z])/g, '-$1').toLowerCase();
 }
 
 /**
- * Decodes an attribute. Can only be encoded with the `encodeAttribute` method which
- * is exported from this file.
- *
- * @param attribute
+ * Decodes an attribute.
+ * @param {string} attribute
  * @returns {string}
  */
 export function decodeAttribute(attribute) {
@@ -99,14 +138,8 @@ export function decodeAttribute(attribute) {
 }
 
 /**
- * Encodes an attribute. Can only be decoded with the `decodeAttribute` method which
- * is exported from this file.
- *
- * This does not use the standard way to encode an attribute, as the dom parser
- * that renders the html would understand and automatically decode it. Which results
- * in non sanitized html output.
- *
- * @param attribute
+ * Encodes an attribute.
+ * @param {string} attribute
  * @returns {string}
  */
 export function encodeAttribute(attribute) {

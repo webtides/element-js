@@ -2,6 +2,9 @@ export class Directive {
 	/** @type {Element} */
 	node = undefined;
 
+	/**
+	 * @param {Node} node
+	 */
 	constructor(node) {
 		this.node = node;
 	}
