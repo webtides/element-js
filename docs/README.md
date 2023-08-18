@@ -57,6 +57,10 @@ load them yourself. For more information see [Bundling/Publishing](#bundlingpubl
 > like `Babel`. For a list of `Babel` plugins that are used, see [ES6 Classes](#es6-classes). For more information on
 > bundling and publishing your elements see [Bundling/Publishing](#bundlingpublishing).
 
+### Getting Started
+
++ #### [Upgrade Guide](./getting-started/upgrade-to-v1.md)
+
 ### Element Core Concepts
 
 + #### [ES6 Classes & Options](./concepts/classes.md)
