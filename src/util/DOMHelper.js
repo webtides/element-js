@@ -6,6 +6,8 @@ export const ATTRIBUTE_NODE = 2;
 export const TEXT_NODE = 3;
 /* A Comment node, such as <!-- … --> */
 export const COMMENT_NODE = 8;
+/* A Document Fragment, a document without a parent */
+export const DOCUMENT_FRAGMENT_NODE = 11;
 
 /**
  * Gets a list of (childNode) indexes for the given node
@@ -124,13 +126,15 @@ export const convertStringToHTML = (template) => {
 };
 
 /**
- * Parses the given string and returns a DocumentFragment
- * which contains the DOM subtree representing the <template> element's template contents.
+ * Parses the given string and returns a DocumentFragment which contains the DOM subtree
+ * representing the <template> element's template contents.
+ * Will fall back to string if not in a Browser environment.
  * @param {string} string
- * @return {DocumentFragment}
+ * @return {DocumentFragment | string}
  */
 export const convertStringToTemplate = (string) => {
 	const template = globalThis.document?.createElement('template');
+	if (!template) return string;
 	// TODO: ensure that SSRed and CSRed templates have the same amount of whitespace text nodes
 	template.innerHTML = string.trimStart().trimEnd();
 	return template.content;

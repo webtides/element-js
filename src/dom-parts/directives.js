@@ -1,6 +1,6 @@
 import { camelToDash, decodeAttribute, encodeAttribute } from '../util/AttributeParser.js';
-import { TemplateResult } from './TemplateResult';
-import { convertStringToHTML } from '../util/DOMHelper';
+import { TemplateResult } from './TemplateResult.js';
+import { convertStringToTemplate } from '../util/DOMHelper.js';
 
 /**
  * Maps a list of classes to an element from an object.
@@ -55,12 +55,13 @@ const choose = (value, cases, defaultCase) => {
 /**
  * Renders a given string as HTML instead of text
  * @param {string} string
- * @returns {function(): Node}
+ * @returns {function(): DocumentFragment | string}
  */
 const unsafeHTML = (string) => {
-	// TODO: write tests for this...
-	// I mean should the string always have a single root element? Or could it also handle multiple root elements?!
-	return () => convertStringToHTML(string).firstChild;
+	const fragment = convertStringToTemplate(string);
+	if (typeof fragment === 'string') return () => fragment;
+	const importedFragment = globalThis.document?.importNode(fragment, true);
+	return () => importedFragment;
 };
 
 /**
@@ -69,6 +70,7 @@ const unsafeHTML = (string) => {
  * @returns {function(): string}
  */
 const spreadAttributes = (attributes) => {
+	// TODO: this can only work in SSR, for CSR we should make a Directive class
 	return () => {
 		return Object.keys(attributes)
 			.map((key) => {
