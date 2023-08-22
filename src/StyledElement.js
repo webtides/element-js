@@ -17,7 +17,7 @@ class StyledElement extends BaseElement {
 	static updateGlobalStyles() {
 		// this is a runtime dependency so that every shadow dom can make use of global css
 		// we assume these styles to be inlined into the document
-		StyledElement.globalStyles = document.getElementById('globalStyles');
+		StyledElement.globalStyles = globalThis.document?.getElementById('globalStyles');
 
 		if (StyledElement.globalStyles && StyledElement['globalStyleSheet']) {
 			//updates already adopted global styles
@@ -117,7 +117,7 @@ class StyledElement extends BaseElement {
 
 			// only append stylesheet if not already appended to shadowRoot or document
 			if (!parentDocument.querySelector(`#${identifier}`)) {
-				const styleElement = document.createElement('style');
+				const styleElement = globalThis.document?.createElement('style');
 				styleElement.id = identifier;
 				styleElement.style.display = 'none';
 				styleElement.textContent = style;
