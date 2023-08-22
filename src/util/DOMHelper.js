@@ -128,13 +128,11 @@ export const convertStringToHTML = (template) => {
 /**
  * Parses the given string and returns a DocumentFragment which contains the DOM subtree
  * representing the <template> element's template contents.
- * Will fall back to string if not in a Browser environment.
  * @param {string} string
- * @return {DocumentFragment | string}
+ * @return {DocumentFragment}
  */
 export const convertStringToTemplate = (string) => {
 	const template = globalThis.document?.createElement('template');
-	if (!template) return string;
 	// TODO: ensure that SSRed and CSRed templates have the same amount of whitespace text nodes
 	template.innerHTML = string.trimStart().trimEnd();
 	return template.content;

@@ -1,6 +1,6 @@
 import { camelToDash, decodeAttribute, encodeAttribute } from '../util/AttributeParser.js';
 import { TemplateResult } from './TemplateResult.js';
-import { convertStringToTemplate } from '../util/DOMHelper.js';
+import { convertStringToHTML, convertStringToTemplate } from '../util/DOMHelper.js';
 import { defineDirective, Directive } from '../util/Directive.js';
 
 /**
@@ -56,13 +56,13 @@ const choose = (value, cases, defaultCase) => {
 /**
  * Renders a given string as HTML instead of text
  * @param {string} string
- * @returns {function(): DocumentFragment | string}
+ * @returns {function(): Node | string}
  */
 const unsafeHTML = (string) => {
-	const fragment = convertStringToTemplate(string);
-	if (typeof fragment === 'string') return () => fragment;
-	const importedFragment = globalThis.document?.importNode(fragment, true);
-	return () => importedFragment;
+	if (!globalThis.DOMParser) return () => string;
+	const node = convertStringToHTML(string).firstChild;
+	const importedNode = globalThis.document?.importNode(node, true);
+	return () => importedNode;
 };
 
 /**

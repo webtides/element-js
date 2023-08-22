@@ -15,17 +15,8 @@ describe('unsafeHTML directive', () => {
 	// 	assert.equal(typeof unsafeContent, 'string');
 	// });
 
-	it('returns a DocumentFragment as a result of the function CSR', async () => {
+	it('returns a Node as a result of the function CSR', async () => {
 		const unsafeContent = unsafeHTML(`<strong>Unsafe HTML</strong>`);
-		assert.equal(unsafeContent().nodeType, DOCUMENT_FRAGMENT_NODE);
-	});
-
-	it('can have one or multiple child nodes in CSR', async () => {
-		const unsafeContent1 = unsafeHTML(`<strong>Unsafe HTML</strong>`);
-		const unsafeContent2 = unsafeHTML(`<strong>Unsafe HTML 1</strong><strong>Unsafe HTML 2</strong>`);
-		assert.equal(unsafeContent1().childElementCount, 1);
-		assert.equal(unsafeContent2().childElementCount, 2);
-		assert.equal(unsafeContent2().firstElementChild.innerHTML, 'Unsafe HTML 1');
-		assert.equal(unsafeContent2().lastElementChild.innerHTML, 'Unsafe HTML 2');
+		assert.equal(unsafeContent().nodeType, ELEMENT_NODE);
 	});
 });
