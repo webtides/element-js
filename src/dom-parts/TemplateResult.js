@@ -213,7 +213,8 @@ export class TemplateResult {
 					// TODO: we currently cannot distinguish between NodeParts and AttributeParts before
 					if (isObjectLike(value) && value.directiveClass) {
 						// NodePart
-						// result += encodeAttribute(isObjectLike(value) ? JSON.stringify(value) : value);
+						const directive = new value.directiveClass();
+						result += directive.stringify(...value.values);
 					} else if (value != null) {
 						result += encodeAttribute(isObjectLike(value) ? JSON.stringify(value) : value);
 					}

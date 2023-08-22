@@ -13,6 +13,16 @@ export class Directive {
 	 * @abstract
 	 */
 	update() {}
+
+	// TODO: this is somewhat custom... maybe we could set the initial values in the constructor and then simply override the default toString() method?!
+	/**
+	 * Implement the stringify method and return a string for rendering the directive in SSR mode
+	 * @param {...any} values
+	 * @returns {string}
+	 */
+	stringify(...values) {
+		return '';
+	}
 }
 
 /**

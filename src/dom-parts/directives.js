@@ -1,6 +1,7 @@
 import { camelToDash, decodeAttribute, encodeAttribute } from '../util/AttributeParser.js';
 import { TemplateResult } from './TemplateResult.js';
 import { convertStringToTemplate } from '../util/DOMHelper.js';
+import { defineDirective, Directive } from '../util/Directive.js';
 
 /**
  * Maps a list of classes to an element from an object.
@@ -66,21 +67,43 @@ const unsafeHTML = (string) => {
 
 /**
  * Renders multiple attributes as key="value" pairs from a map of attributes
- * @param {Object.<string, any>} attributes
- * @returns {function(): string}
  */
-const spreadAttributes = (attributes) => {
-	// TODO: this can only work in SSR, for CSR we should make a Directive class
-	return () => {
+export class SpreadAttributesDirective extends Directive {
+	/**
+	 * @param {Object.<string, any>} attributes
+	 */
+	update(attributes) {
+		// TODO: what if the attribute was already there..?!
+		// TODO: what if the attribute was there from a previous render/update, but not anymore?!
+		for (const name of Object.keys(attributes)) {
+			const value = attributes[name];
+			this.node.setAttribute(
+				camelToDash(name),
+				encodeAttribute(typeof value !== 'string' ? JSON.stringify(value) : value),
+			);
+		}
+	}
+
+	/**
+	 * @param {Object.<string, any>} attributes
+	 * @returns {string}
+	 */
+	stringify(attributes) {
 		return Object.keys(attributes)
-			.map((key) => {
-				let value = attributes[key];
-				return `${camelToDash(key)}='${encodeAttribute(
+			.map((name) => {
+				let value = attributes[name];
+				return `${camelToDash(name)}='${encodeAttribute(
 					typeof value !== 'string' ? JSON.stringify(value) : value,
 				)}'`;
 			})
 			.join(' ');
-	};
-};
+	}
+}
+
+/**
+ * Renders multiple attributes as key="value" pairs from a map of attributes
+ * @param {Object.<string, any>} attributes
+ */
+const spreadAttributes = defineDirective(SpreadAttributesDirective);
 
 export { classMap, styleMap, when, choose, unsafeHTML, spreadAttributes };
