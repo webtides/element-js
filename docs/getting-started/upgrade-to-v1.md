@@ -160,3 +160,32 @@ class MyElement extends BaseElement {
     }
 }
 ```
+
+## Removed the `i18n` helper function
+
+We removed the `i18n` helper function. It was a very simple and naive implementation for translating strings in templates. We would recommend to use a more sophisticated i18n solution.
+
+If you still need the same functionality, you can simply add the following function to your code and change the imports accordingly:
+
+```javascript
+/**
+ * Retrieves a translated key from a dictionary on the window object
+ * Example: ${i18n('CustomElement.buttonLabel', 'Label')}
+ * @param {string} key - to be translated
+ * @param {string} fallback - to be used if key is not defined
+ * @return {string} - String of the translated key or fallback or original key
+ */
+export function i18n(key, fallback) {
+    try {
+        const translations = window.elementjs.i18n();
+        if (translations[key] === undefined) {
+            throw 'Translation Missing';
+        }
+
+        return translations[key];
+    } catch (err) {
+        if (fallback) return fallback;
+        else return key;
+    }
+}
+```

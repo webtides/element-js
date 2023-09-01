@@ -15,11 +15,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
-## [1.0.0-alpha.2] - 2023-??-??
+## [1.0.0-alpha.3] - 2023-??-??
+
+### Removed
+
+-   _BRAKING_ Removed `i18n` helper function. See CHANGELOG how to implement it yourself or use a third party library.
+
+## [1.0.0-alpha.2] - 2023-08-23
 
 ### Added
 
-- Added JSDocs for everything in the codebase. This will especially be helpful when using constructor options. 
+-   Added JSDocs for everything in the codebase. This will especially be helpful when using constructor options.
 
 ## [1.0.0-alpha.1] - 2023-08-15
 
