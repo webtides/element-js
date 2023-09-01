@@ -17,6 +17,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [1.0.0-alpha.3] - 2023-??-??
 
+### Changed
+
+- _BRAKING_ Changed the default options when using the `dispatch` helper function. `bubbles`, `cancelable` and `composed` will now be `true` by default.
+
 ### Removed
 
 -   _BRAKING_ Removed `i18n` helper function. See CHANGELOG how to implement it yourself or use a third party library.

@@ -189,3 +189,31 @@ export function i18n(key, fallback) {
     }
 }
 ```
+
+## Changed default options for the `dispatch` helper function
+
+We changed the default options when using the `dispatch` helper function. `bubbles`, `cancelable` and `composed` will now be `true` by default.
+
+Also, we changed the parameter signature. Instead of expecting the tree boolean values as parameters after the data value, we now expect an `options` object that is in line with the `CustomEventInit` options for the `CustomEvent` class. This is not a breaking change, and we will still evaluate the old parameter list for now. It will finally be removed in v2.0.
+
+We would recommend that you start using the new syntax. Change this:
+
+```javascript
+this.dispatch('custom-event', 'foo', true, true, true);
+```
+
+to (if you wanted every parameter to be `true` before):
+
+```javascript
+this.dispatch('custom-event', 'foo');
+```
+
+or this (if you had different option values):
+
+```javascript
+this.dispatch('custom-event', 'foo', {
+    bubbles: true,
+    cancelable: false,
+    composed: true
+});
+```

@@ -572,17 +572,32 @@ class BaseElement extends HTMLElement {
 	 * Helper function for dispatching custom events
 	 * @param {string} name
 	 * @param {Object} data
-	 * @param {boolean} bubble
-	 * @param {boolean} cancelable
-	 * @param {boolean} composed
+	 * @param {CustomEventInit} options
+	 * @param {boolean} cancelable - DEPRECATED
+	 * @param {boolean} composed - DEPRECATED
 	 */
-	dispatch(name, data, bubble = false, cancelable = false, composed = false) {
-		const event = new CustomEvent(name, {
-			bubbles: bubble,
-			cancelable: cancelable,
-			composed: composed,
-			detail: data,
-		});
+	dispatch(name, data, options, cancelable = false, composed = false) {
+		let eventInit = {};
+
+		if (options !== undefined && typeof options === 'boolean') {
+			eventInit['bubbles'] = options;
+			eventInit['cancelable'] = cancelable;
+			eventInit['composed'] = composed;
+			eventInit['detail'] = data;
+			console.warn(
+				`[${this.localName}] Using the old parameter options for the event is deprecated and will be removed in v2.0! Please use the new options object that is in line with the "CustomEventInit" options`,
+			);
+		} else {
+			eventInit = {
+				bubbles: true,
+				cancelable: true,
+				composed: true,
+				detail: data,
+				...options,
+			};
+		}
+
+		const event = new CustomEvent(name, eventInit);
 		this.dispatchEvent(event);
 	}
 
