@@ -1,7 +1,6 @@
 import { StyledElement } from './StyledElement.js';
 import { html } from './dom-parts/html.js';
 import { render } from './dom-parts/render.js';
-export { i18n } from './util/i18n.js';
 
 /**
  * Options object for the TemplateElement

@@ -1,6 +1,5 @@
 import { BaseElement } from './BaseElement.js';
 import { supportsAdoptingStyleSheets, getShadowParentOrBody } from './util/DOMHelper.js';
-export { i18n } from './util/i18n.js';
 
 /**
  * Options object for the StyledElement
