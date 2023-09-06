@@ -1,6 +1,65 @@
 import { BaseElement } from './BaseElement.js';
 import { supportsAdoptingStyleSheets, getShadowParentOrBody } from './util/DOMHelper.js';
 
+/** @type {Map<Node, CSSStyleSheet>} */
+const globalStyleSheetsCache = new WeakMap();
+
+/**
+ * @param {boolean | string | string[]} selector
+ * @return {CSSStyleSheet[]}
+ */
+function getGlobalStyleSheets(selector) {
+	const observer = new MutationObserver((mutationRecord) => {
+		const filteredNodes = Array.from(mutationRecord[0].addedNodes).filter(
+			(node) => node.tagName === 'STYLE' || node.tagName === 'LINK',
+		);
+		if (filteredNodes[0].tagName === 'LINK') {
+			filteredNodes[0].onload = () => {
+				globalThis.document?.dispatchEvent(new CustomEvent('global-styles-change'));
+			};
+		} else {
+			globalThis.document?.dispatchEvent(new CustomEvent('global-styles-change'));
+		}
+	});
+	observer.observe(globalThis.document, { subtree: true, childList: true });
+
+	/** @type {CSSStyleSheet[]}*/
+	const cssStyleSheets = [];
+
+	if (selector === false) return cssStyleSheets;
+
+	if (typeof selector === 'string') {
+		selector = [selector];
+	}
+
+	if (selector === true || selector.includes('document')) {
+		cssStyleSheets.push(...globalThis.document?.adoptedStyleSheets);
+	}
+
+	Array.from(globalThis.document?.styleSheets).map((styleSheet) => {
+		if (Array.isArray(selector) && !selector.some((cssSelector) => styleSheet.ownerNode.matches(cssSelector))) {
+			return;
+		}
+
+		let cssStyleSheet = globalStyleSheetsCache.get(styleSheet.ownerNode);
+		if (!cssStyleSheet) {
+			cssStyleSheet = new CSSStyleSheet();
+			let cssText = '';
+			if (styleSheet.ownerNode.tagName === 'STYLE') {
+				cssText = styleSheet.ownerNode.textContent;
+			} else if (styleSheet.ownerNode.tagName === 'LINK') {
+				cssText = Array.from(styleSheet.cssRules)
+					.map((rule) => rule.cssText)
+					.join('');
+			}
+			cssStyleSheet.replaceSync(cssText);
+		}
+		cssStyleSheets.push(cssStyleSheet);
+	});
+
+	return cssStyleSheets;
+}
+
 /**
  * Options object for the StyledElement
  * @typedef {Object} StyledElementOptions
@@ -11,19 +70,6 @@ import { supportsAdoptingStyleSheets, getShadowParentOrBody } from './util/DOMHe
  */
 
 class StyledElement extends BaseElement {
-	static globalStyles = null;
-
-	static updateGlobalStyles() {
-		// this is a runtime dependency so that every shadow dom can make use of global css
-		// we assume these styles to be inlined into the document
-		StyledElement.globalStyles = globalThis.document?.getElementById('globalStyles');
-
-		if (StyledElement.globalStyles && StyledElement['globalStyleSheet']) {
-			//updates already adopted global styles
-			StyledElement['globalStyleSheet'].replaceSync(StyledElement.globalStyles.textContent);
-		}
-	}
-
 	/**
 	 * @param {StyledElementOptions} options
 	 */
@@ -47,6 +93,12 @@ class StyledElement extends BaseElement {
 		if (supportsAdoptingStyleSheets() && this._options.shadowRender) {
 			// adopting does only make sense in shadow dom. Fall back to append for light elements
 			this.adoptStyleSheets();
+
+			if (this._options.adoptGlobalStyles !== false) {
+				globalThis.document?.addEventListener('global-styles-change', () => {
+					this.adoptStyleSheets();
+				});
+			}
 		}
 	}
 
@@ -79,29 +131,19 @@ class StyledElement extends BaseElement {
 	 * Adopt stylesheets
 	 */
 	adoptStyleSheets() {
-		if (!this.constructor['cssStyleSheets']) {
-			this.constructor['cssStyleSheets'] = this._styles.map((style) => {
-				const sheet = new CSSStyleSheet();
-				if (sheet && sheet.cssRules.length === 0) {
-					sheet.replaceSync(style);
-				}
-				return sheet;
+		if (!this.constructor['elementStyleSheets']) {
+			this.constructor['elementStyleSheets'] = this._styles.map((style) => {
+				const cssStyleSheet = new CSSStyleSheet();
+				cssStyleSheet.replaceSync(style);
+				return cssStyleSheet;
 			});
 		}
 
-		if (StyledElement.globalStyles && !StyledElement['globalStyleSheet']) {
-			StyledElement['globalStyleSheet'] = new CSSStyleSheet();
-			StyledElement['globalStyleSheet'].replaceSync(StyledElement.globalStyles.textContent);
-		}
+		const adoptGlobalStyleSheets = this._options.shadowRender && this._options.adoptGlobalStyles !== false;
 
-		// adopt styles
-		// uses proposed solution for constructable stylesheets
-		// see: https://wicg.github.io/construct-stylesheets/#proposed-solution
 		this.getRoot().adoptedStyleSheets = [
-			...(this._options.shadowRender && this._options.adoptGlobalStyles && StyledElement['globalStyleSheet']
-				? [StyledElement['globalStyleSheet']]
-				: []),
-			...this.constructor['cssStyleSheets'],
+			...(adoptGlobalStyleSheets ? getGlobalStyleSheets(this._options.adoptGlobalStyles) : []),
+			...this.constructor['elementStyleSheets'],
 		];
 	}
 
@@ -125,7 +167,5 @@ class StyledElement extends BaseElement {
 		});
 	}
 }
-
-StyledElement.updateGlobalStyles();
 
 export { StyledElement };
