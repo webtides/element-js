@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Changed
 
 - _BRAKING_ Changed the default options when using the `dispatch` helper function. `bubbles`, `cancelable` and `composed` will now be `true` by default.
+- _BRAKING_ Changed adopting global styles to include ALL global styles. Previously only one inline <style> with the ID of '#globalStyles' would be adopted. For more information see the docs. 
 
 ### Removed
 

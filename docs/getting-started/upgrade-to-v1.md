@@ -217,3 +217,27 @@ this.dispatch('custom-event', 'foo', {
     composed: true
 });
 ```
+
+## Changed adoptGlobalStyles
+
+We changed adopting global styles to include ALL global styles now. Previously only one inline <style> with the ID of '#globalStyles' would be adopted. For more information see the docs. We think that this is the behaviour that one would actually want.
+
+If you still need it to be the way it was before, please change the `adoptGlobalStyles` option value from:
+
+```javascript
+export class ShadowElement extends TemplateElement {
+    constructor() {
+        super({ adoptGlobalStyles: true });
+    }
+}
+```
+
+to:
+
+```javascript
+export class ShadowElement extends TemplateElement {
+    constructor() {
+        super({ adoptGlobalStyles: '#globalStyles' });
+    }
+}
+```
