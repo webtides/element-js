@@ -1,6 +1,8 @@
 import { BaseElement } from './BaseElement.js';
 import { supportsAdoptingStyleSheets, getShadowParentOrBody } from './util/DOMHelper.js';
 
+// TODO: add tests
+
 /** @type {Map<Node, CSSStyleSheet>} */
 const globalStyleSheetsCache = new WeakMap();
 
@@ -9,7 +11,7 @@ const globalStyleSheetsCache = new WeakMap();
  * @return {CSSStyleSheet[]}
  */
 function getGlobalStyleSheets(selector) {
-	const observer = new MutationObserver((mutationRecord) => {
+	const mutationObserver = new MutationObserver((mutationRecord) => {
 		const filteredNodes = Array.from(mutationRecord[0].addedNodes).filter(
 			(node) => node.tagName === 'STYLE' || node.tagName === 'LINK',
 		);
@@ -21,7 +23,7 @@ function getGlobalStyleSheets(selector) {
 			globalThis.document?.dispatchEvent(new CustomEvent('global-styles-change'));
 		}
 	});
-	observer.observe(globalThis.document, { subtree: true, childList: true });
+	mutationObserver.observe(globalThis.document, { subtree: true, childList: true });
 
 	/** @type {CSSStyleSheet[]}*/
 	const cssStyleSheets = [];
@@ -90,6 +92,10 @@ class StyledElement extends BaseElement {
 	connectedCallback() {
 		super.connectedCallback();
 
+		if (!supportsAdoptingStyleSheets() || this._options.shadowRender === false) {
+			this.appendStyleSheets();
+		}
+
 		if (supportsAdoptingStyleSheets() && this._options.shadowRender) {
 			// adopting does only make sense in shadow dom. Fall back to append for light elements
 			this.adoptStyleSheets();
@@ -109,22 +115,6 @@ class StyledElement extends BaseElement {
 	 */
 	styles() {
 		return [];
-	}
-
-	/**
-	 * Overrides the `update` method to adopt optional styles
-	 * @param {PropertyUpdateOptions} options
-	 */
-	update(options) {
-		if (!supportsAdoptingStyleSheets() || this._options.shadowRender === false) {
-			// append stylesheets to template if not already adopted
-			const appendableStyles = [...this._styles];
-			if (this._options.shadowRender && this._options.adoptGlobalStyles) {
-				appendableStyles.unshift(StyledElement.globalStyles?.textContent ?? '');
-			}
-			this.appendStyleSheets(appendableStyles);
-		}
-		super.update(options);
 	}
 
 	/**
@@ -149,11 +139,10 @@ class StyledElement extends BaseElement {
 
 	/**
 	 * Custom polyfill for constructable stylesheets by appending styles to the end of an element
-	 * @param {string[]} styles
 	 */
-	appendStyleSheets(styles) {
+	appendStyleSheets() {
 		const parentDocument = getShadowParentOrBody(this.getRoot());
-		styles.forEach((style, index) => {
+		this._styles.forEach((style, index) => {
 			const identifier = this.tagName + index;
 
 			// only append stylesheet if not already appended to shadowRoot or document
