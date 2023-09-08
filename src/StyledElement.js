@@ -1,8 +1,6 @@
 import { BaseElement } from './BaseElement.js';
 import { supportsAdoptingStyleSheets, getShadowParentOrBody } from './util/DOMHelper.js';
 
-// TODO: add tests
-
 /** @type {Map<Node, CSSStyleSheet>} */
 const globalStyleSheetsCache = new WeakMap();
 
@@ -69,7 +67,7 @@ function getGlobalStyleSheets(selector) {
  * @extends BaseElementOptions
  * @property {boolean} [shadowRender] - When set to true the element will render the template (if provided) in the Shadow DOM and therefore encapsulate the element and styles from the rest of the document. Default is `false`
  * @property {[]} [styles] - Via the styles option you can add multiple styles/stylesheets to your element. Default is `[]`
- * @property {boolean} [adoptGlobalStyles] - When set to true element-js will look for a style element in the global document with an id of "globalStyles" and apply it before any custom/element styles inside the shadow DOM. Default is `true`
+ * @property {boolean | string | string[]} [adoptGlobalStyles] - When set to true element-js will look for all style elements in the global document with and apply them before any custom/element styles inside the shadow DOM. Default is `true`.
  */
 
 class StyledElement extends BaseElement {
