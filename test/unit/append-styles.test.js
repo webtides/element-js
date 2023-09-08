@@ -1,11 +1,10 @@
 /* eslint-disable no-unused-expressions */
-
 import { fixture, fixtureSync, defineCE, assert, expect, nextFrame } from '@open-wc/testing';
-import { TemplateElement, html } from '../../src/TemplateElement';
-import { StyledElement } from '../../src/StyledElement';
+import { TemplateElement, html } from '../../src/TemplateElement.js';
 
 const color = 'rgb(255, 240, 0)';
 const color2 = 'rgb(255, 0, 255)';
+
 const shadowTag = defineCE(
 	class extends TemplateElement {
 		constructor() {
@@ -68,12 +67,14 @@ describe('append-styles', () => {
 		style.id = 'globalStyles';
 		style.appendChild(document.createTextNode(`p{color: ${color}}`));
 		document.head.appendChild(style);
-		StyledElement.updateGlobalStyles();
 
-		//convert chrome to firefox
-
+		// simulate no constructable stylesheets
 		cssReplace = CSSStyleSheet.prototype.replace;
 		delete CSSStyleSheet.prototype.replace;
+	});
+
+	after(() => {
+		CSSStyleSheet.prototype.replace = cssReplace;
 	});
 
 	it('appends stylesheets if the browser does not support adopting Styleheets (shadow-dom)', async () => {
@@ -107,9 +108,5 @@ describe('append-styles', () => {
 		await nextFrame();
 		const computedColor = await window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
 		assert.equal(computedColor, color2);
-	});
-
-	after(() => {
-		CSSStyleSheet.prototype.replace = cssReplace;
 	});
 });
