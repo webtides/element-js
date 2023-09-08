@@ -12,14 +12,15 @@ const globalStyleSheetsCache = new WeakMap();
  */
 function getGlobalStyleSheets(selector) {
 	const mutationObserver = new MutationObserver((mutationRecord) => {
+		if (!mutationRecord[0]) return;
 		const filteredNodes = Array.from(mutationRecord[0].addedNodes).filter(
 			(node) => node.tagName === 'STYLE' || node.tagName === 'LINK',
 		);
-		if (filteredNodes[0].tagName === 'LINK') {
+		if (filteredNodes && filteredNodes[0] && filteredNodes[0].tagName === 'LINK') {
 			filteredNodes[0].onload = () => {
 				globalThis.document?.dispatchEvent(new CustomEvent('global-styles-change'));
 			};
-		} else {
+		} else if (filteredNodes && filteredNodes[0] && filteredNodes[0].tagName === 'STYLE') {
 			globalThis.document?.dispatchEvent(new CustomEvent('global-styles-change'));
 		}
 	});
@@ -92,8 +93,12 @@ class StyledElement extends BaseElement {
 	connectedCallback() {
 		super.connectedCallback();
 
-		if (!supportsAdoptingStyleSheets() || this._options.shadowRender === false) {
-			this.appendStyleSheets();
+		if (!this.constructor['elementStyleSheets']) {
+			this.constructor['elementStyleSheets'] = this._styles.map((style) => {
+				const cssStyleSheet = new CSSStyleSheet();
+				cssStyleSheet.replaceSync(style);
+				return cssStyleSheet;
+			});
 		}
 
 		if (supportsAdoptingStyleSheets() && this._options.shadowRender) {
@@ -118,17 +123,21 @@ class StyledElement extends BaseElement {
 	}
 
 	/**
+	 * Overrides the `update` method to adopt optional styles
+	 * @param {PropertyUpdateOptions} options
+	 */
+	update(options) {
+		// We cannot do this in connectedCallback() since the whole template will be overridden in update/render afterward
+		if (!supportsAdoptingStyleSheets() || this._options.shadowRender === false) {
+			this.appendStyleSheets();
+		}
+		super.update(options);
+	}
+
+	/**
 	 * Adopt stylesheets
 	 */
 	adoptStyleSheets() {
-		if (!this.constructor['elementStyleSheets']) {
-			this.constructor['elementStyleSheets'] = this._styles.map((style) => {
-				const cssStyleSheet = new CSSStyleSheet();
-				cssStyleSheet.replaceSync(style);
-				return cssStyleSheet;
-			});
-		}
-
 		const adoptGlobalStyleSheets = this._options.shadowRender && this._options.adoptGlobalStyles !== false;
 
 		this.getRoot().adoptedStyleSheets = [
@@ -142,7 +151,16 @@ class StyledElement extends BaseElement {
 	 */
 	appendStyleSheets() {
 		const parentDocument = getShadowParentOrBody(this.getRoot());
-		this._styles.forEach((style, index) => {
+
+		const adoptGlobalStyleSheets =
+			this._options.shadowRender && this._options.adoptGlobalStyles !== false && parentDocument !== document.body;
+
+		const appendableStyles = [
+			...(adoptGlobalStyleSheets ? getGlobalStyleSheets(this._options.adoptGlobalStyles) : []),
+			...this.constructor['elementStyleSheets'],
+		];
+
+		appendableStyles.forEach((styleSheet, index) => {
 			const identifier = this.tagName + index;
 
 			// only append stylesheet if not already appended to shadowRoot or document
@@ -150,7 +168,9 @@ class StyledElement extends BaseElement {
 				const styleElement = globalThis.document?.createElement('style');
 				styleElement.id = identifier;
 				styleElement.style.display = 'none';
-				styleElement.textContent = style;
+				styleElement.textContent = Array.from(styleSheet.cssRules)
+					.map((rule) => rule.cssText)
+					.join('');
 				parentDocument.appendChild(styleElement);
 			}
 		});

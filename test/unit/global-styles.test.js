@@ -75,7 +75,10 @@ describe('global-styles', () => {
 		style.id = 'globalStyles';
 		style.appendChild(document.createTextNode(`p{color: ${color}}`));
 		document.head.appendChild(style);
-		StyledElement.updateGlobalStyles();
+	});
+
+	after(() => {
+		document.getElementById('globalStyles').remove();
 	});
 
 	it('adopts globalStyles in lightDom', async () => {
@@ -114,9 +117,5 @@ describe('global-styles', () => {
 		await nextFrame();
 		const computedColor = await window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
 		assert.equal(computedColor, color2);
-	});
-
-	after(() => {
-		document.getElementById('globalStyles').remove();
 	});
 });
