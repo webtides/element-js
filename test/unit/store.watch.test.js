@@ -15,12 +15,19 @@ class WatchStore extends Store {
 	echoOldCount = -1;
 	triggerCount = 0;
 	echoNestedStoreCount = 0;
+	updateCount = 0;
 	properties() {
 		return {
 			count: 0,
 			nestedStore: new NestedStore(),
 		};
 	}
+
+	requestUpdate() {
+		super.requestUpdate();
+		this.updateCount++;
+	}
+
 	watch() {
 		return {
 			count: (newCount, oldCount) => {
@@ -59,7 +66,7 @@ describe('store-watch', () => {
 		assert.equal(watchStore.triggerCount, 2);
 	});
 
-	it('watches changes on nested store properties which are in itself instances of Store', async () => {
+	it('Call watcher on nested store properties which are itself instances of Store', async () => {
 		const watchStore = new WatchStore({ count: 0 });
 		assert.equal(watchStore.nestedStore.nestedCount, 0);
 		watchStore.nestedStore.nestedCount = 1;
@@ -67,5 +74,13 @@ describe('store-watch', () => {
 		// store updates contains a potential await requestUpdate so we need to wait a frame here
 		await nextFrame();
 		assert.equal(watchStore.echoNestedStoreCount, watchStore.nestedStore.nestedCount);
+	});
+
+	it('updates on nested store properties changes', async () => {
+		const watchStore = new WatchStore({ count: 0 });
+		assert.equal(watchStore.nestedStore.nestedCount, 0);
+		watchStore.nestedStore.nestedCount++;
+		await nextFrame();
+		assert.equal(watchStore.updateCount, 1);
 	});
 });
