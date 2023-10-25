@@ -78,7 +78,9 @@ export class Store {
 	requestUpdate() {
 		this._observer.forEach(async (observer) => {
 			if (observer instanceof BaseElement || observer instanceof Store) {
-				await observer.requestUpdate();
+				if (observer._options.autoUpdate) {
+					await observer.requestUpdate();
+				}
 				// check if store is watched by an observer
 				if (Object.keys(observer.watch() ?? {}).length > 0) {
 					// observer actually has watched properties
