@@ -1,65 +1,6 @@
 import { BaseElement } from './BaseElement.js';
 import { supportsAdoptingStyleSheets, getShadowParentOrBody } from './util/DOMHelper.js';
-
-/** @type {Map<Node, CSSStyleSheet>} */
-const globalStyleSheetsCache = new WeakMap();
-
-/**
- * @param {boolean | string | string[]} selector
- * @return {CSSStyleSheet[]}
- */
-function getGlobalStyleSheets(selector) {
-	const mutationObserver = new MutationObserver((mutationRecord) => {
-		if (!mutationRecord[0]) return;
-		const filteredNodes = Array.from(mutationRecord[0].addedNodes).filter(
-			(node) => node.tagName === 'STYLE' || node.tagName === 'LINK',
-		);
-		if (filteredNodes && filteredNodes[0] && filteredNodes[0].tagName === 'LINK') {
-			filteredNodes[0].onload = () => {
-				globalThis.document?.dispatchEvent(new CustomEvent('global-styles-change'));
-			};
-		} else if (filteredNodes && filteredNodes[0] && filteredNodes[0].tagName === 'STYLE') {
-			globalThis.document?.dispatchEvent(new CustomEvent('global-styles-change'));
-		}
-	});
-	mutationObserver.observe(globalThis.document, { subtree: true, childList: true });
-
-	/** @type {CSSStyleSheet[]}*/
-	const cssStyleSheets = [];
-
-	if (selector === false) return cssStyleSheets;
-
-	if (typeof selector === 'string') {
-		selector = [selector];
-	}
-
-	if (selector === true || selector.includes('document')) {
-		cssStyleSheets.push(...globalThis.document?.adoptedStyleSheets);
-	}
-
-	Array.from(globalThis.document?.styleSheets).map((styleSheet) => {
-		if (Array.isArray(selector) && !selector.some((cssSelector) => styleSheet.ownerNode.matches(cssSelector))) {
-			return;
-		}
-
-		let cssStyleSheet = globalStyleSheetsCache.get(styleSheet.ownerNode);
-		if (!cssStyleSheet) {
-			cssStyleSheet = new CSSStyleSheet();
-			let cssText = '';
-			if (styleSheet.ownerNode.tagName === 'STYLE') {
-				cssText = styleSheet.ownerNode.textContent;
-			} else if (styleSheet.ownerNode.tagName === 'LINK') {
-				cssText = Array.from(styleSheet.cssRules)
-					.map((rule) => rule.cssText)
-					.join('');
-			}
-			cssStyleSheet.replaceSync(cssText);
-		}
-		cssStyleSheets.push(cssStyleSheet);
-	});
-
-	return cssStyleSheets;
-}
+import { GlobalStylesStore } from './util/GlobalStylesStore.js';
 
 /**
  * Options object for the StyledElement
@@ -104,7 +45,7 @@ class StyledElement extends BaseElement {
 			this.adoptStyleSheets();
 
 			if (this._options.adoptGlobalStyles !== false) {
-				globalThis.document?.addEventListener('global-styles-change', () => {
+				GlobalStylesStore.subscribe(() => {
 					this.adoptStyleSheets();
 				});
 			}
@@ -139,7 +80,7 @@ class StyledElement extends BaseElement {
 		const adoptGlobalStyleSheets = this._options.shadowRender && this._options.adoptGlobalStyles !== false;
 
 		this.getRoot().adoptedStyleSheets = [
-			...(adoptGlobalStyleSheets ? getGlobalStyleSheets(this._options.adoptGlobalStyles) : []),
+			...(adoptGlobalStyleSheets ? GlobalStylesStore.getGlobalStyleSheets(this._options.adoptGlobalStyles) : []),
 			...this.constructor['elementStyleSheets'],
 		];
 	}
@@ -154,7 +95,7 @@ class StyledElement extends BaseElement {
 			this._options.shadowRender && this._options.adoptGlobalStyles !== false && parentDocument !== document.body;
 
 		const appendableStyles = [
-			...(adoptGlobalStyleSheets ? getGlobalStyleSheets(this._options.adoptGlobalStyles) : []),
+			...(adoptGlobalStyleSheets ? GlobalStylesStore.getGlobalStyleSheets(this._options.adoptGlobalStyles) : []),
 			...this.constructor['elementStyleSheets'],
 		];
 
