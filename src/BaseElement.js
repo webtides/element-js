@@ -17,6 +17,7 @@ class BaseElement extends HTMLElement {
 		this._options = {
 			autoUpdate: true,
 			deferUpdate: true,
+			deferConnected: false,
 			mutationObserverOptions: {
 				attributes: true,
 				childList: true,
@@ -27,6 +28,13 @@ class BaseElement extends HTMLElement {
 			...options,
 		};
 
+		if (this.hasAttribute('defer-update')) {
+			this._options.deferUpdate = true;
+		}
+		if (this.hasAttribute('defer-connected')) {
+			this._options.deferConnected = true;
+		}
+
 		if (options.childListUpdate !== undefined && options.childListUpdate !== null) {
 			this._options.mutationObserverOptions.childList = options.childListUpdate;
 			console.warn(
@@ -36,6 +44,11 @@ class BaseElement extends HTMLElement {
 	}
 
 	connectedCallback() {
+		if (this._options.deferConnected) {
+			this._options.deferConnected = false;
+			return;
+		}
+
 		// define all attributes to "this" as properties
 		this.defineAttributesAsProperties();
 
@@ -51,7 +64,7 @@ class BaseElement extends HTMLElement {
 		// define everything that should be observed
 		this.defineObserver();
 
-		if (this.hasAttribute('defer-update') || this._options.deferUpdate) {
+		if (this._options.deferUpdate) {
 			// don't updates/render, but register refs and events
 			this.registerEventsAndRefs();
 

@@ -46,6 +46,35 @@ render (if template was provided) initially. This might be necessary in some cas
 your element before actually rendering for the first time. You will have to call the `requestUpdate` method manually at
 the right lifecycle hook.
 
+#### deferUpdate via attribute
+
+deferUpdate can also be set to true by adding a "defer-update" attribute to the host element.
+
+```html 
+<deferred-element defer-update></deferred-element>
+```
+
+#### deferConnected (⚠️)
+
+Type: `boolean` Default: `false`
+
+When set to `true` the element will early return from the native `connectedCallback()`.
+Setting this to true will defer the entire initialization of `element-js` feature set. 
+To make the element useful at a later point again `connectedCallback()` must be called at a later point.   
+
+This is an advanced Setting and should be used with great caution.
+
+
+#### deferConnected via attribute (⚠️)
+
+deferConnected can also be set to true by adding a "defer-connected" attribute to the host element.
+
+```html 
+<deferred-element defer-connected></deferred-element>
+```
+
+
+
 #### mutationObserverOptions
 
 Type: `object` Default: `{ "attributes": true, "childList": true, "subtree": false }`
