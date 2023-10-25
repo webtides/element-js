@@ -18,7 +18,7 @@ import { BaseElement } from '../BaseElement.js';
  */
 export class Store {
 	_serializationKey;
-	_observer = new Set();
+	_observer = new Set([]);
 	_singlePropertyMode = false;
 	_state = {};
 
