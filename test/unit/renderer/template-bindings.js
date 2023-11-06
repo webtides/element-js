@@ -354,6 +354,23 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 			assert.equal(stripCommentMarkers(el.innerHTML), '<div foo="baz">Text</div>');
 		});
 
+		it('can have different bindings in one template', async () => {
+			const el = document.createElement('div');
+			let name = 'John';
+			let active = true;
+			const templateResult = html`<div>Hello ${name}<a class="link ${active ? 'is-active' : ''}">Label</a></div>`;
+			render(templateResult, el);
+			assert.equal(
+				stripCommentMarkers(el.innerHTML),
+				'<div>Hello John <a class="link is-active">Label</a></div>',
+			);
+			assert.equal(
+				stripCommentMarkers(el.innerHTML),
+				stripCommentMarkers(templateResult.toString()),
+				'CSR template does not match SSR template',
+			);
+		});
+
 		// TODO: it is actually working but somehow in the tests the DOM element won't update...
 		// it('can remove items from lists with looped bindings', async () => {
 		// 	const el = document.createElement('div');
