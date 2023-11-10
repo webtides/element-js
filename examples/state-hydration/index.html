@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>State Hydration</title>
+		<script type="module" src="state-hydration.js"></script>
+		<script src="https://cdn.tailwindcss.com"></script>
+		<style type="text/tailwindcss">
+			.btn {
+				@apply inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
+			}
+		</style>
+	</head>
+	<body class="flex flex-col gap-4 items-center">
+		<h1>State Hydration</h1>
+		<div>Counter 1</div>
+		<counter-element element-js-state-id="qayxswedc">
+			<!-- this would be better/nicer, but it is not so easy because we will have to consider/add the script tag when rendering the template -->
+			<!-- we would not need to generate uuids for all elements -->
+			<!-- we could remove the attributes on hydration?! -->
+			<!-- for BaseElements this should not be a problem -->
+			<script type="element-js/json">
+				{ "count": 7, "sharedStore": "Store/qwertzuiop", "internalStore": "Store/asdfghjkl" }
+			</script>
+		</counter-element>
+		<div>Counter 2</div>
+		<counter-element element-js-state-id="rfvbgtzhn" count="13">
+			<script type="element-js/json">
+				{ "count": 14, "sharedStore": "Store/qwertzuiop", "internalStore": "Store/yxcvbnm" }
+			</script>
+		</counter-element>
+		<script type="element-js/json">
+			{
+				"qwertzuiop": { "count": 5 },
+				"asdfghjkl": { "count": 6 },
+				"yxcvbnm": { "count": 8 },
+				"qayxswedc": { "count": 7, "sharedStore": "Store/qwertzuiop", "internalStore": "Store/asdfghjkl" },
+				"rfvbgtzhn": { "count": 14, "sharedStore": "Store/qwertzuiop", "internalStore": "Store/yxcvbnm" }
+			}
+		</script>
+		<!-- TODO: generate uuid in Store constructor -->
+		<!-- TODO: generate uuid in BaseElement constructor ?! or use inline element-js/json -->
+		<!-- TODO: serialize state of stores upon change -->
+		<!-- TODO: serialize state of elements upon change -->
+		<!-- TODO: hydrate element state from element-js/json -->
+		<!-- TODO: create stores with uuid from element state and hydrate state from element-js/json -->
+		<!-- TODO: cache all stores in a global WeakMap<uuid, Store> -->
+		<!-- TODO: test hydration for nested stores -->
+		<!-- TODO: think about what to do about and how to serialize other fields (eg. class fields) of stores/elements -->
+		<!-- TODO: decide how to enable this feature, or if it should be always enabled, or if serialization should be triggered manually? -->
+	</body>
+</html>
