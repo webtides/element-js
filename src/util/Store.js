@@ -1,7 +1,9 @@
 import { isObjectLike, deepEquals } from './AttributeParser.js';
+import { setSerializedState } from './SerializeStateHelper.js';
 import { BaseElement } from '../BaseElement.js';
 
 export class Store {
+	_uuid;
 	_observer = new Set();
 	_singlePropertyMode = false;
 	_state = {};
@@ -10,10 +12,16 @@ export class Store {
 	 * @param {* | object} value
 	 */
 	constructor(value) {
-		// wrap primitives with a generic "value" field to generate getter and setter
-		this._singlePropertyMode = arguments.length > 0 && !isObjectLike(value);
-		const specificValues = this._singlePropertyMode ? { value } : value;
-		this._state = { ...(!this._singlePropertyMode && this.properties()), ...specificValues };
+		if (value?.hasOwnProperty('uuid') && value?.hasOwnProperty('state')) {
+			this._uuid = value.uuid;
+			this._state = value.state;
+		} else {
+			this._uuid = globalThis.crypto.randomUUID();
+			// wrap primitives with a generic "value" field to generate getter and setter
+			this._singlePropertyMode = arguments.length > 0 && !isObjectLike(value);
+			const specificValues = this._singlePropertyMode ? { value } : value;
+			this._state = { ...(!this._singlePropertyMode && this.properties()), ...specificValues };
+		}
 
 		Object.entries(this._state).map(([key, value]) => {
 			Object.defineProperty(this, key, {
@@ -23,6 +31,8 @@ export class Store {
 				set: (newValue) => {
 					const oldValue = this._state[key];
 					this._state[key] = newValue;
+
+					setSerializedState(this._uuid, this._state);
 
 					if (!deepEquals(newValue, oldValue)) {
 						const watch = this.watch();
@@ -111,5 +121,9 @@ export class Store {
 				console.error('Store: observer type is not supported.', observer);
 			}
 		});
+	}
+
+	static createInstanceFromState(uuid, state) {
+		return new this({ uuid, state });
 	}
 }
