@@ -1,7 +1,7 @@
 import { parseAttribute, isNaN, dashToCamel, camelToDash, isObjectLike } from './util/AttributeParser.js';
 import { getClosestParentCustomElementNode, isOfSameNodeType } from './util/DOMHelper.js';
 import { Store } from './util/Store.js';
-
+import { getSerializedState, setSerializedState } from './util/SerializeStateHelper.js';
 export { defineElement } from './util/defineElement.js';
 export { toString } from './util/toString.js';
 
@@ -40,6 +40,9 @@ export { toString } from './util/toString.js';
  */
 
 class BaseElement extends HTMLElement {
+	_uuid;
+	_serializedState;
+
 	/**
 	 * @param {BaseElementOptions} options
 	 */
@@ -71,6 +74,14 @@ class BaseElement extends HTMLElement {
 	 * register observers, refs and events.
 	 */
 	connectedCallback() {
+		if (this.hasAttribute('element-js-state-id')) {
+			this._uuid = this.getAttribute('element-js-state-id');
+			this._serializedState = getSerializedState(this._uuid);
+		} else {
+			// generate new uuid
+			this._uuid = globalThis.crypto.randomUUID();
+		}
+
 		// define all attributes to "this" as properties
 		this.defineAttributesAsProperties();
 
@@ -261,10 +272,6 @@ class BaseElement extends HTMLElement {
 	 * @param {boolean} reflectAttribute
 	 */
 	defineProperty(property, value, reflectAttribute = false) {
-		if (value instanceof Store) {
-			value.subscribe(this);
-		}
-
 		if (this._state.hasOwnProperty(property)) {
 			// property has already been defined as an attribute nothing to do here
 			return;
@@ -280,7 +287,13 @@ class BaseElement extends HTMLElement {
 			this.removeAttribute(camelToDash(property));
 		}
 
-		this._state[property] = value;
+		this._state[property] = this._serializedState?.hasOwnProperty(property)
+			? this._serializedState[property]
+			: value;
+
+		if (this._state[property] instanceof Store) {
+			this._state[property].subscribe(this);
+		}
 
 		Object.defineProperty(this, property, {
 			get: () => {
@@ -291,6 +304,8 @@ class BaseElement extends HTMLElement {
 				const newValueString = JSON.stringify(newValue);
 				if (JSON.stringify(oldValue) !== newValueString) {
 					this._state[property] = newValue;
+
+					setSerializedState(this._uuid, this._state);
 
 					if (newValue instanceof Store) {
 						newValue.subscribe(this);
