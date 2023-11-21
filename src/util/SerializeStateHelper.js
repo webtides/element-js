@@ -1,7 +1,7 @@
 import { Store } from './Store.js';
 
-// /** @type {Map<string, Store>} */
-// const storesCache = new WeakMap();
+/** @type {Map<string, Store>} */
+const storesCache = new Map();
 
 let globalElementJsState;
 export function setSerializedState(uuid, state) {
@@ -34,7 +34,12 @@ export function getSerializedState(uuid) {
 		if (typeof value === 'string' && value.startsWith('Store/')) {
 			const [_, storeUuid] = value.split('/');
 			const storeState = unresolvedState[storeUuid];
-			return Store.createInstanceFromState(storeUuid, storeState);
+			let store = storesCache.get(storeUuid);
+			if (!store) {
+				store = Store.createInstanceFromState(storeUuid, storeState);
+				storesCache.set(storeUuid, store);
+			}
+			return store;
 		} else {
 			return value;
 		}
