@@ -1,12 +1,22 @@
 import { Store } from './Store.js';
 
 let globalElementJsState;
-export function setSerializedState(uuid, state) {
+function initGlobalStateObject() {
 	if (!globalElementJsState) {
 		globalElementJsState = Array.from(globalThis.document.scripts).find(
 			(script) => script.type === 'element-js/json',
 		);
+		if (!globalElementJsState) {
+			const script = document.createElement('script');
+			script.setAttribute('type', 'element-js/json');
+			document.body.appendChild(script);
+			globalElementJsState = script;
+		}
 	}
+}
+
+export function setSerializedState(uuid, state) {
+	initGlobalStateObject();
 
 	const currentState = JSON.parse(globalElementJsState.textContent);
 	currentState[uuid] = state;
@@ -20,11 +30,7 @@ export function setSerializedState(uuid, state) {
 }
 
 export function getSerializedState(uuid) {
-	if (!globalElementJsState) {
-		globalElementJsState = Array.from(globalThis.document.scripts).find(
-			(script) => script.type === 'element-js/json',
-		);
-	}
+	initGlobalStateObject();
 
 	const unresolvedState = JSON.parse(globalElementJsState.textContent);
 	const currentState = JSON.parse(globalElementJsState.textContent, (key, value) => {
