@@ -1,8 +1,5 @@
 import { Store } from './Store.js';
 
-/** @type {Map<string, Store>} */
-const storesCache = new Map();
-
 let globalElementJsState;
 export function setSerializedState(uuid, state) {
 	if (!globalElementJsState) {
@@ -34,12 +31,7 @@ export function getSerializedState(uuid) {
 		if (typeof value === 'string' && value.startsWith('Store/')) {
 			const [_, storeUuid] = value.split('/');
 			const storeState = unresolvedState[storeUuid];
-			let store = storesCache.get(storeUuid);
-			if (!store) {
-				store = Store.createInstanceFromState(storeUuid, storeState);
-				storesCache.set(storeUuid, store);
-			}
-			return store;
+			return Store.createInstance(storeUuid, storeState);
 		} else {
 			return value;
 		}

@@ -1,6 +1,9 @@
 import { isObjectLike, deepEquals } from './AttributeParser.js';
-import { setSerializedState } from './SerializeStateHelper.js';
+import { getSerializedState, setSerializedState } from './SerializeStateHelper.js';
 import { BaseElement } from '../BaseElement.js';
+
+/** @type {Map<string, Store>} */
+const storesCache = new Map();
 
 export class Store {
 	_uuid;
@@ -123,7 +126,13 @@ export class Store {
 		});
 	}
 
-	static createInstanceFromState(uuid, state) {
-		return new this({ uuid, state });
+	static createInstance(uuid, state) {
+		let store = storesCache.get(uuid);
+		if (!store) {
+			const serializedState = state || getSerializedState(uuid);
+			store = new this({ uuid, state: serializedState });
+			storesCache.set(uuid, store);
+		}
+		return store;
 	}
 }
