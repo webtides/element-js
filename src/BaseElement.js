@@ -80,6 +80,7 @@ class BaseElement extends HTMLElement {
 		} else {
 			// generate new uuid
 			this._uuid = globalThis.crypto.randomUUID();
+			this.setAttribute('element-js-state-id', this._uuid);
 		}
 
 		// define all attributes to "this" as properties
