@@ -15,6 +15,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [0.7.4] - 2023-11-24
+
+### Added
+* storeception (reactive store properties in parent stores)
+* context injection in shadow elements requests travel though shadow roots
+* defer element connection (disables client side code until called manually)
+
+### Fixed
+* late context injection if parent mounts after child (loading order)
+* stores updating elements that want to be updated
+
+
 ## [0.7.3] - 2023-03-07
 
 ### Fixed
