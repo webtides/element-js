@@ -40,7 +40,7 @@ export { toString } from './util/toString.js';
  */
 
 class BaseElement extends HTMLElement {
-	_uuid;
+	_serializationKey;
 	_serializedState;
 
 	/**
@@ -74,13 +74,12 @@ class BaseElement extends HTMLElement {
 	 * register observers, refs and events.
 	 */
 	connectedCallback() {
-		if (this.hasAttribute('element-js-state-id')) {
-			this._uuid = this.getAttribute('element-js-state-id');
-			this._serializedState = getSerializedState(this._uuid);
+		if (this.hasAttribute('eljs:key')) {
+			this._serializationKey = this.getAttribute('eljs:key');
+			this._serializedState = getSerializedState(this._serializationKey);
 		} else {
-			// generate new uuid
-			this._uuid = globalThis.crypto.randomUUID();
-			this.setAttribute('element-js-state-id', this._uuid);
+			this._serializationKey = globalThis.crypto.randomUUID();
+			this.setAttribute('eljs:key', this._serializationKey);
 		}
 
 		// define all attributes to "this" as properties
@@ -306,7 +305,7 @@ class BaseElement extends HTMLElement {
 				if (JSON.stringify(oldValue) !== newValueString) {
 					this._state[property] = newValue;
 
-					setSerializedState(this._uuid, this._state);
+					setSerializedState(this._serializationKey, this._state);
 
 					if (newValue instanceof Store) {
 						newValue.subscribe(this);
