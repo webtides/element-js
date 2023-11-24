@@ -6,13 +6,7 @@ class CounterStore extends Store {
 	}
 }
 
-// TODO: this will not be instantiated from serialized state...
-// TODO: so elements created after global state hydration will get a different instance of the shared store...
-//const sharedStore = new CounterStore();
-// TODO: so we have to use something that gives the store a reproducible key beforehand
-// this is probably similar to https://nuxt.com/docs/api/composables/use-state ?!
-// maybe we can hide all of this in the constructor? And also generate a key based on the file and line number?!
-const sharedStore = CounterStore.createInstance('qwertzuiop');
+const sharedStore = new CounterStore({}, { key: 'shared-store' });
 
 /**
  * @property {number} count

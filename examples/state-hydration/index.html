@@ -14,35 +14,21 @@
 	<body class="flex flex-col gap-4 items-center">
 		<h1>State Hydration</h1>
 		<div>Counter 1</div>
-		<counter-element element-js-state-id="qayxswedc">
-			<!-- this would be better/nicer, but it is not so easy because we will have to consider/add the script tag when rendering the template -->
-			<!-- we would not need to generate uuids for all elements -->
-			<!-- we could remove the attributes on hydration?! -->
-			<!-- for BaseElements this should not be a problem -->
-			<!--			<script type="element-js/json">-->
-			<!--				{ "count": 7, "sharedStore": "Store/qwertzuiop", "internalStore": "Store/asdfghjkl" }-->
-			<!--			</script>-->
-		</counter-element>
+		<counter-element eljs:key="qayxswedc"> </counter-element>
 		<div>Counter 2</div>
-		<counter-element element-js-state-id="rfvbgtzhn" count="13">
-			<!--			<script type="element-js/json">-->
-			<!--				{ "count": 14, "sharedStore": "Store/qwertzuiop", "internalStore": "Store/yxcvbnm" }-->
-			<!--			</script>-->
-		</counter-element>
+		<counter-element eljs:key="rfvbgtzhn" count="13"> </counter-element>
 		<div>Counter 3 (no serialized state)</div>
 		<counter-element></counter-element>
 		<script type="element-js/json">
 			{
-				"qwertzuiop": { "count": 5 },
+				"shared-store": { "count": 5 },
 				"asdfghjkl": { "count": 6 },
 				"yxcvbnm": { "count": 8 },
-				"qayxswedc": { "count": 7, "sharedStore": "Store/qwertzuiop", "internalStore": "Store/asdfghjkl" },
-				"rfvbgtzhn": { "count": 14, "sharedStore": "Store/qwertzuiop", "internalStore": "Store/yxcvbnm" }
+				"qayxswedc": { "count": 7, "sharedStore": "Store/shared-store", "internalStore": "Store/asdfghjkl" },
+				"rfvbgtzhn": { "count": 14, "sharedStore": "Store/shared-store", "internalStore": "Store/yxcvbnm" }
 			}
 		</script>
-		<!-- TODO: test hydration for nested stores -->
-		<!-- TODO: think about what to do about and how to serialize other fields (eg. class fields) of stores/elements -->
-		<!-- TODO: think about what to do about and how to serialize other instances like our Store ?! Maybe with an interface? -->
-		<!-- TODO: decide how to enable this feature, or if it should be always enabled, or if serialization should be triggered manually? -->
+		<!-- TODO: think about how to serialize other fields (eg. class fields) of stores/elements -->
+		<!-- TODO: think about how to serialize other instances like our Store ?! Maybe with an interface? -->
 	</body>
 </html>

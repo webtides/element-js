@@ -36,11 +36,18 @@ export function getSerializedState(uuid) {
 	const currentState = JSON.parse(globalElementJsState.textContent, (key, value) => {
 		if (typeof value === 'string' && value.startsWith('Store/')) {
 			const [_, storeUuid] = value.split('/');
-			const storeState = unresolvedState[storeUuid];
-			return Store.createInstance(storeUuid, storeState);
+			const serializedState = unresolvedState[storeUuid];
+			return new Store(serializedState, { key: storeUuid, serializedState });
 		} else {
 			return value;
 		}
 	});
 	return currentState[uuid];
+}
+
+export function hasSerializedState(uuid) {
+	initGlobalStateObject();
+
+	const serializedState = JSON.parse(globalElementJsState.textContent);
+	return serializedState.hasOwnProperty(uuid);
 }

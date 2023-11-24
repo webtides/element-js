@@ -1,27 +1,45 @@
-import { isObjectLike, deepEquals } from './AttributeParser.js';
-import { getSerializedState, setSerializedState } from './SerializeStateHelper.js';
+import { deepEquals, isObjectLike } from './AttributeParser.js';
+import { getSerializedState, setSerializedState, hasSerializedState } from './SerializeStateHelper.js';
 import { BaseElement } from '../BaseElement.js';
+
+/**
+ * Options object for the Store
+ * @typedef {Object} StoreOptions
+ * @property {string} [key] - A unique key so that the store instance can be serialized and deserialized correctly across multiple shared parents/hosts.
+ */
 
 /** @type {Map<string, Store>} */
 const storesCache = new Map();
 
 export class Store {
-	_uuid;
+	_serializationKey;
 	_observer = new Set();
 	_singlePropertyMode = false;
 	_state = {};
 
 	/**
-	 * @param {* | object} value
+	 * @param {* | object} [value]
+	 * @param {StoreOptions} [options]
 	 */
-	constructor(value) {
-		if (value?.hasOwnProperty('uuid') && value?.hasOwnProperty('state')) {
-			this._uuid = value.uuid;
-			this._state = value.state;
+	constructor(value, options) {
+		if (options?.key && storesCache.has(options?.key)) {
+			return storesCache.get(options?.key);
+		}
+
+		this._singlePropertyMode = arguments.length > 0 && !isObjectLike(value);
+
+		if (options?.key) {
+			this._serializationKey = options?.key;
 		} else {
-			this._uuid = globalThis.crypto.randomUUID();
+			this._serializationKey = globalThis.crypto.randomUUID();
+		}
+
+		if (options?.serializedState) {
+			this._state = options.serializedState;
+		} else if (hasSerializedState(this._serializationKey)) {
+			this._state = getSerializedState(this._serializationKey);
+		} else {
 			// wrap primitives with a generic "value" field to generate getter and setter
-			this._singlePropertyMode = arguments.length > 0 && !isObjectLike(value);
 			const specificValues = this._singlePropertyMode ? { value } : value;
 			this._state = { ...(!this._singlePropertyMode && this.properties()), ...specificValues };
 		}
@@ -35,7 +53,7 @@ export class Store {
 					const oldValue = this._state[key];
 					this._state[key] = newValue;
 
-					setSerializedState(this._uuid, this._state);
+					setSerializedState(this._serializationKey, this._state);
 
 					if (!deepEquals(newValue, oldValue)) {
 						const watch = this.watch();
@@ -47,6 +65,8 @@ export class Store {
 				},
 			});
 		});
+
+		storesCache.set(this._serializationKey, this);
 	}
 
 	/**
@@ -124,15 +144,5 @@ export class Store {
 				console.error('Store: observer type is not supported.', observer);
 			}
 		});
-	}
-
-	static createInstance(uuid, state) {
-		let store = storesCache.get(uuid);
-		if (!store) {
-			const serializedState = state || getSerializedState(uuid);
-			store = new this({ uuid, state: serializedState });
-			storesCache.set(uuid, store);
-		}
-		return store;
 	}
 }
