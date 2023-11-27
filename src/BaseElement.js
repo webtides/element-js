@@ -40,7 +40,7 @@ export { toString } from './util/toString.js';
  */
 
 /**
- * @implements {SerializableState}
+ * @implements {Serializable}
  */
 class BaseElement extends HTMLElement {
 	_serializationKey;
@@ -627,11 +627,22 @@ class BaseElement extends HTMLElement {
 		return this;
 	}
 
+	/**
+	 * This method will be used to serialize this elements state.
+	 * By default, it will generate an object with all properties from this.properties().
+	 * You can override this and return a different object with more/less/different properties.
+	 * @return {{[string: any]: *}}
+	 */
 	toJSON() {
 		const keys = Object.keys(this.properties());
 		return Object.fromEntries(keys.map((key) => [key, this[key]]));
 	}
 
+	/**
+	 * This method will be used to restore properties on the element from a previously serialized state.
+	 * You can override this and handle the deserialization differently if the default is not enough.
+	 * @param {{[string: any]: *}} serializedState
+	 */
 	fromJSON(serializedState) {
 		Object.assign(this, serializedState);
 	}

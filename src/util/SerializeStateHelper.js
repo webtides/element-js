@@ -1,7 +1,7 @@
 import { Store } from './Store.js';
 
 /**
- * @typedef {Object} SerializableState
+ * @typedef {Object} Serializable
  * An interface that classes should implement to enable serialization and deserialization of their state.
  * @property {string} _serializationKey - a unique key to be used for serialization.
  * @property {object} toJSON - Function to retrieve the state for serialization.
@@ -9,10 +9,15 @@ import { Store } from './Store.js';
  */
 
 // TODO: is it ok to expose this like this? Or should we wrap the cache in helper methods also?
-/** @type {Map<string, SerializableState>} */
+/** @type {Map<string, Serializable>} */
 export const serializableObjectsCache = new Map();
 
+/** @type {HTMLScriptElement} */
 let globalElementJsState;
+
+/**
+ * Initializes the global script element that holds the state for all `Serializable` objects.
+ */
 function initGlobalStateObject() {
 	if (!globalElementJsState) {
 		globalElementJsState = Array.from(globalThis.document.scripts).find(
@@ -27,36 +32,44 @@ function initGlobalStateObject() {
 	}
 }
 
+/**
+ * Takes an object that implements the `Serializable` interface and serializes its state.
+ * @param {Serializable} serializableObject
+ */
 export function serializeState(serializableObject) {
 	if (!serializableObject._serializationKey && !serializableObject.toJSON) {
 		throw new Error('serializableObject does not implement the Serializable interface');
 	}
-	setSerializedState(serializableObject._serializationKey, serializableObject.toJSON());
-}
 
-export function deserializeState(serializableObject, serializedState) {
-	if (!serializableObject._serializationKey && !serializableObject.fromJSON) {
-		throw new Error('serializableObject does not implement the Serializable interface');
-	}
-	// TODO: I'm not sure if I like "fromJSON" so much...
-	serializableObject.fromJSON(serializedState || getSerializedState(serializableObject._serializationKey));
-}
-
-function setSerializedState(uuid, state) {
 	initGlobalStateObject();
 
 	const currentState = JSON.parse(globalElementJsState.textContent);
-	currentState[uuid] = state;
+	currentState[serializableObject._serializationKey] = serializableObject.toJSON();
 	globalElementJsState.textContent = JSON.stringify(currentState, (key, value) => {
 		if (value instanceof Store) {
-			return 'Store/' + value._uuid;
+			return 'Store/' + value._serializationKey;
 		} else {
 			return value;
 		}
 	});
 }
 
-function getSerializedState(uuid) {
+/**
+ * Takes an object that implements the `Serializable` interface and deserializes its state and restores the object.
+ * @param {Serializable} serializableObject
+ * @param {{[string: any]: *}} serializedState
+ */
+export function deserializeState(serializableObject, serializedState) {
+	if (!serializableObject._serializationKey && !serializableObject.fromJSON) {
+		throw new Error('serializableObject does not implement the Serializable interface');
+	}
+
+	if (serializedState) {
+		// TODO: I'm not sure if I like "fromJSON" so much...
+		serializableObject.fromJSON(serializedState);
+		return;
+	}
+
 	initGlobalStateObject();
 
 	const unresolvedState = JSON.parse(globalElementJsState.textContent);
@@ -69,12 +82,19 @@ function getSerializedState(uuid) {
 			return value;
 		}
 	});
-	return currentState[uuid];
+
+	// TODO: I'm not sure if I like "fromJSON" so much...
+	serializableObject.fromJSON(currentState[serializableObject._serializationKey]);
 }
 
-export function hasSerializedState(uuid) {
+/**
+ * Checks if a serialized state is available for a given key.
+ * @param key
+ * @return {boolean}
+ */
+export function hasSerializedState(key) {
 	initGlobalStateObject();
 
 	const serializedState = JSON.parse(globalElementJsState.textContent);
-	return serializedState.hasOwnProperty(uuid);
+	return serializedState.hasOwnProperty(key);
 }

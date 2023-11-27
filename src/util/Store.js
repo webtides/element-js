@@ -14,7 +14,7 @@ import { BaseElement } from '../BaseElement.js';
  */
 
 /**
- * @implements {SerializableState}
+ * @implements {Serializable}
  */
 export class Store {
 	_serializationKey;
@@ -153,11 +153,22 @@ export class Store {
 		});
 	}
 
+	/**
+	 * This method will be used to serialize this stores state.
+	 * By default, it will generate an object with all properties from this.properties().
+	 * You can override this and return a different object with more/less/different properties.
+	 * @return {{[string: any]: *}}
+	 */
 	toJSON() {
 		const keys = Object.keys(this.properties());
 		return Object.fromEntries(keys.map((key) => [key, this[key]]));
 	}
 
+	/**
+	 * This method will be used to restore properties on the store from a previously serialized state.
+	 * You can override this and handle the deserialization differently if the default is not enough.
+	 * @param {{[string: any]: *}} serializedState
+	 */
 	fromJSON(serializedState) {
 		Object.assign(this, serializedState);
 	}
