@@ -51,7 +51,8 @@ export class Store {
 
 		const serializationKeys = Object.keys(this.toJSON());
 		Object.entries(properties).map(([key, value]) => {
-			this._state[key] = serializationKeys.includes(key) ? this[key] : value;
+			this._state[key] =
+				hasSerializedState(this._serializationKey) && serializationKeys.includes(key) ? this[key] : value;
 			Object.defineProperty(this, key, {
 				get: () => {
 					return this._state[key];
