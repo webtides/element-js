@@ -1,5 +1,10 @@
 import { deepEquals, isObjectLike } from './AttributeParser.js';
-import { getSerializedState, setSerializedState, hasSerializedState } from './SerializeStateHelper.js';
+import {
+	hasSerializedState,
+	serializeState,
+	deserializeState,
+	serializableObjectsCache,
+} from './SerializeStateHelper.js';
 import { BaseElement } from '../BaseElement.js';
 
 /**
@@ -8,9 +13,9 @@ import { BaseElement } from '../BaseElement.js';
  * @property {string} [key] - A unique key so that the store instance can be serialized and deserialized correctly across multiple shared parents/hosts.
  */
 
-/** @type {Map<string, Store>} */
-const storesCache = new Map();
-
+/**
+ * @implements {SerializableState}
+ */
 export class Store {
 	_serializationKey;
 	_observer = new Set();
@@ -22,8 +27,8 @@ export class Store {
 	 * @param {StoreOptions} [options]
 	 */
 	constructor(value, options) {
-		if (options?.key && storesCache.has(options?.key)) {
-			return storesCache.get(options?.key);
+		if (options?.key && serializableObjectsCache.has(options?.key)) {
+			return serializableObjectsCache.get(options?.key);
 		}
 
 		this._singlePropertyMode = arguments.length > 0 && !isObjectLike(value);
@@ -35,16 +40,18 @@ export class Store {
 		}
 
 		if (options?.serializedState) {
-			this._state = options.serializedState;
+			deserializeState(this, options.serializedState);
 		} else if (hasSerializedState(this._serializationKey)) {
-			this._state = getSerializedState(this._serializationKey);
-		} else {
-			// wrap primitives with a generic "value" field to generate getter and setter
-			const specificValues = this._singlePropertyMode ? { value } : value;
-			this._state = { ...(!this._singlePropertyMode && this.properties()), ...specificValues };
+			deserializeState(this);
 		}
 
-		Object.entries(this._state).map(([key, value]) => {
+		// wrap primitives with a generic "value" field to generate getter and setter
+		const specificValues = this._singlePropertyMode ? { value } : value;
+		const properties = { ...(!this._singlePropertyMode && this.properties()), ...specificValues };
+
+		const serializationKeys = Object.keys(this.toJSON());
+		Object.entries(properties).map(([key, value]) => {
+			this._state[key] = serializationKeys.includes(key) ? this[key] : value;
 			Object.defineProperty(this, key, {
 				get: () => {
 					return this._state[key];
@@ -53,7 +60,7 @@ export class Store {
 					const oldValue = this._state[key];
 					this._state[key] = newValue;
 
-					setSerializedState(this._serializationKey, this._state);
+					serializeState(this);
 
 					if (!deepEquals(newValue, oldValue)) {
 						const watch = this.watch();
@@ -66,7 +73,7 @@ export class Store {
 			});
 		});
 
-		storesCache.set(this._serializationKey, this);
+		serializableObjectsCache.set(this._serializationKey, this);
 	}
 
 	/**
@@ -144,5 +151,14 @@ export class Store {
 				console.error('Store: observer type is not supported.', observer);
 			}
 		});
+	}
+
+	toJSON() {
+		const keys = Object.keys(this.properties());
+		return Object.fromEntries(keys.map((key) => [key, this[key]]));
+	}
+
+	fromJSON(serializedState) {
+		Object.assign(this, serializedState);
 	}
 }

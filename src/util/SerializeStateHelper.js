@@ -1,5 +1,17 @@
 import { Store } from './Store.js';
 
+/**
+ * @typedef {Object} SerializableState
+ * An interface that classes should implement to enable serialization and deserialization of their state.
+ * @property {string} _serializationKey - a unique key to be used for serialization.
+ * @property {object} toJSON - Function to retrieve the state for serialization.
+ * @property {object} fromJSON - Function to set the state during deserialization.
+ */
+
+// TODO: is it ok to expose this like this? Or should we wrap the cache in helper methods also?
+/** @type {Map<string, SerializableState>} */
+export const serializableObjectsCache = new Map();
+
 let globalElementJsState;
 function initGlobalStateObject() {
 	if (!globalElementJsState) {
@@ -15,7 +27,22 @@ function initGlobalStateObject() {
 	}
 }
 
-export function setSerializedState(uuid, state) {
+export function serializeState(serializableObject) {
+	if (!serializableObject._serializationKey && !serializableObject.toJSON) {
+		throw new Error('serializableObject does not implement the Serializable interface');
+	}
+	setSerializedState(serializableObject._serializationKey, serializableObject.toJSON());
+}
+
+export function deserializeState(serializableObject, serializedState) {
+	if (!serializableObject._serializationKey && !serializableObject.fromJSON) {
+		throw new Error('serializableObject does not implement the Serializable interface');
+	}
+	// TODO: I'm not sure if I like "fromJSON" so much...
+	serializableObject.fromJSON(serializedState || getSerializedState(serializableObject._serializationKey));
+}
+
+function setSerializedState(uuid, state) {
 	initGlobalStateObject();
 
 	const currentState = JSON.parse(globalElementJsState.textContent);
@@ -29,7 +56,7 @@ export function setSerializedState(uuid, state) {
 	});
 }
 
-export function getSerializedState(uuid) {
+function getSerializedState(uuid) {
 	initGlobalStateObject();
 
 	const unresolvedState = JSON.parse(globalElementJsState.textContent);
