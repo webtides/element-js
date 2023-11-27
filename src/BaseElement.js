@@ -1,7 +1,7 @@
 import { parseAttribute, isNaN, dashToCamel, camelToDash, isObjectLike } from './util/AttributeParser.js';
 import { getClosestParentCustomElementNode, isOfSameNodeType } from './util/DOMHelper.js';
 import { Store } from './util/Store.js';
-import { getSerializedState, setSerializedState } from './util/SerializeStateHelper.js';
+import { serializeState, deserializeState, hasSerializedState } from './util/SerializeStateHelper.js';
 export { defineElement } from './util/defineElement.js';
 export { toString } from './util/toString.js';
 
@@ -39,9 +39,11 @@ export { toString } from './util/toString.js';
  * @property {any} oldValue - The old value for the property
  */
 
+/**
+ * @implements {SerializableState}
+ */
 class BaseElement extends HTMLElement {
 	_serializationKey;
-	_serializedState;
 
 	/**
 	 * @param {BaseElementOptions} options
@@ -76,7 +78,7 @@ class BaseElement extends HTMLElement {
 	connectedCallback() {
 		if (this.hasAttribute('eljs:key')) {
 			this._serializationKey = this.getAttribute('eljs:key');
-			this._serializedState = getSerializedState(this._serializationKey);
+			deserializeState(this);
 		} else {
 			this._serializationKey = globalThis.crypto.randomUUID();
 			this.setAttribute('eljs:key', this._serializationKey);
@@ -287,9 +289,10 @@ class BaseElement extends HTMLElement {
 			this.removeAttribute(camelToDash(property));
 		}
 
-		this._state[property] = this._serializedState?.hasOwnProperty(property)
-			? this._serializedState[property]
-			: value;
+		this._state[property] =
+			hasSerializedState(this._serializationKey) && Object.keys(this.toJSON())?.includes(property)
+				? this[property]
+				: value;
 
 		if (this._state[property] instanceof Store) {
 			this._state[property].subscribe(this);
@@ -305,7 +308,7 @@ class BaseElement extends HTMLElement {
 				if (JSON.stringify(oldValue) !== newValueString) {
 					this._state[property] = newValue;
 
-					setSerializedState(this._serializationKey, this._state);
+					serializeState(this);
 
 					if (newValue instanceof Store) {
 						newValue.subscribe(this);
@@ -622,6 +625,15 @@ class BaseElement extends HTMLElement {
 	 */
 	getRoot() {
 		return this;
+	}
+
+	toJSON() {
+		const keys = Object.keys(this.properties());
+		return Object.fromEntries(keys.map((key) => [key, this[key]]));
+	}
+
+	fromJSON(serializedState) {
+		Object.assign(this, serializedState);
 	}
 }
 
