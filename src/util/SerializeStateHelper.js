@@ -57,7 +57,7 @@ export function serializeState(serializableObject) {
 /**
  * Takes an object that implements the `Serializable` interface and deserializes its state and restores the object.
  * @param {Serializable} serializableObject
- * @param {{[string: any]: *}} serializedState
+ * @param {{[string: any]: *}} [serializedState]
  */
 export function deserializeState(serializableObject, serializedState) {
 	if (!serializableObject._serializationKey && !serializableObject.fromJSON) {
