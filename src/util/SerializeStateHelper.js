@@ -37,6 +37,8 @@ function initGlobalStateObject() {
  * @param {Serializable} serializableObject
  */
 export function serializeState(serializableObject) {
+	if (!globalThis.elementJsConfig?.serializeState) return;
+
 	if (!serializableObject._serializationKey && !serializableObject.toJSON) {
 		throw new Error('serializableObject does not implement the Serializable interface');
 	}
@@ -60,6 +62,8 @@ export function serializeState(serializableObject) {
  * @param {{[string: any]: *}} [serializedState]
  */
 export function deserializeState(serializableObject, serializedState) {
+	if (!globalThis.elementJsConfig?.serializeState) return;
+
 	if (!serializableObject._serializationKey && !serializableObject.fromJSON) {
 		throw new Error('serializableObject does not implement the Serializable interface');
 	}
@@ -93,6 +97,8 @@ export function deserializeState(serializableObject, serializedState) {
  * @return {boolean}
  */
 export function hasSerializedState(key) {
+	if (!globalThis.elementJsConfig?.serializeState) return false;
+
 	initGlobalStateObject();
 
 	const serializedState = JSON.parse(globalElementJsState.textContent);
