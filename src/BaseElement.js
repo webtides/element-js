@@ -81,7 +81,9 @@ class BaseElement extends HTMLElement {
 			deserializeState(this);
 		} else {
 			this._serializationKey = globalThis.crypto.randomUUID();
-			this.setAttribute('eljs:key', this._serializationKey);
+			if (globalThis.elementJsConfig?.serializeState) {
+				this.setAttribute('eljs:key', this._serializationKey);
+			}
 		}
 
 		// define all attributes to "this" as properties
@@ -289,10 +291,11 @@ class BaseElement extends HTMLElement {
 			this.removeAttribute(camelToDash(property));
 		}
 
-		this._state[property] =
-			hasSerializedState(this._serializationKey) && Object.keys(this.toJSON())?.includes(property)
-				? this[property]
-				: value;
+		if (hasSerializedState(this._serializationKey) && Object.keys(this.toJSON())?.includes(property)) {
+			value = this[property];
+		}
+
+		this._state[property] = value;
 
 		if (this._state[property] instanceof Store) {
 			this._state[property].subscribe(this);
