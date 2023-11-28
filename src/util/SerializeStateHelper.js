@@ -26,6 +26,7 @@ function initGlobalStateObject() {
 		if (!globalElementJsState) {
 			const script = document.createElement('script');
 			script.setAttribute('type', 'element-js/json');
+			script.textContent = '{}';
 			document.body.appendChild(script);
 			globalElementJsState = script;
 		}
