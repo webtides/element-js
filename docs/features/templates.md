@@ -285,3 +285,24 @@ export class FormControl extends TemplateElement {
     }
 }
 ```
+
+#### SSR (Server side rendering)
+
+The templates you write for _element-js_ can easily be rendered on the server or any other environment different from the browser (like Service Workers, Node, etc.). _element-js_ uses special markers (as comments) in the HTML to track positions of control flow and interpolations. When elements get connected in the browser, they don't have to render the templates again. They only need to hydrate.
+
+##### Hydration
+
+When you render templates on the server, _element-js_ can efficiently hydrate elements. It uses the existing rendered templates and only adds event listeners and other things that only work in browser environments. One important piece of hydration is the state of the elements. It is not possible to embed the state into the server rendered templates. _element-js_ therefore uses a global JSON object where all elements (and stores) will serialize their state. If such an object is found upon connection of an element, it will restore its state.
+
+> The state serialization is not enabled by default. Currently most _element-js_ elements only render in the browser (client side). This might change in the future as more and more applications and elements will get rendered server side.
+
+To enable state serialization you can add the following (inline, sync) script block to yor HTML.
+
+```html
+<script>
+    /** @type {ElementJsConfig} */
+    globalThis.elementJsConfig = {
+        serializeState: true
+    };
+</script>
+```
