@@ -1,39 +1,30 @@
 import { Store } from './Store.js';
 
-class GlobalStylesStoreDefinition extends Store {
+/**
+ * @property {CSSStyleSheet[]} cssStyleSheets
+ */
+class GlobalStylesStore extends Store {
+	/** @type {Map<Node, CSSStyleSheet>} */
 	globalStyleSheetsCache = new WeakMap();
-	_mutationObserver = null;
+
 	constructor() {
 		super();
-		this._mutationObserver = new MutationObserver((mutationRecord) => {
+		const mutationObserver = new MutationObserver((mutationRecord) => {
 			if (!mutationRecord[0]) return;
 			const filteredNodes = Array.from(mutationRecord[0].addedNodes).filter(
 				(node) => node.tagName === 'STYLE' || node.tagName === 'LINK',
 			);
 			if (filteredNodes && filteredNodes[0] && filteredNodes[0].tagName === 'LINK') {
 				filteredNodes[0].onload = () => {
-					this.indexGlobalStyleSheets();
+					this.requestUpdate();
 				};
 			} else if (filteredNodes && filteredNodes[0] && filteredNodes[0].tagName === 'STYLE') {
-				this.indexGlobalStyleSheets();
+				this.requestUpdate();
 			}
 		});
-		this._mutationObserver.observe(globalThis.document, { subtree: true, childList: true });
-		this.indexGlobalStyleSheets('document');
+		mutationObserver.observe(globalThis.document, { subtree: true, childList: true });
 	}
-	properties() {
-		return {
-			cssStyleSheets: [],
-		};
-	}
-	indexGlobalStyleSheets(selector) {
-		/** @type {CSSStyleSheet[]}*/
 
-		this.cssStyleSheets = [
-			...globalThis.document?.adoptedStyleSheets,
-			...Array.from(globalThis.document?.styleSheets),
-		];
-	}
 	getGlobalStyleSheets(selector) {
 		/** @type {CSSStyleSheet[]}*/
 		const cssStyleSheets = [];
@@ -44,25 +35,26 @@ class GlobalStylesStoreDefinition extends Store {
 			selector = [selector];
 		}
 
-		this.cssStyleSheets.forEach((styleSheet) => {
+		if (selector === true || selector.includes('document')) {
+			cssStyleSheets.push(...globalThis.document?.adoptedStyleSheets);
+		}
+
+		Array.from(globalThis.document?.styleSheets).map((styleSheet) => {
 			if (Array.isArray(selector) && !selector.some((cssSelector) => styleSheet.ownerNode.matches(cssSelector))) {
 				return;
 			}
 
-			// TODO what does this lookup actually do !!?? i think this entire thing can be a return [].filter
+			// TODO: this will always be null as we never set anything to the cache...
 			let cssStyleSheet = this.globalStyleSheetsCache.get(styleSheet.ownerNode);
 			if (!cssStyleSheet) {
 				cssStyleSheet = new CSSStyleSheet();
 				let cssText = '';
-				if (styleSheet.ownerNode?.tagName === 'STYLE') {
+				if (styleSheet.ownerNode.tagName === 'STYLE') {
 					cssText = styleSheet.ownerNode.textContent;
-				} else if (styleSheet.ownerNode?.tagName === 'LINK') {
+				} else if (styleSheet.ownerNode.tagName === 'LINK') {
 					cssText = Array.from(styleSheet.cssRules)
 						.map((rule) => rule.cssText)
 						.join('');
-				} else {
-					// TODO what is happening here
-					console.log('TODO ???', styleSheet);
 				}
 				cssStyleSheet.replaceSync(cssText);
 			}
@@ -73,6 +65,4 @@ class GlobalStylesStoreDefinition extends Store {
 	}
 }
 
-export const GlobalStylesStore = new GlobalStylesStoreDefinition();
-
-window.GlobalStylesStore = GlobalStylesStore;
+export const globalStylesStore = new GlobalStylesStore();
