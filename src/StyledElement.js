@@ -1,6 +1,6 @@
 import { BaseElement } from './BaseElement.js';
 import { supportsAdoptingStyleSheets, getShadowParentOrBody } from './util/DOMHelper.js';
-import { GlobalStylesStore } from './util/GlobalStylesStore.js';
+import { globalStylesStore } from './util/GlobalStylesStore.js';
 
 /**
  * Options object for the StyledElement
@@ -45,7 +45,7 @@ class StyledElement extends BaseElement {
 			this.adoptStyleSheets();
 
 			if (this._options.adoptGlobalStyles !== false) {
-				GlobalStylesStore.subscribe(() => {
+				globalStylesStore.subscribe(() => {
 					this.adoptStyleSheets();
 				});
 			}
@@ -80,7 +80,7 @@ class StyledElement extends BaseElement {
 		const adoptGlobalStyleSheets = this._options.shadowRender && this._options.adoptGlobalStyles !== false;
 
 		this.getRoot().adoptedStyleSheets = [
-			...(adoptGlobalStyleSheets ? GlobalStylesStore.getGlobalStyleSheets(this._options.adoptGlobalStyles) : []),
+			...(adoptGlobalStyleSheets ? globalStylesStore.getGlobalStyleSheets(this._options.adoptGlobalStyles) : []),
 			...this.constructor['elementStyleSheets'],
 		];
 	}
@@ -95,7 +95,7 @@ class StyledElement extends BaseElement {
 			this._options.shadowRender && this._options.adoptGlobalStyles !== false && parentDocument !== document.body;
 
 		const appendableStyles = [
-			...(adoptGlobalStyleSheets ? GlobalStylesStore.getGlobalStyleSheets(this._options.adoptGlobalStyles) : []),
+			...(adoptGlobalStyleSheets ? globalStylesStore.getGlobalStyleSheets(this._options.adoptGlobalStyles) : []),
 			...this.constructor['elementStyleSheets'],
 		];
 
