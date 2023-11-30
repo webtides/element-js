@@ -76,13 +76,13 @@ class BaseElement extends HTMLElement {
 	 * register observers, refs and events.
 	 */
 	connectedCallback() {
-		if (this.hasAttribute('eljs:key')) {
-			this._serializationKey = this.getAttribute('eljs:key');
+		if (this.hasAttribute('ejs:key')) {
+			this._serializationKey = this.getAttribute('ejs:key');
 			deserializeState(this);
 		} else {
 			this._serializationKey = globalThis.crypto.randomUUID();
 			if (globalThis.elementJsConfig?.serializeState) {
-				this.setAttribute('eljs:key', this._serializationKey);
+				this.setAttribute('ejs:key', this._serializationKey);
 			}
 		}
 
