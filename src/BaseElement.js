@@ -291,7 +291,7 @@ class BaseElement extends HTMLElement {
 			this.removeAttribute(camelToDash(property));
 		}
 
-		if (hasSerializedState(this._serializationKey) && Object.keys(this.toJSON())?.includes(property)) {
+		if (hasSerializedState(this._serializationKey) && Object.keys(this.serializeState())?.includes(property)) {
 			value = this[property];
 		}
 
@@ -636,7 +636,7 @@ class BaseElement extends HTMLElement {
 	 * You can override this and return a different object with more/less/different properties.
 	 * @return {{[string: any]: *}}
 	 */
-	toJSON() {
+	serializeState() {
 		const keys = Object.keys(this.properties());
 		return Object.fromEntries(keys.map((key) => [key, this[key]]));
 	}
@@ -646,7 +646,7 @@ class BaseElement extends HTMLElement {
 	 * You can override this and handle the deserialization differently if the default is not enough.
 	 * @param {{[string: any]: *}} serializedState
 	 */
-	fromJSON(serializedState) {
+	restoreState(serializedState) {
 		Object.assign(this, serializedState);
 	}
 }

@@ -28,7 +28,7 @@ const otherFieldsTag = defineCE(
 			};
 		}
 
-		toJSON() {
+		serializeState() {
 			return {
 				nonReactiveCount: this.nonReactiveCount,
 			};
@@ -94,7 +94,7 @@ describe('state-serialization', () => {
 		assert.equal(el.count, 13);
 	});
 
-	it('can serialize a custom state object by overriding toJSON and fromJSON', async () => {
+	it('can serialize a custom state object by overriding serializeState and restoreState', async () => {
 		globalThis.elementJsConfig.serializeState = true;
 		createSerializedState({ qwertzuiop: { nonReactiveCount: 3 } });
 
