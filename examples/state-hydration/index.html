@@ -20,12 +20,12 @@
 	<body class="flex flex-col gap-4 items-center">
 		<h1>State Hydration</h1>
 		<div>Counter 1</div>
-		<counter-element eljs:key="qayxswedc"> </counter-element>
+		<counter-element ejs:key="qayxswedc"> </counter-element>
 		<div>Counter 2</div>
-		<counter-element eljs:key="rfvbgtzhn" count="13"> </counter-element>
+		<counter-element ejs:key="rfvbgtzhn" count="13"> </counter-element>
 		<div>Counter 3 (no serialized state)</div>
 		<counter-element></counter-element>
-		<script type="element-js/json">
+		<script type="ejs/json">
 			{
 				"shared-store": { "count": 5 },
 				"asdfghjkl": { "count": 6 },

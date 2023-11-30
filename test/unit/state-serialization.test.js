@@ -37,9 +37,7 @@ const otherFieldsTag = defineCE(
 );
 
 function createSerializedState(state) {
-	const globalElementJsState = Array.from(globalThis.document.scripts).find(
-		(script) => script.type === 'element-js/json',
-	);
+	const globalElementJsState = Array.from(globalThis.document.scripts).find((script) => script.type === 'ejs/json');
 	globalElementJsState.textContent = JSON.stringify(state);
 }
 
@@ -48,12 +46,12 @@ describe('state-serialization', () => {
 		globalThis.elementJsConfig = {};
 
 		const globalElementJsState = Array.from(globalThis.document.scripts).find(
-			(script) => script.type === 'element-js/json',
+			(script) => script.type === 'ejs/json',
 		);
 
 		if (!globalElementJsState) {
 			const script = document.createElement('script');
-			script.setAttribute('type', 'element-js/json');
+			script.setAttribute('type', 'ejs/json');
 			script.textContent = '{}';
 			document.body.appendChild(script);
 		}
@@ -63,10 +61,10 @@ describe('state-serialization', () => {
 		const el = fixtureSync(`<${tag}></${tag}>`);
 
 		const globalElementJsState = Array.from(globalThis.document.scripts).find(
-			(script) => script.type === 'element-js/json',
+			(script) => script.type === 'ejs/json',
 		);
 
-		assert.equal(el.getAttribute('eljs:key'), null);
+		assert.equal(el.getAttribute('ejs:key'), null);
 		assert.equal(globalElementJsState.textContent, '{}');
 	});
 
@@ -76,10 +74,10 @@ describe('state-serialization', () => {
 		const el = fixtureSync(`<${tag}></${tag}>`);
 
 		const globalElementJsState = Array.from(globalThis.document.scripts).find(
-			(script) => script.type === 'element-js/json',
+			(script) => script.type === 'ejs/json',
 		);
 
-		assert.notEqual(el.getAttribute('eljs:key'), null);
+		assert.notEqual(el.getAttribute('ejs:key'), null);
 		assert.notEqual(globalElementJsState, undefined);
 	});
 
@@ -87,7 +85,7 @@ describe('state-serialization', () => {
 		globalThis.elementJsConfig.serializeState = true;
 		createSerializedState({ qwertzuiop: { count: 13 } });
 
-		const el = fixtureSync(`<${tag} eljs:key="qwertzuiop" count="7"></${tag}>`);
+		const el = fixtureSync(`<${tag} ejs:key="qwertzuiop" count="7"></${tag}>`);
 
 		assert.notEqual(el.count, 0);
 		assert.notEqual(el.count, 7);
@@ -98,7 +96,7 @@ describe('state-serialization', () => {
 		globalThis.elementJsConfig.serializeState = true;
 		createSerializedState({ qwertzuiop: { nonReactiveCount: 3 } });
 
-		const el = fixtureSync(`<${otherFieldsTag} eljs:key="qwertzuiop"></${otherFieldsTag}>`);
+		const el = fixtureSync(`<${otherFieldsTag} ejs:key="qwertzuiop"></${otherFieldsTag}>`);
 
 		assert.notEqual(el.nonReactiveCount, -1);
 		assert.equal(el.nonReactiveCount, 3);
@@ -108,7 +106,7 @@ describe('state-serialization', () => {
 		globalThis.elementJsConfig.serializeState = true;
 		createSerializedState({ qwertzuiop: { store: 'Store/asdfghjkl' }, asdfghjkl: { count: 13 } });
 
-		const el = fixtureSync(`<${tag} eljs:key="qwertzuiop"></${tag}>`);
+		const el = fixtureSync(`<${tag} ejs:key="qwertzuiop"></${tag}>`);
 
 		assert.notEqual(el.store.count, 0);
 		assert.equal(el.store.count, 13);
@@ -118,7 +116,7 @@ describe('state-serialization', () => {
 		globalThis.elementJsConfig.serializeState = true;
 		createSerializedState({ qwertzuiop: { sharedStore: 'Store/shared-store' }, 'shared-store': { count: 13 } });
 
-		const el = fixtureSync(`<${tag} eljs:key="qwertzuiop"></${tag}>`);
+		const el = fixtureSync(`<${tag} ejs:key="qwertzuiop"></${tag}>`);
 
 		assert.notEqual(el.sharedStore.count, 0);
 		assert.equal(el.sharedStore.count, 13);
@@ -132,8 +130,8 @@ describe('state-serialization', () => {
 			asdfghjkl: { sharedStore: 'Store/shared-store' },
 		});
 
-		const el = fixtureSync(`<${tag} eljs:key="qwertzuiop"></${tag}>`);
-		const el2 = fixtureSync(`<${tag} eljs:key="asdfghjkl"></${tag}>`);
+		const el = fixtureSync(`<${tag} ejs:key="qwertzuiop"></${tag}>`);
+		const el2 = fixtureSync(`<${tag} ejs:key="asdfghjkl"></${tag}>`);
 
 		assert.equal(el.sharedStore.count, 13);
 		assert.equal(el.sharedStore, el2.sharedStore);
@@ -142,7 +140,7 @@ describe('state-serialization', () => {
 	afterEach(() => {
 		globalThis.elementJsConfig = undefined;
 		const globalElementJsState = Array.from(globalThis.document.scripts).find(
-			(script) => script.type === 'element-js/json',
+			(script) => script.type === 'ejs/json',
 		);
 		if (globalElementJsState) {
 			globalElementJsState.textContent = '{}';

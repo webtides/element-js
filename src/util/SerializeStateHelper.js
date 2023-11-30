@@ -20,12 +20,10 @@ let globalElementJsState;
  */
 function initGlobalStateObject() {
 	if (!globalElementJsState) {
-		globalElementJsState = Array.from(globalThis.document.scripts).find(
-			(script) => script.type === 'element-js/json',
-		);
+		globalElementJsState = Array.from(globalThis.document.scripts).find((script) => script.type === 'ejs/json');
 		if (!globalElementJsState) {
 			const script = document.createElement('script');
-			script.setAttribute('type', 'element-js/json');
+			script.setAttribute('type', 'ejs/json');
 			script.textContent = '{}';
 			document.body.appendChild(script);
 			globalElementJsState = script;
