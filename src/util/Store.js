@@ -49,7 +49,7 @@ export class Store {
 		const specificValues = this._singlePropertyMode ? { value } : value;
 		const properties = { ...(!this._singlePropertyMode && this.properties()), ...specificValues };
 
-		const serializationKeys = Object.keys(this.toJSON());
+		const serializationKeys = Object.keys(this.serializeState());
 		Object.entries(properties).map(([key, value]) => {
 			this._state[key] =
 				hasSerializedState(this._serializationKey) && serializationKeys.includes(key) ? this[key] : value;
@@ -160,7 +160,7 @@ export class Store {
 	 * You can override this and return a different object with more/less/different properties.
 	 * @return {{[string: any]: *}}
 	 */
-	toJSON() {
+	serializeState() {
 		const keys = Object.keys(this.properties());
 		return Object.fromEntries(keys.map((key) => [key, this[key]]));
 	}
@@ -170,7 +170,7 @@ export class Store {
 	 * You can override this and handle the deserialization differently if the default is not enough.
 	 * @param {{[string: any]: *}} serializedState
 	 */
-	fromJSON(serializedState) {
+	restoreState(serializedState) {
 		Object.assign(this, serializedState);
 	}
 }

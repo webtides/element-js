@@ -4,8 +4,8 @@ import { Store } from './Store.js';
  * @typedef {Object} Serializable
  * An interface that classes should implement to enable serialization and deserialization of their state.
  * @property {string} _serializationKey - a unique key to be used for serialization.
- * @property {object} toJSON - Function to retrieve the state for serialization.
- * @property {object} fromJSON - Function to set the state during deserialization.
+ * @property {object} serializeState - Function to retrieve the state for serialization.
+ * @property {object} restoreState - Function to set the state during deserialization.
  */
 
 // TODO: is it ok to expose this like this? Or should we wrap the cache in helper methods also?
@@ -40,14 +40,14 @@ function initGlobalStateObject() {
 export function serializeState(serializableObject) {
 	if (!globalThis.elementJsConfig?.serializeState) return;
 
-	if (!serializableObject._serializationKey && !serializableObject.toJSON) {
+	if (!serializableObject._serializationKey && !serializableObject.serializeState) {
 		throw new Error('serializableObject does not implement the Serializable interface');
 	}
 
 	initGlobalStateObject();
 
 	const currentState = JSON.parse(globalElementJsState.textContent);
-	currentState[serializableObject._serializationKey] = serializableObject.toJSON();
+	currentState[serializableObject._serializationKey] = serializableObject.serializeState();
 	globalElementJsState.textContent = JSON.stringify(currentState, (key, value) => {
 		if (value instanceof Store) {
 			return 'Store/' + value._serializationKey;
@@ -65,13 +65,13 @@ export function serializeState(serializableObject) {
 export function deserializeState(serializableObject, serializedState) {
 	if (!globalThis.elementJsConfig?.serializeState) return;
 
-	if (!serializableObject._serializationKey && !serializableObject.fromJSON) {
+	if (!serializableObject._serializationKey && !serializableObject.restoreState) {
 		throw new Error('serializableObject does not implement the Serializable interface');
 	}
 
 	if (serializedState) {
-		// TODO: I'm not sure if I like "fromJSON" so much...
-		serializableObject.fromJSON(serializedState);
+		// TODO: I'm not sure if I like "restoreState" so much...
+		serializableObject.restoreState(serializedState);
 		return;
 	}
 
@@ -88,8 +88,8 @@ export function deserializeState(serializableObject, serializedState) {
 		}
 	});
 
-	// TODO: I'm not sure if I like "fromJSON" so much...
-	serializableObject.fromJSON(currentState[serializableObject._serializationKey]);
+	// TODO: I'm not sure if I like "restoreState" so much...
+	serializableObject.restoreState(currentState[serializableObject._serializationKey]);
 }
 
 /**
