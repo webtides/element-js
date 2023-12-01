@@ -4,8 +4,8 @@ import { Store } from './Store.js';
  * @typedef {Object} Serializable
  * An interface that classes should implement to enable serialization and deserialization of their state.
  * @property {string} _serializationKey - a unique key to be used for serialization.
- * @property {object} serializeState - Function to retrieve the state for serialization.
- * @property {object} restoreState - Function to set the state during deserialization.
+ * @property {function} serializeState - Function to retrieve the state for serialization.
+ * @property {function} restoreState - Function to set the state during deserialization.
  */
 
 // TODO: is it ok to expose this like this? Or should we wrap the cache in helper methods also?
@@ -68,7 +68,6 @@ export function deserializeState(serializableObject, serializedState) {
 	}
 
 	if (serializedState) {
-		// TODO: I'm not sure if I like "restoreState" so much...
 		serializableObject.restoreState(serializedState);
 		return;
 	}
@@ -86,7 +85,6 @@ export function deserializeState(serializableObject, serializedState) {
 		}
 	});
 
-	// TODO: I'm not sure if I like "restoreState" so much...
 	serializableObject.restoreState(currentState[serializableObject._serializationKey]);
 }
 
