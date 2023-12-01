@@ -90,11 +90,11 @@ describe(`TemplateResult.createTemplateString()`, () => {
 
 	it('adds placeholders as comment nodes before the node for directives at attribute positions', async () => {
 		const directive = defineDirective(class extends Directive {});
-		const templateResult = html`<div ${directive()}>Text</div>`;
+		const templateResult = html`<div no-directive ${directive()}>Text</div>`;
 		const templateString = createTemplateString(templateResult.strings);
 		assert.equal(
 			stripWhitespace(templateString),
-			'<!--template-part--><!--dom-part-0$--><div>Text</div><!--/template-part-->',
+			'<!--template-part--><!--dom-part-0$--><div no-directive>Text</div><!--/template-part-->',
 		);
 	});
 });

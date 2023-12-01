@@ -32,7 +32,7 @@ export const createTemplateString = (templateStrings, attributePlaceholders = ''
 		if (trailingSlash.length) elementTagWithAttributes += voidElements.test(name) ? ' /' : '></' + name;
 		// collect all attribute parts so that we can place matching comment nodes
 		const attributeParts = attributesString.replace(attributes, (attribute, name, valueWithQuotes, directive) => {
-			if (directive) {
+			if (directive && directive === '\x01') {
 				return `<!--\x02$-->`;
 			}
 
