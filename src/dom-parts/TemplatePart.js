@@ -101,30 +101,33 @@ export class TemplatePart extends Part {
 
 			/** @type AttributePart */
 			let previousAttributePart = undefined;
-			this.parts = parts.map((part, index) => {
-				// We currently need the path because the fragment will be cloned via importNode and therefore the node will be a different one
-				const node = part.path.reduceRight(({ childNodes }, i) => childNodes[i], this);
-
-				if (part.type === 'node') {
-					return new ChildNodePart(node, templateResult.values[index]);
-					// TODO: the nodes in the parts array also have nested parts information... could we start creating the nested parts here as well?
-				}
-				if (part.type === 'attribute') {
-					// If we have multiple attribute parts with the same name, it means we have multiple
-					// interpolations inside that attribute. Instead of creating a new part, we will return the same
-					// as before and let it defer the update until the last interpolation gets updated
-					if (previousAttributePart && previousAttributePart.name === part.name) {
-						previousAttributePart.addNode(node);
-						return previousAttributePart;
+			this.parts = parts
+				.map((part) => {
+					// We currently need the path because the fragment will be cloned via importNode and therefore the node will be a different one
+					part.node = part.path.reduceRight(({ childNodes }, i) => childNodes[i], this);
+					return part;
+				})
+				.map((part, index) => {
+					if (part.type === 'node') {
+						return new ChildNodePart(part.node, templateResult.values[index]);
+						// TODO: the nodes in the parts array also have nested parts information... could we start creating the nested parts here as well?
 					}
-					return (previousAttributePart = new AttributePart(node, part.name, part.initialValue));
-				}
-				if (part.type === 'directive') {
-					return new NodePart(node, templateResult.values[index]);
-				}
+					if (part.type === 'attribute') {
+						// If we have multiple attribute parts with the same name, it means we have multiple
+						// interpolations inside that attribute. Instead of creating a new part, we will return the same
+						// as before and let it defer the update until the last interpolation gets updated
+						if (previousAttributePart && previousAttributePart.name === part.name) {
+							previousAttributePart.addNode(part.node);
+							return previousAttributePart;
+						}
+						return (previousAttributePart = new AttributePart(part.node, part.name, part.initialValue));
+					}
+					if (part.type === 'directive') {
+						return new NodePart(part.node, templateResult.values[index]);
+					}
 
-				throw `cannot map part: ${part}`;
-			});
+					throw `cannot map part: ${part}`;
+				});
 			this.strings = templateResult.strings;
 		}
 	}
