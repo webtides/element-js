@@ -15,6 +15,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.0.0-alpha.4] - 2023-12-01
+
+### Fixed
+
+-   falsy creation of directive parts for non-directive attributes
+-   creating parts with wrong comment marker positions
+
 ## [1.0.0-alpha.3] - 2023-12-01
 
 ### Added
@@ -23,8 +30,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Changed
 
-- _BRAKING_ Changed the default options when using the `dispatch` helper function. `bubbles`, `cancelable` and `composed` will now be `true` by default.
-- _BRAKING_ Changed adopting global styles to include ALL global styles. Previously only one inline <style> with the ID of '#globalStyles' would be adopted. For more information see the docs. 
+-   _BRAKING_ Changed the default options when using the `dispatch` helper function. `bubbles`, `cancelable` and `composed` will now be `true` by default.
+-   _BRAKING_ Changed adopting global styles to include ALL global styles. Previously only one inline <style> with the ID of '#globalStyles' would be adopted. For more information see the docs.
 
 ### Removed
 
@@ -59,13 +66,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## [0.7.4] - 2023-11-24
 
 ### Added
-* storeception (reactive store properties in parent stores)
-* context injection in shadow elements requests travel though shadow roots
-* defer element connection (disables client side code until called manually)
+
+-   storeception (reactive store properties in parent stores)
+-   context injection in shadow elements requests travel though shadow roots
+-   defer element connection (disables client side code until called manually)
 
 ### Fixed
-* late context injection if parent mounts after child (loading order)
-* stores updating elements that want to be updated
+
+-   late context injection if parent mounts after child (loading order)
+-   stores updating elements that want to be updated
 
 ## [0.7.3] - 2023-03-07
 
