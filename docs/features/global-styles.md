@@ -114,3 +114,18 @@ export class ShadowElement extends TemplateElement {
     }
 }
 ```
+
+By default, _element-js_ will only apply all style elements from the global document that are present in the initial HTML. It will not observe the document for any changes regarding style elements.
+
+> Observing global styles is done via a MutationObserver on the whole document. This might impose performance issues. 
+
+To enable global style observation you can add the following (inline, sync) script block to yor HTML.
+
+```html
+<script>
+    /** @type {ElementJsConfig} */
+    globalThis.elementJsConfig = {
+        observeGlobalStyles: true
+    };
+</script>
+```
