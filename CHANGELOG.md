@@ -15,7 +15,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
-## [1.0.0-alpha.3] - 2023-??-??
+## [1.0.0-alpha.3] - 2023-12-01
+
+### Added
+
+-   Added state serialization. This improves hydration from SSR a lot. ([#106](https://github.com/webtides/element-js/pull/106))
 
 ### Changed
 
