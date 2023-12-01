@@ -85,9 +85,9 @@ describe('global-styles', () => {
 	it('adopts globalStyles in lightDom', async () => {
 		const el = await fixture(`<${lightTag}></${lightTag}>`);
 		await nextFrame;
-		const computedColor = await window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
+		const computedColor = window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
 		assert.equal(computedColor, color);
-		const computeSpanColor = await window.getComputedStyle(el.$refs.coloredSpan).getPropertyValue('color');
+		const computeSpanColor = window.getComputedStyle(el.$refs.coloredSpan).getPropertyValue('color');
 		assert.equal(computeSpanColor, color2);
 	});
 
@@ -95,18 +95,22 @@ describe('global-styles', () => {
 		const el = await fixture(`<${shadowTag}></${shadowTag}>`);
 		//this needs to be called to find the styles added ar runtime
 		await nextFrame();
-		const computedColor = await window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
+		const computedColor = window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
 		assert.equal(computedColor, color);
 
-		const computeSpanColor = await window.getComputedStyle(el.$refs.coloredSpan).getPropertyValue('color');
+		const computeSpanColor = window.getComputedStyle(el.$refs.coloredSpan).getPropertyValue('color');
 		assert.equal(computeSpanColor, color2);
 	});
 
 	it('adopts globalStyles in shadowDom when they get added asynchronously', async () => {
+		console.log(
+			'2 globalThis.elementJsConfig?.observeGlobalStyles',
+			globalThis.elementJsConfig?.observeGlobalStyles,
+		);
 		const el = await fixture(`<${shadowTag}></${shadowTag}>`);
 		//this needs to be called to find the styles added ar runtime
 		await nextFrame();
-		const computedColor = await window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
+		const computedColor = window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
 		assert.equal(computedColor, color);
 
 		const style = document.createElement('STYLE');
@@ -116,7 +120,7 @@ describe('global-styles', () => {
 		document.head.appendChild(style);
 
 		await nextFrame();
-		const computedColor3 = await window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
+		const computedColor3 = window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
 		assert.notEqual(computedColor3, color);
 		assert.equal(computedColor3, color3);
 		document.getElementById('globalStyles2').remove();
@@ -126,17 +130,17 @@ describe('global-styles', () => {
 		const el = await fixture(`<${shadowNonAdoptingTag}></${shadowNonAdoptingTag}>`);
 		//this needs to be called to find the styles added ar runtime
 		await nextFrame();
-		const computedColor = await window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
+		const computedColor = window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
 		assert.notEqual(computedColor, color);
 
-		const computeSpanColor = await window.getComputedStyle(el.$refs.coloredSpan).getPropertyValue('color');
+		const computeSpanColor = window.getComputedStyle(el.$refs.coloredSpan).getPropertyValue('color');
 		assert.equal(computeSpanColor, color2);
 	});
 
 	it('adopts styles in correct order (shadow-dom)', async () => {
 		const el = fixtureSync(`<${shadowCascadeTag}></${shadowCascadeTag}>`);
 		await nextFrame();
-		const computedColor = await window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
+		const computedColor = window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
 		assert.equal(computedColor, color2);
 	});
 });
