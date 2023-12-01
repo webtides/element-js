@@ -53,6 +53,11 @@ export class Store {
 		Object.entries(properties).map(([key, value]) => {
 			this._state[key] =
 				hasSerializedState(this._serializationKey) && serializationKeys.includes(key) ? this[key] : value;
+
+			if (value instanceof Store) {
+				value.subscribe(this);
+			}
+
 			Object.defineProperty(this, key, {
 				get: () => {
 					return this._state[key];
@@ -60,6 +65,9 @@ export class Store {
 				set: (newValue) => {
 					const oldValue = this._state[key];
 					this._state[key] = newValue;
+					if (value instanceof Store) {
+						value.subscribe(this);
+					}
 
 					serializeState(this);
 
@@ -113,7 +121,7 @@ export class Store {
 
 	/**
 	 * Add an observer
-	 * @param {BaseElement | Function} observer
+	 * @param {BaseElement|Function|Store} observer
 	 */
 	subscribe(observer) {
 		this._observer.add(observer);
@@ -132,17 +140,23 @@ export class Store {
 	 */
 	requestUpdate() {
 		this._observer.forEach(async (observer) => {
-			if (observer instanceof BaseElement) {
-				await observer.requestUpdate();
+			if (observer instanceof BaseElement || observer instanceof Store) {
+				if (observer?._options?.autoUpdate !== false) {
+					await observer.requestUpdate();
+				}
 				// check if store is watched by an observer
 				if (Object.keys(observer.watch() ?? {}).length > 0) {
 					// observer actually has watched properties
-					const properties = observer.properties();
 					Object.keys(observer.watch() ?? {}).forEach((key) => {
 						if (observer._state[key] === this) {
 							// observer is actually watching store changes provide new and old values
-							observer.callPropertyWatcher(key, this, this);
-							observer.notifyPropertyChange(key, this);
+							if (observer instanceof Store) {
+								// observer is a foreign store / call watcher
+								observer.watch?.()[key](this, this);
+							} else {
+								observer.callPropertyWatcher(key, this, this);
+								observer.notifyPropertyChange(key, this);
+							}
 						}
 					});
 				}

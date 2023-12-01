@@ -1,5 +1,5 @@
 import { parseAttribute, isNaN, dashToCamel, camelToDash, isObjectLike } from './util/AttributeParser.js';
-import { getClosestParentCustomElementNode, isOfSameNodeType } from './util/DOMHelper.js';
+import { getAllElementChildren, getClosestParentCustomElementNode, isOfSameNodeType } from './util/DOMHelper.js';
 import { Store } from './util/Store.js';
 import { serializeState, deserializeState, hasSerializedState } from './util/SerializeStateHelper.js';
 export { defineElement } from './util/defineElement.js';
@@ -59,6 +59,7 @@ class BaseElement extends HTMLElement {
 		this._options = {
 			autoUpdate: true,
 			deferUpdate: true,
+			deferConnected: false,
 			mutationObserverOptions: {
 				attributes: true,
 				childList: true,
@@ -68,6 +69,13 @@ class BaseElement extends HTMLElement {
 			propertyOptions: {},
 			...options,
 		};
+
+		if (this.hasAttribute('defer-update')) {
+			this._options.deferUpdate = true;
+		}
+		if (this.hasAttribute('defer-connected')) {
+			this._options.deferConnected = true;
+		}
 	}
 
 	/**
@@ -76,6 +84,11 @@ class BaseElement extends HTMLElement {
 	 * register observers, refs and events.
 	 */
 	connectedCallback() {
+		if (this._options.deferConnected) {
+			this._options.deferConnected = false;
+			return;
+		}
+
 		if (this.hasAttribute('ejs:key')) {
 			this._serializationKey = this.getAttribute('ejs:key');
 			deserializeState(this);
@@ -416,8 +429,21 @@ class BaseElement extends HTMLElement {
 			this.requestContext(key, value);
 		});
 		// define context provider
-		if (Object.keys(this.provideProperties()).length > 0) {
+		const providedKeys = Object.keys(this.provideProperties());
+		if (providedKeys.length > 0) {
 			this.addEventListener('request-context', this.onRequestContext);
+			// check if there are already connected elements in child dom and restart requests
+			getAllElementChildren(this.getRoot(), BaseElement).forEach((customChild) => {
+				// if injectProperties?.() is defined it means that the child got connected BEFORE the parent (Runtime Issue)
+				const requestedProperties = customChild.injectProperties?.() ?? {};
+				Object.entries(requestedProperties).forEach(([key, value]) => {
+					// iterate over requested properties to find missed context requests
+					if (providedKeys.includes(key)) {
+						// owns the provided  key -> replay request
+						customChild.requestContext(key, value);
+					}
+				});
+			});
 		}
 	}
 
@@ -427,7 +453,7 @@ class BaseElement extends HTMLElement {
 	 * @param {any | function} valueOrCallback
 	 */
 	requestContext(propertyName, valueOrCallback) {
-		this.dispatch('request-context', { [propertyName]: valueOrCallback }, true);
+		this.dispatch('request-context', { [propertyName]: valueOrCallback }, true, true, true);
 	}
 
 	/**
@@ -437,7 +463,6 @@ class BaseElement extends HTMLElement {
 	 * @param {CustomEvent} event
 	 */
 	onRequestContext(event) {
-		const properties = this.properties();
 		const provideProperties = this.provideProperties();
 
 		Object.entries(event.detail ?? {}).forEach(([key, valueOrCallback]) => {
@@ -450,7 +475,9 @@ class BaseElement extends HTMLElement {
 					valueOrCallback(providedValue);
 				} else {
 					// assign to prop
-					event.target[key] = providedValue;
+					const eventPath = event.composedPath();
+					const target = eventPath[0] || event.target;
+					target[key] = providedValue;
 				}
 			}
 		});

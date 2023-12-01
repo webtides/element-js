@@ -76,6 +76,26 @@ export function getClosestParentCustomElementNode(domNode) {
 }
 
 /**
+ * Get all
+ * @param {Node} domNode
+ * @param {{prototype: HTMLElement, new()}} instanceOfFilter
+ * @return {Node[]}
+ */
+export function getAllElementChildren(domNode, instanceOfFilter = HTMLElement) {
+	const nodeIterator = document.createNodeIterator(domNode, NodeFilter.SHOW_ELEMENT, (node) =>
+		node.nodeName.includes('-') && node instanceof instanceOfFilter
+			? NodeFilter.FILTER_ACCEPT
+			: NodeFilter.FILTER_REJECT,
+	);
+	const customElements = [];
+	let currentNode;
+	while ((currentNode = nodeIterator.nextNode())) {
+		customElements.push(currentNode);
+	}
+	return customElements;
+}
+
+/**
  * Checks whether two nodes are of the same node type
  * @param {Node} nodeA
  * @param {Node} nodeB

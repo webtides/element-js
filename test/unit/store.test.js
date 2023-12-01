@@ -60,10 +60,17 @@ class WatchStoreElement extends BaseElement {
 	}
 }
 
+class NoneUpdatingStoreElement extends StoreElement {
+	constructor() {
+		super({ autoUpdate: false });
+	}
+}
+
 const tagA = defineCE(StoreElement);
 const tagB = defineCE(AnotherStoreElement);
 const tagC = defineCE(ComplexStoreElement);
 const tagW = defineCE(WatchStoreElement);
+const tagNonUpdating = defineCE(NoneUpdatingStoreElement);
 
 describe('store-observer', () => {
 	it('generates reactive store properties from object as constructor argument ', async () => {
@@ -85,6 +92,17 @@ describe('store-observer', () => {
 		await nextFrame();
 		assert.equal(el.updateCount, 1);
 	});
+
+	it('observes the store but does not update when returned by property map if elements autoUpdate ist set to false', async () => {
+		simpleStore.count = 0;
+		const el = await fixture(`<${tagNonUpdating}></${tagNonUpdating}>`);
+		await nextFrame();
+		assert.equal(el.updateCount, 0);
+		simpleStore.count = 1;
+		await nextFrame();
+		assert.equal(el.updateCount, 0);
+	});
+
 	it('updates multiple components that reference the same store in their property map', async () => {
 		const el = await fixture(`<${tagA}></${tagA}>`);
 		const elB = await fixture(`<${tagB}></${tagB}>`);

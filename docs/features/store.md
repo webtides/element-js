@@ -99,3 +99,45 @@ export class AnotherElement extends TemplateElement {
 }
 
 ```         
+
+
+##### storeception
+
+Changes too nested stores will trigger updates and watcher in ParentStore and ultimately transfer to all elements referencing the parent
+
+```js 
+
+class NestedStore extends Store {
+	properties() {
+		return {
+			nestedCount: 0,
+		};
+	}
+}
+
+class ParentStore extends Store {
+	properties() {
+		return {
+			count: 0,		
+			nestedStore: new NestedStore(),
+		};
+	}
+
+	requestUpdate() {
+		// will be triggered on count OR nestedStore.nestedCount changes
+	}
+
+	watch() {
+		return {
+			count: (newCount, oldCount) => {
+				// will be triggered on count changes
+			},
+			nestedStore: () => {
+				// will be triggered on nestedStore changes
+			},
+		};
+	}
+}
+
+```         
+

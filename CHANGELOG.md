@@ -52,6 +52,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 -   _BREAKING_ Removed the `computed` map in the `BaseElement`. Using the computed() map for computed properties is deprecated! Please use regular JS getters and return the computed value. See the docs for more info. ([#99](https://github.com/webtides/element-js/pull/99))
 -   _BREAKING_ Removed all occurrences of `ShadyCSS` in `StyledElement`. ([#99](https://github.com/webtides/element-js/pull/99))
 
+## [0.7.4] - 2023-11-24
+
+### Added
+* storeception (reactive store properties in parent stores)
+* context injection in shadow elements requests travel though shadow roots
+* defer element connection (disables client side code until called manually)
+
+### Fixed
+* late context injection if parent mounts after child (loading order)
+* stores updating elements that want to be updated
+
 ## [0.7.3] - 2023-03-07
 
 ### Fixed
