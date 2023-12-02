@@ -2,7 +2,7 @@
 	"name": "@webtides/element-js",
 	"version": "1.0.0-alpha.4",
 	"module": "index.js",
-	"main": "dist/index.js",
+	"main": "index.js",
 	"type": "module",
 	"files": [
 		"/dist",
@@ -11,7 +11,7 @@
 	],
 	"exports": {
 		".": {
-			"browser": "./dist/index.js",
+			"browser": "./index.js",
 			"import": "./index.js",
 			"default": "./index.js"
 		},
@@ -42,7 +42,6 @@
 		"babel-eslint": "^10.1.0",
 		"babel-plugin-module-resolver": "^5.0.0",
 		"deepmerge": "^4.2.2",
-		"esbuild": "^0.15.5",
 		"eslint": "8.22.0",
 		"eslint-config-prettier": "^7.2.0",
 		"eslint-plugin-import": "^2.26.0",
@@ -59,7 +58,6 @@
 	},
 	"scripts": {
 		"lint": "eslint index.js 'src/**/*.js'",
-		"prepare": "esbuild index.js --outfile=dist/index.js --bundle --format=esm --sourcemap --target=chrome79,firefox68,safari12,edge79",
 		"test": "web-test-runner test/**/*.test.{html,js} --node-resolve",
 		"test:coverage": "web-test-runner test/**/*.test.{html,js} --node-resolve --coverage",
 		"test:watch": "web-test-runner test/**/*.test.{html,js} --node-resolve --watch",
