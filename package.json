@@ -35,20 +35,18 @@
 	],
 	"dependencies": {},
 	"devDependencies": {
-		"@babel/eslint-parser": "^7.18.9",
-		"@open-wc/testing": "^3.1.6",
-		"@web/dev-server": "^0.1.30",
-		"@web/test-runner": "^0.14.0",
+		"@babel/eslint-parser": "^7.23.3",
+		"@open-wc/testing": "^4.0.0",
+		"@web/dev-server": "^0.4.1",
+		"@web/test-runner": "^0.14.1",
 		"babel-eslint": "^10.1.0",
-		"babel-plugin-module-resolver": "^5.0.0",
-		"deepmerge": "^4.2.2",
-		"eslint": "8.22.0",
-		"eslint-config-prettier": "^7.2.0",
-		"eslint-plugin-import": "^2.26.0",
-		"eslint-plugin-prettier": "^4.2.1",
-		"husky": "^8.0.1",
-		"lint-staged": "^13.0.3",
-		"prettier": "^2.7.1"
+		"eslint": "8.55.0",
+		"eslint-config-prettier": "^9.1.0",
+		"eslint-plugin-import": "^2.29.0",
+		"eslint-plugin-prettier": "^5.0.1",
+		"husky": "^8.0.3",
+		"lint-staged": "^15.1.0",
+		"prettier": "^3.1.0"
 	},
 	"lint-staged": {
 		"*.{js,json}": [
