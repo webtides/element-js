@@ -380,7 +380,7 @@ class BaseElement extends HTMLElement {
 			property in this._options['propertyOptions'] &&
 			this._options['propertyOptions'][property]['notify'] === true
 		) {
-			this.dispatch(`${camelToDash(property)}-changed`, newValue, true);
+			this.dispatch(`${camelToDash(property)}-changed`, newValue);
 		}
 	}
 
@@ -453,7 +453,7 @@ class BaseElement extends HTMLElement {
 	 * @param {any | function} valueOrCallback
 	 */
 	requestContext(propertyName, valueOrCallback) {
-		this.dispatch('request-context', { [propertyName]: valueOrCallback }, true, true, true);
+		this.dispatch('request-context', { [propertyName]: valueOrCallback });
 	}
 
 	/**
@@ -619,10 +619,10 @@ class BaseElement extends HTMLElement {
 	/**
 	 * Helper function for dispatching custom events
 	 * @param {string} name
-	 * @param {Object} data
-	 * @param {CustomEventInit} options
-	 * @param {boolean} cancelable - DEPRECATED
-	 * @param {boolean} composed - DEPRECATED
+	 * @param {Object} [data]
+	 * @param {CustomEventInit} [options]
+	 * @param {boolean} [cancelable] - DEPRECATED
+	 * @param {boolean} [composed] - DEPRECATED
 	 */
 	dispatch(name, data, options, cancelable = false, composed = false) {
 		let eventInit = {};

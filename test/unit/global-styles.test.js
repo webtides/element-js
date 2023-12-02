@@ -103,10 +103,6 @@ describe('global-styles', () => {
 	});
 
 	it('adopts globalStyles in shadowDom when they get added asynchronously', async () => {
-		console.log(
-			'2 globalThis.elementJsConfig?.observeGlobalStyles',
-			globalThis.elementJsConfig?.observeGlobalStyles,
-		);
 		const el = await fixture(`<${shadowTag}></${shadowTag}>`);
 		//this needs to be called to find the styles added ar runtime
 		await nextFrame();

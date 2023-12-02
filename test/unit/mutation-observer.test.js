@@ -11,7 +11,7 @@ class UpdateCountElement extends BaseElement {
 	afterUpdate() {
 		this.updateCount++;
 		if (this.updateCount > 0) {
-			this.dispatch('afterUpdate', null, true);
+			this.dispatch('afterUpdate', null);
 		}
 	}
 }
