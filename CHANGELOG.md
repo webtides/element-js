@@ -15,6 +15,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.0.0-alpha.5] - 2023-12-07
+
+### Added
+
+-   Added the /docs directory to the files array in package.json
+-   Added part instances as __part to comment nodes
+
+### Fixed
+
+-   fixed escaped unsafeHTML in SSR mode
+
 ## [1.0.0-alpha.4] - 2023-12-01
 
 ### Fixed
