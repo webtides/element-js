@@ -5,7 +5,7 @@
 	"main": "index.js",
 	"type": "module",
 	"files": [
-		"/dist",
+		"/docs",
 		"/src",
 		"index.js"
 	],
