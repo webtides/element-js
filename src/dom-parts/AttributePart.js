@@ -120,6 +120,7 @@ export class AttributePart extends Part {
 	 */
 	constructor(node, name, initialValue) {
 		super();
+		node.__part = this; // add Part to comment node for debugging in the browser
 		this.name = name;
 		this.initialValue = initialValue;
 		this.processor = processAttributePart(node.nextElementSibling, this.name);

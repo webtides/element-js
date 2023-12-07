@@ -212,6 +212,8 @@ export class ChildNodePart extends Part {
 
 		let serverSideRendered = false;
 		if (startNode) {
+			startNode.__part = this; // add Part to comment node for debugging in the browser
+
 			const placeholder = startNode.data;
 			const childNodes = [startNode];
 			let childNode = startNode.nextSibling;
