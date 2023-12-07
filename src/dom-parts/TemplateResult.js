@@ -99,6 +99,8 @@ const getValue = (value) => {
 					return value.map(getValue).join('');
 				case value instanceof TemplateResult:
 					return value.toString();
+				case value.__unsafeHTML:
+					return value.string;
 			}
 			break;
 		case 'function':
