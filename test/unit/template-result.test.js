@@ -4,7 +4,7 @@ import { html } from '../../src/dom-parts/html.js';
 import { convertStringToTemplate } from '../../src/util/DOMHelper';
 import { render } from '../../src/dom-parts/render';
 import { stripCommentMarkers } from './renderer/template-bindings.js';
-import { defineDirective, Directive } from "../../src/util/Directive";
+import { defineDirective, Directive } from '../../src/util/Directive';
 
 export const stripWhitespace = (html) => html.replace(/\s+/g, ' ').replaceAll('> ', '>').trim();
 
@@ -113,7 +113,7 @@ describe('TemplateResult.parseParts()', () => {
 		const documentFragment = convertStringToTemplate(templateResult.templateString);
 		const childNodes = [...documentFragment.childNodes];
 		const parts = templateResult.parseParts(childNodes);
-		assert.deepEqual(parts, [{ type: 'node', path: [1, 2], parts: [] }]);
+		assert.deepEqual(parts, [{ type: 'node', path: [1, 2] }]);
 	});
 
 	it('creates an attribute part for an interpolation inside an attribute', async () => {
@@ -154,6 +154,14 @@ describe('TemplateResult.parseParts()', () => {
 		const parts = templateResult.parseParts(childNodes);
 		assert.deepEqual(parts, [{ type: 'directive', path: [2] }]);
 	});
+
+	it('creates no nested parts for text interpolation inside a nested node', async () => {
+		const templateResult = html`<div>${html`<div>${'Text'}</div>`}</div>`;
+		const documentFragment = convertStringToTemplate(templateResult.templateString);
+		const childNodes = [...documentFragment.childNodes];
+		const parts = templateResult.parseParts(childNodes);
+		assert.deepEqual(parts, [{ type: 'node', path: [1, 2] }]);
+	});
 });
 
 describe('TemplateResult.toString()', () => {
@@ -190,10 +198,10 @@ describe('TemplateResult.toString()', () => {
 	});
 
 	it('adds multiple placeholders as comment nodes before the node for attributes with multiple variables', async () => {
-		const templateResult = html`<div id="${1}" class="${'some'} other ${'class'}">Text</div>`;
+		const templateResult = html`<div id="${1}" not-class="${'some'} other ${'class'}">Text</div>`;
 		assert.equal(
 			stripWhitespace(templateResult.toString()),
-			'<!--template-part--><!--dom-part-0:id=\x03--><!--dom-part-1:class=\x03 other \x03--><!--dom-part-2:class=\x03 other \x03--><div id="1" class="some other class">Text</div><!--/template-part-->',
+			'<!--template-part--><!--dom-part-0:id=\x03--><!--dom-part-1:not-class=\x03 other \x03--><!--dom-part-2:not-class=\x03 other \x03--><div id="1" not-class="some other class">Text</div><!--/template-part-->',
 		);
 	});
 
@@ -258,7 +266,10 @@ describe('TemplateResult SSR', () => {
 		const templateResult = html`<div>${text}</div>`;
 		render(templateResult, el);
 		assert.equal(stripCommentMarkers(el.innerHTML), '<div>Foo</div>');
-		// TODO: find a way to actually test that the parts have been created?!
+		const parts = templateResult.parseParts(el.childNodes);
+		assert.equal(parts.length, 1);
+		assert.equal(parts[0].type, 'node');
+		// TODO: test parts like above...
 	});
 
 	it('can update previously hydrated templates', async () => {

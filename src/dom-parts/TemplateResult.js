@@ -258,40 +258,39 @@ export class TemplateResult {
 		const template = range.cloneContents();
 
 		const treeWalker = globalThis.document?.createTreeWalker(template, 128);
-		let node = treeWalker.currentNode;
+		let node = treeWalker.nextNode(); //to skip the root template-part
+		const parts = [];
 
-		// this is kinda freaky because the tree walker is shared throughout the recursion - but YOLO
-		const getParts = () => {
-			const parts = [];
-			let currentPart = undefined;
-			// search for parts through numbered comment nodes with placeholders
-			while ((node = treeWalker.nextNode())) {
-				if (/^template-part$/.test(node.data) && currentPart) {
-					// start recursion -> add nested parts to previous part
-					currentPart.parts = getParts();
-				}
-				if (/^\/template-part$/.test(node.data)) {
-					// end recursion
-					return parts;
-				}
-				if (/^dom-part-\d+$/.test(node.data)) {
-					parts.push((currentPart = { type: 'node', path: getNodePath(node), parts: [] }));
-				}
-				if (/^dom-part-\d+:/.test(node.data)) {
-					const [_, attribute] = node.data.split(':');
-					const [name, initialValue] = attribute.split('=');
-					currentPart = undefined;
-					parts.push({ type: 'attribute', path: getNodePath(node), name: name, initialValue });
-				}
-				if (/^dom-part-\d+\$/.test(node.data)) {
-					currentPart = undefined;
-					parts.push({ type: 'directive', path: getNodePath(node) });
-				}
+		let nestedLevel = 0;
+		// search for parts through numbered comment nodes with placeholders
+		while ((node = treeWalker.nextNode())) {
+			if (/^template-part$/.test(node.data)) {
+				nestedLevel++;
+				continue;
 			}
-			return parts;
-		};
-
-		const parts = getParts();
+			if (/^\/template-part$/.test(node.data)) {
+				if (nestedLevel > 0) {
+					nestedLevel--;
+				}
+				continue;
+			}
+			if (nestedLevel > 0) {
+				continue;
+			}
+			if (/^dom-part-\d+$/.test(node.data)) {
+				parts.push({ type: 'node', path: getNodePath(node) });
+				continue;
+			}
+			if (/^dom-part-\d+:/.test(node.data)) {
+				const [_, ...attribute] = node.data.split(':');
+				const [name, initialValue] = attribute.join(':').split('=');
+				parts.push({ type: 'attribute', path: getNodePath(node), name: name, initialValue });
+				continue;
+			}
+			if (/^dom-part-\d+\$/.test(node.data)) {
+				parts.push({ type: 'directive', path: getNodePath(node) });
+			}
+		}
 
 		// We couldn't correctly parse parts from the template
 		if (parts.length !== this.strings.length - 1) {

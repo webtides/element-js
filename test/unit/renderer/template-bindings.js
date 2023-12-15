@@ -195,6 +195,27 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 			);
 		});
 
+		it('can render bindings inside attributes with special characters', async () => {
+			const el = document.createElement('div');
+			const active = true;
+			const templateResult = html`<a
+				class="link ${active
+					? 'is-active'
+					: ''} text-blue-600 dark:text-blue-200/50 top-[117px] before:content-['Festivus']"
+				>Label</a
+			>`;
+			render(templateResult, el);
+			assert.equal(
+				stripCommentMarkers(el.innerHTML),
+				'<a class="link is-active text-blue-600 dark:text-blue-200/50 top-[117px] before:content-[\'Festivus\']">Label</a>',
+			);
+			assert.equal(
+				stripCommentMarkers(el.innerHTML),
+				stripCommentMarkers(templateResult.toString().replace('</a>', '</a >')),
+				'CSR template does not match SSR template',
+			);
+		});
+
 		it('can render multiple bindings inside attributes', async () => {
 			const el = document.createElement('div');
 			const active = true;

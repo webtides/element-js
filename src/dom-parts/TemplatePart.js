@@ -34,6 +34,8 @@ export class TemplatePart extends Part {
 
 		let serverSideRendered = false;
 		if (startNode) {
+			startNode.__part = this; // add Part to comment node for debugging in the browser
+
 			const placeholder = startNode.data;
 			const childNodes = [startNode];
 			let childNode = startNode.nextSibling;
@@ -110,7 +112,6 @@ export class TemplatePart extends Part {
 				.map((part, index) => {
 					if (part.type === 'node') {
 						return new ChildNodePart(part.node, templateResult.values[index]);
-						// TODO: the nodes in the parts array also have nested parts information... could we start creating the nested parts here as well?
 					}
 					if (part.type === 'attribute') {
 						// If we have multiple attribute parts with the same name, it means we have multiple
