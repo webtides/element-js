@@ -15,6 +15,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.0.0-alpha.6] - 2023-12-18
+
+### Fixed
+
+-   fixed hyphens in attribute names being split in SSR mode
+
 ## [1.0.0-alpha.5] - 2023-12-07
 
 ### Added
