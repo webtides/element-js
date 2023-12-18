@@ -12,7 +12,7 @@ const partPositions = /[\x01\x02]/g;
 // \x03 COMMENT.ATTRIBUTE_TOKEN
 // \x04 Node.ATTRIBUTE_TOKEN
 
-const interpolation = new RegExp(`(<!--dom-part-(\\d+)--><!--/dom-part-(\\d+)-->|(\\S\\w+)="\x04(")?|\x04)`, 'g');
+const interpolation = new RegExp(`(<!--dom-part-(\\d+)--><!--/dom-part-(\\d+)-->|(\\S[-\\w]+)="\x04(")?|\x04)`, 'g');
 
 /**
  * Given a template, find part positions as both nodes and attributes and

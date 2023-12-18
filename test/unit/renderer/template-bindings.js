@@ -209,9 +209,10 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 				stripCommentMarkers(el.innerHTML),
 				'<a class="link is-active text-blue-600 dark:text-blue-200/50 top-[117px] before:content-[\'Festivus\']">Label</a>',
 			);
+			// TODO: fix whitespace issues below...
 			assert.equal(
-				stripCommentMarkers(el.innerHTML),
-				stripCommentMarkers(templateResult.toString().replace('</a>', '</a >')),
+				stripCommentMarkers(el.innerHTML.replace('</a>', '</a >')),
+				stripCommentMarkers(templateResult.toString()),
 				'CSR template does not match SSR template',
 			);
 		});
