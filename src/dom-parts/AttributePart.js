@@ -78,7 +78,7 @@ const processAttribute = (node, name) => {
 	};
 };
 
-/** @type {Map<Comment, AttributePart>} */
+/** @type {Map<Element, AttributePart>} */
 const attributePartsCache = new WeakMap();
 
 /**
@@ -138,14 +138,6 @@ export class AttributePart extends Part {
 		this.processor = processAttributePart(node.nextElementSibling, this.name);
 		node.__part = this; // add Part to comment node for debugging in the browser
 		attributePartsCache.set(node.nextElementSibling, this);
-	}
-
-	/**
-	 * @param {Node} node
-	 */
-	addNode(node) {
-		this.interpolations++;
-		// TODO: what about the comment node? It will always be the first for now...
 	}
 
 	/**
