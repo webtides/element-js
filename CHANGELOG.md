@@ -15,6 +15,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.0.0-alpha.7] - 2023-12-19
+
+### Fixed
+
+-   fixed wrong attribute parts for the same name on different elements
+
 ## [1.0.0-alpha.6] - 2023-12-18
 
 ### Fixed
