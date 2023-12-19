@@ -101,8 +101,6 @@ export class TemplatePart extends Part {
 				partsCache.set(templateResult.strings, parts);
 			}
 
-			/** @type AttributePart */
-			let previousAttributePart = undefined;
 			this.parts = parts
 				.map((part) => {
 					// We currently need the path because the fragment will be cloned via importNode and therefore the node will be a different one
@@ -114,19 +112,11 @@ export class TemplatePart extends Part {
 						return new ChildNodePart(part.node, templateResult.values[index]);
 					}
 					if (part.type === 'attribute') {
-						// If we have multiple attribute parts with the same name, it means we have multiple
-						// interpolations inside that attribute. Instead of creating a new part, we will return the same
-						// as before and let it defer the update until the last interpolation gets updated
-						if (previousAttributePart && previousAttributePart.name === part.name) {
-							previousAttributePart.addNode(part.node);
-							return previousAttributePart;
-						}
-						return (previousAttributePart = new AttributePart(part.node, part.name, part.initialValue));
+						return new AttributePart(part.node, part.name, part.initialValue);
 					}
 					if (part.type === 'directive') {
 						return new NodePart(part.node, templateResult.values[index]);
 					}
-
 					throw `cannot map part: ${part}`;
 				});
 			this.strings = templateResult.strings;

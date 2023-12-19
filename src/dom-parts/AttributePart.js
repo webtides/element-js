@@ -78,6 +78,9 @@ const processAttribute = (node, name) => {
 	};
 };
 
+/** @type {Map<Comment, AttributePart>} */
+const attributePartsCache = new WeakMap();
+
 /**
  * @param {Element} node
  * @param {String} name
@@ -114,16 +117,27 @@ export class AttributePart extends Part {
 	initialValue = undefined;
 
 	/**
-	 * @param {Node} node
+	 * @param {Comment} node
 	 * @param {String} name
 	 * @param {String} initialValue
 	 */
 	constructor(node, name, initialValue) {
+		// If we have multiple attribute parts with the same name, it means we have multiple
+		// interpolations inside that attribute. Instead of creating a new part, we will return the same
+		// as before and let it defer the update until the last interpolation gets updated
+		const attributePart = attributePartsCache.get(node.nextElementSibling);
+		if (attributePart && attributePart.name === name) {
+			attributePart.interpolations++;
+			node.__part = attributePart; // add Part to comment node for debugging in the browser
+			return attributePart;
+		}
+
 		super();
-		node.__part = this; // add Part to comment node for debugging in the browser
 		this.name = name;
 		this.initialValue = initialValue;
 		this.processor = processAttributePart(node.nextElementSibling, this.name);
+		node.__part = this; // add Part to comment node for debugging in the browser
+		attributePartsCache.set(node.nextElementSibling, this);
 	}
 
 	/**
