@@ -12,13 +12,13 @@ const removeChildNodes = (node) => {
 	const firstChild = Array.isArray(node)
 		? node[0]
 		: node instanceof TemplatePart
-		? node.childNodes[0]
-		: node.firstChild;
+		  ? node.childNodes[0]
+		  : node.firstChild;
 	const lastChild = Array.isArray(node)
 		? node[node.length - 1]
 		: node instanceof TemplatePart
-		? node.childNodes[node.childNodes.length - 1]
-		: node.lastChild;
+		  ? node.childNodes[node.childNodes.length - 1]
+		  : node.lastChild;
 	range.setStartAfter(firstChild);
 	range.setEndAfter(lastChild);
 	range.deleteContents();
@@ -75,38 +75,12 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
 		}
 
 		// If DOM node is equal to the template node, don't do anything
-		// if (domChildNode.isEqualNode(templateChildNode)) {
 		if (domChildNode === templateChildNode) {
 			continue;
 		}
 
-		// TODO: everything after here does the same... do we even need to do all the checks?!
-		// TODO: because if none of the checks apply, we will run into errors for later updates
-		// TODO: because we return the templateNodes but they never actually get into the DOM...
-
-		// If node types are not the same, replace the DOM node with the template node
-		if (templateChildNode.nodeType !== domChildNode.nodeType) {
-			parentNode.replaceChild(templateChildNode, domChildNode);
-			continue;
-		}
-
-		// If the element tag names are not the same, replace the DOM node with the template node
-		if (templateChildNode.nodeType === ELEMENT_NODE && templateChildNode.tagName !== domChildNode.tagName) {
-			parentNode.replaceChild(templateChildNode, domChildNode);
-			continue;
-		}
-
-		// If the node is an SVG element, don't even think about diffing it, just replace it
-		if (templateChildNode.nodeType === ELEMENT_NODE && templateChildNode.tagName === 'SVG') {
-			parentNode.replaceChild(templateChildNode, domChildNode);
-			continue;
-		}
-
-		// If DOM node is not equal to the template node, replace it
-		if (domChildNode !== templateChildNode) {
-			parentNode.replaceChild(templateChildNode, domChildNode);
-			continue;
-		}
+		// Everything else is somehow different and can be replaced
+		parentNode.replaceChild(templateChildNode, domChildNode);
 	}
 	return templateChildNodes;
 };
