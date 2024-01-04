@@ -80,6 +80,10 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
 			continue;
 		}
 
+		// TODO: everything after here does the same... do we even need to do all the checks?!
+		// TODO: because if none of the checks apply, we will run into errors for later updates
+		// TODO: because we return the templateNodes but they never actually get into the DOM...
+
 		// If node types are not the same, replace the DOM node with the template node
 		if (templateChildNode.nodeType !== domChildNode.nodeType) {
 			parentNode.replaceChild(templateChildNode, domChildNode);
@@ -94,6 +98,12 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
 
 		// If the node is an SVG element, don't even think about diffing it, just replace it
 		if (templateChildNode.nodeType === ELEMENT_NODE && templateChildNode.tagName === 'SVG') {
+			parentNode.replaceChild(templateChildNode, domChildNode);
+			continue;
+		}
+
+		// If DOM node is not equal to the template node, replace it
+		if (domChildNode !== templateChildNode) {
 			parentNode.replaceChild(templateChildNode, domChildNode);
 			continue;
 		}
