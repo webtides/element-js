@@ -50,15 +50,11 @@ class GlobalStylesStore extends Store {
 			let cssStyleSheet = this.globalStyleSheetsCache.get(styleSheet.ownerNode);
 			if (!cssStyleSheet) {
 				cssStyleSheet = new CSSStyleSheet();
-				let cssText = '';
 				if (styleSheet.ownerNode.tagName === 'STYLE') {
-					cssText = styleSheet.ownerNode.textContent;
+					cssStyleSheet.replaceSync(styleSheet.ownerNode.textContent);
 				} else if (styleSheet.ownerNode.tagName === 'LINK') {
-					cssText = Array.from(styleSheet.cssRules)
-						.map((rule) => rule.cssText)
-						.join('');
+					Array.from(styleSheet.cssRules).map((rule) => cssStyleSheet.insertRule(rule.cssText));
 				}
-				cssStyleSheet.replaceSync(cssText);
 			}
 			cssStyleSheets.push(cssStyleSheet);
 		});
