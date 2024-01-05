@@ -10,6 +10,7 @@ export { toString } from './util/toString.js';
  * @typedef {Object} BaseElementOptions
  * @property {boolean} [autoUpdate] - When set to true the element will call the requestUpdate() method on the instance every time a property or attribute was changed. This will re-evaluate everything on the element and trigger a re-render (if a template is provided) and trigger the watchers for the affected properties/attributes. Default is `true`
  * @property {boolean} [deferUpdate] - When set to true the element will not call the requestUpdate() method upon connecting and therefore will not render (if template was provided) initially. Default is `true`
+ * @property {boolean} [deferConnected] - When set to true the element will skip the initialization in connectedCallback() before connecting and therefore will not render (if template was provided) or hydrate initially. Default is `false`
  * @property {MutationObserverOptions} [mutationObserverOptions]
  * @property {PropertyOptions} [propertyOptions]
  */
@@ -69,13 +70,6 @@ class BaseElement extends HTMLElement {
 			propertyOptions: {},
 			...options,
 		};
-
-		if (this.hasAttribute('defer-update')) {
-			this._options.deferUpdate = true;
-		}
-		if (this.hasAttribute('defer-connected')) {
-			this._options.deferConnected = true;
-		}
 	}
 
 	/**
@@ -84,8 +78,13 @@ class BaseElement extends HTMLElement {
 	 * register observers, refs and events.
 	 */
 	connectedCallback() {
-		if (this._options.deferConnected) {
+		if (this.hasAttribute('defer-update')) {
+			this._options.deferUpdate = true;
+		}
+
+		if (this.hasAttribute('defer-connected') || this._options.deferConnected) {
 			this._options.deferConnected = false;
+			this.removeAttribute('defer-connected');
 			return;
 		}
 
@@ -111,7 +110,7 @@ class BaseElement extends HTMLElement {
 		// define everything that should be observed
 		this.defineObserver();
 
-		if (this.hasAttribute('defer-update') || this._options.deferUpdate) {
+		if (this._options.deferUpdate) {
 			// don't update/render, but register refs and events
 			this.registerEventsAndRefs();
 

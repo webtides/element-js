@@ -24,8 +24,15 @@ class TemplateElement extends StyledElement {
 			...options,
 		});
 		this._template = this._options.template;
+	}
 
+	/**
+	 * Overrides the native `connectedCallback` of the HTMLElement to set up and initialize our element.
+	 * This will attach a shadow DOM if the element is supposed to render in shadow DOM.
+	 */
+	connectedCallback() {
 		if (this._options.shadowRender) this.attachShadow({ mode: 'open' });
+		super.connectedCallback();
 	}
 
 	/**

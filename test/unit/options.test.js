@@ -37,7 +37,8 @@ describe('options', () => {
 		// properties wil not be defined
 		assert.isUndefined(el.updateCalled);
 	});
-	it('can initalize by calling connectedCallback manually', async () => {
+
+	it('can initialize by calling connectedCallback manually', async () => {
 		const el = await fixture(`<${immediateTag} defer-connected></${immediateTag}>`);
 		el.connectedCallback();
 		// properties wil be defined

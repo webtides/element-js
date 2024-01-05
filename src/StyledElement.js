@@ -92,7 +92,9 @@ class StyledElement extends BaseElement {
 		const parentDocument = getShadowParentOrBody(this.getRoot());
 
 		const adoptGlobalStyleSheets =
-			this._options.shadowRender && this._options.adoptGlobalStyles !== false && parentDocument !== document.body;
+			this._options.shadowRender &&
+			this._options.adoptGlobalStyles !== false &&
+			parentDocument !== globalThis.document.body;
 
 		const appendableStyles = [
 			...(adoptGlobalStyleSheets ? globalStylesStore.getGlobalStyleSheets(this._options.adoptGlobalStyles) : []),
