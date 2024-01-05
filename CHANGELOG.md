@@ -15,6 +15,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.0.0-alpha.9] - 2024-01-05
+
+### Changed
+
+-   moved DOM methods into connected callbacks to make it safe for the elements to be created in SSR environments
+
 ## [1.0.0-alpha.8] - 2024-01-04
 
 ### Fixed
@@ -38,7 +44,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Added
 
 -   Added the /docs directory to the files array in package.json
--   Added part instances as __part to comment nodes
+-   Added part instances as \_\_part to comment nodes
 
 ### Fixed
 
