@@ -1,4 +1,4 @@
-import { TemplateResult } from './TemplateResult';
+import { TemplateResult } from './TemplateResult.js';
 
 /**
  * @param {TemplateStringsArray} strings

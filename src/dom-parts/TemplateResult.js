@@ -1,4 +1,4 @@
-import { COMMENT_NODE, getNodePath } from '../util/DOMHelper';
+import { COMMENT_NODE, getNodePath } from '../util/DOMHelper.js';
 import { encodeAttribute, isObjectLike } from '../util/AttributeParser.js';
 import { TemplatePart } from './TemplatePart.js';
 
