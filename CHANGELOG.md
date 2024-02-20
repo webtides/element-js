@@ -15,6 +15,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.0.0-alpha.10] - 2024-02-20
+
+### Fixed
+
+-   fixed unsafeHTML not rendering anything when toString was called
+-   fixed using = sign in attribute positions with interpolations
+-   fixed rendering null values in node part positions in SSR
+-   fixed missing .js file extensions
+
 ## [1.0.0-alpha.9] - 2024-01-05
 
 ### Changed
