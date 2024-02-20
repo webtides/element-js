@@ -201,13 +201,13 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 			const templateResult = html`<a
 				class="link ${active
 					? 'is-active'
-					: ''} text-blue-600 dark:text-blue-200/50 top-[117px] before:content-['Festivus']"
+					: ''} text-blue-600 dark:text-blue-200/50 top-[117px] foo=bar before:content-['Festivus']"
 				>Label</a
 			>`;
 			render(templateResult, el);
 			assert.equal(
 				stripCommentMarkers(el.innerHTML),
-				'<a class="link is-active text-blue-600 dark:text-blue-200/50 top-[117px] before:content-[\'Festivus\']">Label</a>',
+				'<a class="link is-active text-blue-600 dark:text-blue-200/50 top-[117px] foo=bar before:content-[\'Festivus\']">Label</a>',
 			);
 			// TODO: fix whitespace issues below...
 			assert.equal(

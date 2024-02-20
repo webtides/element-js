@@ -287,8 +287,13 @@ export class TemplateResult {
 			}
 			if (/^dom-part-\d+:/.test(node.data)) {
 				const [_, ...attribute] = node.data.split(':');
-				const [name, initialValue] = attribute.join(':').split('=');
-				parts.push({ type: 'attribute', path: getNodePath(node), name: name, initialValue });
+				const [name, ...initialValue] = attribute.join(':').split('=');
+				parts.push({
+					type: 'attribute',
+					path: getNodePath(node),
+					name: name,
+					initialValue: initialValue.join('='),
+				});
 				continue;
 			}
 			if (/^dom-part-\d+\$/.test(node.data)) {
