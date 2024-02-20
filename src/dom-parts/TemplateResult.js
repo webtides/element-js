@@ -95,12 +95,16 @@ const getValue = (value) => {
 			return String(value);
 		case 'object':
 			switch (true) {
+				case value === null:
+					return '';
 				case Array.isArray(value):
 					return value.map(getValue).join('');
 				case value instanceof TemplateResult:
 					return value.toString();
 				case value.__unsafeHTML:
 					return value.string;
+				default:
+					console.log('Cannot getValue for', value);
 			}
 			break;
 		case 'function':

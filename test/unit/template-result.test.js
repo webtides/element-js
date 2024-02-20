@@ -1,10 +1,10 @@
 import { fixture, assert } from '@open-wc/testing';
 import { createTemplateString } from '../../src/dom-parts/TemplateResult.js';
 import { html } from '../../src/dom-parts/html.js';
-import { convertStringToTemplate } from '../../src/util/DOMHelper';
-import { render } from '../../src/dom-parts/render';
+import { convertStringToTemplate } from '../../src/util/DOMHelper.js';
+import { render } from '../../src/dom-parts/render.js';
 import { stripCommentMarkers } from './renderer/template-bindings.js';
-import { defineDirective, Directive } from '../../src/util/Directive';
+import { defineDirective, Directive } from '../../src/util/Directive.js';
 
 export const stripWhitespace = (html) => html.replace(/\s+/g, ' ').replaceAll('> ', '>').trim();
 
@@ -186,6 +186,30 @@ describe('TemplateResult.toString()', () => {
 		assert.equal(
 			stripWhitespace(templateResult.toString()),
 			'<!--template-part--><div><!--dom-part-0-->Text<!--/dom-part-0--></div><!--/template-part-->',
+		);
+	});
+
+	it('adds placeholders as comment nodes for a list of child node variables', async () => {
+		const templateResult = html`<div>${['Text-1', 'Text-2']}</div>`;
+		assert.equal(
+			stripWhitespace(templateResult.toString()),
+			'<!--template-part--><div><!--dom-part-0-->Text-1Text-2<!--/dom-part-0--></div><!--/template-part-->',
+		);
+	});
+
+	it('adds placeholders as comment nodes for a list of template part child node variables', async () => {
+		const templateResult = html`<div>${[html`${'Text-1'}`, html`${'Text-2'}`]}</div>`;
+		assert.equal(
+			stripWhitespace(templateResult.toString()),
+			'<!--template-part--><div><!--dom-part-0--><!--template-part--><!--dom-part-0-->Text-1<!--/dom-part-0--><!--/template-part--><!--template-part--><!--dom-part-0-->Text-2<!--/dom-part-0--><!--/template-part--><!--/dom-part-0--></div><!--/template-part-->',
+		);
+	});
+
+	it('adds placeholders as comment nodes for null child node variables', async () => {
+		const templateResult = html`<div>${null}</div>`;
+		assert.equal(
+			stripWhitespace(templateResult.toString()),
+			'<!--template-part--><div><!--dom-part-0--><!--/dom-part-0--></div><!--/template-part-->',
 		);
 	});
 
