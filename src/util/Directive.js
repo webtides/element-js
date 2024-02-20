@@ -30,6 +30,13 @@ export class Directive {
  */
 export const defineDirective = (directiveClass) => {
 	return (...values) => {
-		return { directiveClass, values };
+		return {
+			directiveClass,
+			values,
+			toString: () => {
+				const directive = new directiveClass();
+				return directive.stringify(...values);
+			},
+		};
 	};
 };
