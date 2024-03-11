@@ -37,7 +37,7 @@ class TemplateElement extends StyledElement {
 
 	/**
 	 * The template method should be overridden in extending elements and return the template to be rendered to the root
-	 * @returns {TemplateResult}
+	 * @returns {TemplateResult|String}
 	 */
 	template() {
 		return html``;
