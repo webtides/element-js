@@ -37,7 +37,7 @@ class TemplateElement extends StyledElement {
 
 	/**
 	 * The template method should be overridden in extending elements and return the template to be rendered to the root
-	 * @returns {TemplateResult}
+	 * @returns {TemplateResult | string}
 	 */
 	template() {
 		return html``;
@@ -57,12 +57,7 @@ class TemplateElement extends StyledElement {
 	 */
 	renderTemplate() {
 		const template = this._template || this.template();
-		if (typeof template === 'string') {
-			// just a plain string literal. no lit-html required
-			this.getRoot().innerHTML = `${template}`;
-		} else {
-			render(template, this.getRoot());
-		}
+		render(template, this.getRoot());
 	}
 
 	/**
