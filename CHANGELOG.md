@@ -15,6 +15,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.0.0-alpha.11] - 2024-03-13
+
+### Fixed
+
+-   fixed missing return type `string` for the `template()` function in `TemplateElement`
+-   fixed types for the `propertyOptions` option in `BaseElement`
+
 ## [1.0.0-alpha.10] - 2024-02-20
 
 ### Fixed
