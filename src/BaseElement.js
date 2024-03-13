@@ -24,7 +24,12 @@ export { toString } from './util/toString.js';
 
 /**
  * Options object for the BaseElement propertyOptions option
- * @typedef {Object} PropertyOptions
+ * @typedef {Object<string, PropertyOption>} PropertyOptions
+ */
+
+/**
+ * Option object for a property of the BaseElement propertyOptions option
+ * @typedef {Object} PropertyOption
  * @property {undefined | boolean | function} [reflect] - When set to true the element will reflect property changes back to attributes if the attribute was not present when connecting the element. By default, all attributes that are present when connecting the element will be reflected anyway. Default is `undefined`
  * @property {undefined | boolean | function} [parse] - When set to false the element will not automatically try to parse the attributes string value to a complex type (number, array, object). Default is `undefined`
  * @property {undefined | boolean | function} [notify] - When set to true the element will dispatch CustomEvents for every property/attribute change. The event name will be the property name all lowercase and camel to dashes with a postfix of -changed. Default is `undefined`
