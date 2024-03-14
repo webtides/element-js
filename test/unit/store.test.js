@@ -48,13 +48,17 @@ class WatchStoreElement extends BaseElement {
 		return {
 			watchTriggered: false,
 			store: simpleStore,
+			newValue: null,
+			oldValue: null,
 		};
 	}
 
 	watch() {
 		return {
-			store: (storeUpdate) => {
+			store: (newValue, oldValue) => {
 				this.watchTriggered = true;
+				this.newValue = newValue.count;
+				this.oldValue = oldValue.count;
 			},
 		};
 	}
@@ -194,5 +198,14 @@ describe('store-observer', () => {
 		simpleStore.count = 1;
 		await nextFrame();
 		assert.isTrue(el.watchTriggered);
+	});
+	// TODO create the same tests for store watchers AND notifcations
+	it('triggers an elements watch callback passes old and new Values', async () => {
+		const el = await fixture(`<${tagW}></${tagW}>`);
+		simpleStore.count = 1;
+		simpleStore.count = 2;
+		await nextFrame();
+		assert.equal(el.newValue, 2);
+		assert.equal(el.oldValue, 1);
 	});
 });

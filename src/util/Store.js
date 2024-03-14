@@ -20,6 +20,7 @@ export class Store {
 	_serializationKey;
 	_observer = new Set([]);
 	_singlePropertyMode = false;
+	_oldState = {};
 	_state = {};
 
 	/**
@@ -63,6 +64,7 @@ export class Store {
 					return this._state[key];
 				},
 				set: (newValue) => {
+					this._oldState = { ...this._state };
 					const oldValue = this._state[key];
 					this._state[key] = newValue;
 					if (value instanceof Store) {
@@ -152,10 +154,10 @@ export class Store {
 							// observer is actually watching store changes provide new and old values
 							if (observer instanceof Store) {
 								// observer is a foreign store / call watcher
-								observer.watch?.()[key](this, this);
+								observer.watch?.()[key](this._state, this._oldState);
 							} else {
-								observer.callPropertyWatcher(key, this, this);
-								observer.notifyPropertyChange(key, this);
+								observer.callPropertyWatcher(key, this._state, this._oldState);
+								observer.notifyPropertyChange(key, this._state);
 							}
 						}
 					});
