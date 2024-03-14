@@ -9,8 +9,20 @@ class ComplexStore extends Store {
 	properties() {
 		return {
 			anotherCount: 0,
+			nestedStore: simpleStore,
+			newSimpleCount: null,
+			oldSimpleCount: null,
 		};
 	}
+	watch() {
+		return {
+			nestedStore: (newValue, oldValue) => {
+				this.newNestedCount = newValue.count;
+				this.oldNestedCount = oldValue.count;
+			},
+		};
+	}
+
 	get sum() {
 		return this.count + this.anotherCount;
 	}
@@ -48,8 +60,11 @@ class WatchStoreElement extends BaseElement {
 		return {
 			watchTriggered: false,
 			store: simpleStore,
+			complexStore: complexStore,
 			newValue: null,
 			oldValue: null,
+			newSimpleCount: null,
+			oldSimpleCount: null,
 		};
 	}
 
@@ -200,12 +215,11 @@ describe('store-observer', () => {
 		assert.isTrue(el.watchTriggered);
 	});
 	// TODO create the same tests for store watchers AND notifcations
-	it('triggers an elements watch callback passes old and new Values', async () => {
-		const el = await fixture(`<${tagW}></${tagW}>`);
+	it('triggers an nested stores watch callback passes old and new Values', async () => {
 		simpleStore.count = 1;
 		simpleStore.count = 2;
 		await nextFrame();
-		assert.equal(el.newValue, 2);
-		assert.equal(el.oldValue, 1);
+		assert.equal(complexStore.oldNestedCount, 1);
+		assert.equal(complexStore.newNestedCount, 2);
 	});
 });
