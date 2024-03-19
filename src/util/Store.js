@@ -64,7 +64,7 @@ export class Store {
 					return this._state[key];
 				},
 				set: (newValue) => {
-					this._oldState = structuredClone(this._state);
+					this._oldState = JSON.parse(JSON.stringify(this._state));
 					const oldValue = this._state[key];
 					this._state[key] = newValue;
 					if (value instanceof Store) {
@@ -149,7 +149,7 @@ export class Store {
 				// check if store is watched by an observer
 				if (Object.keys(observer.watch() ?? {}).length > 0) {
 					// observer actually has watched properties
-					const clonedState = structuredClone(this._state);
+					const clonedState = JSON.parse(JSON.stringify(this._state));
 					Object.keys(observer.watch() ?? {}).forEach((key) => {
 						if (observer._state[key] === this) {
 							// observer is actually watching store changes provide new and old values
