@@ -1,0 +1,55 @@
+<html>
+	<body>
+
+		nested elment:
+		<slotting-parent-default-tag style=" border: 1px solid red;"></slotting-parent-default-tag>
+
+		<br>
+		standalone elment:
+		<nested-shadow-default-tag></nested-shadow-default-tag>
+
+		<script type="module">
+			/* eslint-disable no-unused-expressions */
+			import { runTests } from '@web/test-runner-mocha';
+			import { assert, expect, nextFrame, chai } from '@open-wc/testing';
+			import { html, defineElement, BaseElement, TemplateElement } from '../../index';
+
+
+			class NestedShadowDefaultTag extends TemplateElement {
+				constructor() {
+					super({ shadowRender: true });
+				}
+				template() {
+					return html`<slot>DEFAULT</slot>`;
+				}
+			}
+			defineElement('nested-shadow-default-tag', NestedShadowDefaultTag);
+
+			class SlottingParentDefaultTag extends TemplateElement {
+				template() {
+					return html`<nested-shadow-default-tag></nested-shadow-default-tag> `;
+				}
+			}
+			customElements.define('slotting-parent-default-tag', SlottingParentDefaultTag);
+
+
+
+			runTests(() => {
+				// Provider needs to be declared before Requester
+
+				it('should render default content even if rendered by another element', async () => {
+					const defaultElement = document.querySelector(`nested-shadow-default-tag`);
+					await defaultElement.requestUpdate();
+
+					const parentElement = document.querySelector(`slotting-parent-default-tag`);
+					await parentElement.requestUpdate();
+					const nested = parentElement.querySelector('nested-shadow-default-tag');
+					await nested.requestUpdate();
+
+					assert.equal(defaultElement.offsetWidth, nested.offsetWidth);
+				});
+
+			});
+		</script>
+	</body>
+</html>
