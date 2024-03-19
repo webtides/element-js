@@ -202,4 +202,25 @@ describe('store-observer', () => {
 		await nextFrame();
 		assert.isTrue(el.watchTriggered);
 	});
+
+	it('triggers an elements watch callback with new and old serialized state', async () => {
+		// reset store
+		simpleStore.count = 0;
+		const el = await fixture(`<${tagW}></${tagW}>`);
+		assert.isFalse(el.watchTriggered);
+		simpleStore.count = 1;
+		await nextFrame();
+		// check if new and old values have been passed to the watch callback
+		assert.equal(el.oldValue, 0);
+		assert.equal(el.newValue, 1);
+	});
+
+	it('stores old values internally after changes', async () => {
+		// reset store
+		simpleStore.count = 0;
+		simpleStore.count = 1;
+		// check if new and old values are correct in store
+		assert.equal(simpleStore._oldState.count, 0);
+		assert.equal(simpleStore.count, 1);
+	});
 });
