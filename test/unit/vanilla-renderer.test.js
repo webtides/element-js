@@ -68,6 +68,13 @@ class NestedShadowTag extends TemplateElement {
 }
 customElements.define('nested-shadow-tag', NestedShadowTag);
 
+class NestedShadowDefaultTag extends NestedShadowTag {
+	template() {
+		return html`<slot>DEFAULT</slot>`;
+	}
+}
+customElements.define('nested-shadow-default-tag', NestedShadowDefaultTag);
+
 class SlottingParentTag extends TemplateElement {
 	properties() {
 		return {
@@ -76,10 +83,22 @@ class SlottingParentTag extends TemplateElement {
 	}
 
 	template() {
-		return html`<nested-shadow-tag><div>${this.text}</div></nested-shadow-tag>`;
+		return html` <nested-shadow-tag><div>${this.text}</div></nested-shadow-tag> `;
 	}
 }
 customElements.define('slotting-parent-tag', SlottingParentTag);
+class SlottingParentDefaultTag extends TemplateElement {
+	template() {
+		return html`<nested-shadow-default-tag></nested-shadow-default-tag> `;
+	}
+}
+customElements.define('slotting-parent-default-tag', SlottingParentDefaultTag);
+class SlottingParentNotDefaultTag extends TemplateElement {
+	template() {
+		return html`<nested-shadow-default-tag>NOT_DEFAULT</nested-shadow-default-tag> `;
+	}
+}
+customElements.define('slotting-parent-not-default-tag', SlottingParentNotDefaultTag);
 
 class NestedLightTag extends TemplateElement {
 	template() {
@@ -118,5 +137,52 @@ describe(`vanilla-renderer`, () => {
 		el.text = 'Baz';
 		await el.requestUpdate();
 		assert.lightDom.equal(el, `<nested-light-tag><div>Foo</div></nested-light-tag>`);
+	});
+
+	it('should render default content in a slot', async () => {
+		const defaultContent = '<slot>DEFAULT</slot>';
+		const el = await fixture(`<nested-shadow-default-tag></nested-shadow-default-tag>`);
+		await el.requestUpdate();
+		assert.shadowDom.equal(el, defaultContent);
+	});
+
+	it('should be wider with default content than without', async () => {
+		const el = await fixture(`<nested-shadow-tag></nested-shadow-tag>`);
+		await el.requestUpdate();
+		const defaultElement = await fixture(`<nested-shadow-default-tag></nested-shadow-default-tag>`);
+		await defaultElement.requestUpdate();
+
+		assert.isTrue(el.offsetWidth < defaultElement.offsetWidth);
+	});
+	it('should become wider with default content than without', async () => {
+		const defaultElement = await fixture(`<nested-shadow-default-tag></nested-shadow-default-tag>`);
+		await defaultElement.requestUpdate();
+		const otherElement = await fixture(`<nested-shadow-default-tag>NOT_DEFAULT</nested-shadow-default-tag>`);
+		await otherElement.requestUpdate();
+
+		assert.isTrue(defaultElement.offsetWidth < otherElement.offsetWidth);
+	});
+
+	it('should render default content even if rendered by another element', async () => {
+		const defaultContent = '<slot>DEFAULT</slot>';
+		const defaultElement = await fixture(`<nested-shadow-default-tag></nested-shadow-default-tag>`);
+		await defaultElement.requestUpdate();
+
+		const parentElement = await fixture(`<slotting-parent-default-tag></slotting-parent-default-tag>`);
+		await parentElement.requestUpdate();
+		const nested = parentElement.querySelector('nested-shadow-default-tag');
+		await nested.requestUpdate();
+		assert.equal(defaultElement.offsetWidth, nested.offsetWidth);
+	});
+
+	it('should render slotted content even if rendered by another element', async () => {
+		const defaultElement = await fixture(`<nested-shadow-default-tag>NOT_DEFAULT</nested-shadow-default-tag>`);
+		await defaultElement.requestUpdate();
+
+		const parentElement = await fixture(`<slotting-parent-not-default-tag></slotting-parent-not-default-tag>`);
+		await parentElement.requestUpdate();
+		const nested = parentElement.querySelector('nested-shadow-default-tag');
+		await nested.requestUpdate();
+		assert.equal(defaultElement.offsetWidth, nested.offsetWidth);
 	});
 });
