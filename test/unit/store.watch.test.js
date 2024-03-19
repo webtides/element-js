@@ -35,8 +35,10 @@ class WatchStore extends Store {
 				this.echoOldCount = oldCount;
 				this.triggerCount++;
 			},
-			nestedStore: () => {
+			nestedStore: (newStoreValue, oldStoreValue) => {
 				this.echoNestedStoreCount = this.nestedStore.nestedCount;
+				this.oldNestedStoreCount = oldStoreValue.nestedCount;
+				this.newNestedStoreCount = newStoreValue.nestedCount;
 			},
 		};
 	}
@@ -82,5 +84,17 @@ describe('store-watch', () => {
 		watchStore.nestedStore.nestedCount++;
 		await nextFrame();
 		assert.equal(watchStore.updateCount, 1);
+	});
+
+	it('triggers an nested stores watch callback passes old and new Values', async () => {
+		const watchStore = new WatchStore({ count: 0 });
+		assert.equal(watchStore.nestedStore.nestedCount, 0);
+		watchStore.nestedStore.nestedCount = 1;
+		await nextFrame();
+		// check if watch is triggered value is copied
+		assert.equal(watchStore.echoNestedStoreCount, 1);
+		// check if watcher received proper old / new values
+		assert.equal(watchStore.oldNestedStoreCount, 0);
+		assert.equal(watchStore.newNestedStoreCount, 1);
 	});
 });

@@ -9,20 +9,8 @@ class ComplexStore extends Store {
 	properties() {
 		return {
 			anotherCount: 0,
-			nestedStore: simpleStore,
-			newSimpleCount: null,
-			oldSimpleCount: null,
 		};
 	}
-	watch() {
-		return {
-			nestedStore: (newValue, oldValue) => {
-				this.newNestedCount = newValue.count;
-				this.oldNestedCount = oldValue.count;
-			},
-		};
-	}
-
 	get sum() {
 		return this.count + this.anotherCount;
 	}
@@ -213,13 +201,5 @@ describe('store-observer', () => {
 		simpleStore.count = 1;
 		await nextFrame();
 		assert.isTrue(el.watchTriggered);
-	});
-	// TODO create the same tests for store watchers AND notifcations
-	it('triggers an nested stores watch callback passes old and new Values', async () => {
-		simpleStore.count = 1;
-		simpleStore.count = 2;
-		await nextFrame();
-		assert.equal(complexStore.oldNestedCount, 1);
-		assert.equal(complexStore.newNestedCount, 2);
 	});
 });
