@@ -51,7 +51,7 @@ export const createTemplateString = (templateStrings, attributePlaceholders = ''
 		return `
 				${attributesString.includes('\x01') ? attributeParts : ''}
 				<${elementTagWithAttributes}>
-			`;
+			`.trim();
 	});
 	// replace interpolation placeholders with our indexed markers
 	template = template.replace(partPositions, (partPosition) => {
