@@ -310,7 +310,7 @@ export class ChildNodePart extends Part {
 			} else if (Array.isArray(value)) {
 				let childNodePart = this.parts[index];
 				if (!childNodePart) {
-					// TODO: this seems not correct :(
+					// TODO: this seems not correct :( (maybe Template vs DOM Parts !?)
 					const templatePartCommentNodes = this.childNodes?.filter(
 						(node) => node && node.nodeType === COMMENT_NODE && node.data === 'template-part',
 					);

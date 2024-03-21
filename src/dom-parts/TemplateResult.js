@@ -29,6 +29,7 @@ export const createTemplateString = (templateStrings, attributePlaceholders = ''
 	// find (match) all elements to identify their attributes
 	template = template.replace(elements, (_, name, attributesString, trailingSlash) => {
 		let elementTagWithAttributes = name + attributesString.replaceAll('\x01', attributePlaceholders).trimEnd();
+		// TODO the closing case is weird.
 		if (trailingSlash.length) elementTagWithAttributes += voidElements.test(name) ? ' /' : '></' + name;
 		// collect all attribute parts so that we can place matching comment nodes
 		const attributeParts = attributesString.replace(attributes, (attribute, name, valueWithQuotes, directive) => {
@@ -48,26 +49,23 @@ export const createTemplateString = (templateStrings, attributePlaceholders = ''
 			}
 			return parts.join('');
 		});
+		// TODO create test to check if lf are in place
 		return `
-				${attributesString.includes('\x01') ? attributeParts : ''}
-				<${elementTagWithAttributes}>
+				${attributesString.includes('\x01') ? attributeParts : ''}\n
+				<${elementTagWithAttributes}>\n
 			`.trim();
 	});
 	// replace interpolation placeholders with our indexed markers
 	template = template.replace(partPositions, (partPosition) => {
 		if (partPosition === '\x01') {
 			return `<!--dom-part-${partIndex}--><!--/dom-part-${partIndex++}-->`;
-		}
-		if (partPosition === '\x02') {
+		} else if (partPosition === '\x02') {
 			return `dom-part-${partIndex++}`;
 		}
 	});
-	return `
-		<!--template-part-->
-		${template}
-		<!--/template-part-->
-	`;
-	// TODO: ^ this is actually important because of the whitespace
+	// TODO create test to check if lf are in place
+	// /n is important in the returns as we expect a certain order of text / comments an nodes
+	return `<!--template-part-->\n${template}\n<!--/template-part-->`.trim();
 };
 
 /**

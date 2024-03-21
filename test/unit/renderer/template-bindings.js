@@ -3,6 +3,7 @@ import { render } from '../../../src/dom-parts/render';
 import { defineDirective, Directive } from '../../../src/util/Directive';
 
 // TODO: for testing that SSR and CSR will render the same thing, it would be good to test with whitespace and comment markers to make sure that they perfectly match!
+// TODO renderer should actually not output any blanks and whitespaces that have to be removed for testing ...
 export const stripCommentMarkers = (html) =>
 	html
 		.replace(/<!--(\/)?(dom|template)-part(-\d+)?(:(@|.|\?)?\w+(=.*)?)?|(\$)?-->/g, '')
@@ -265,6 +266,7 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 
 		it('can render special @event bindings inside attributes', async () => {
 			const el = document.createElement('div');
+			// TODO we are testing / fixing prettier here
 			const templateResult = html`<a
 				@foo="${(e) => {
 					el.foo = 'bar';
@@ -277,8 +279,9 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
 			>`;
 			render(templateResult, el);
 			assert.equal(stripCommentMarkers(el.innerHTML), '<a onclick="console.log(\'clicked\')">Label</a>');
+			// TODO: why?! removing blanks in html tags as prettier inserts them (see above)
 			assert.equal(
-				stripCommentMarkers(el.innerHTML.replace('onclick', 'onClick').replace('</a>', '</a >')), // TODO: why?!
+				stripCommentMarkers(el.innerHTML.replace('onclick', 'onClick').replace('</a>', '</a >')),
 				stripCommentMarkers(templateResult.toString()),
 				'CSR template does not match SSR template',
 			);

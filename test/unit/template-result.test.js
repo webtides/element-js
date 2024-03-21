@@ -113,7 +113,7 @@ describe('TemplateResult.parseParts()', () => {
 		const documentFragment = convertStringToTemplate(templateResult.templateString);
 		const childNodes = [...documentFragment.childNodes];
 		const parts = templateResult.parseParts(childNodes);
-		assert.deepEqual(parts, [{ type: 'node', path: [1, 2] }]);
+		assert.deepEqual(parts, [{ type: 'node', path: [0, 2] }]);
 	});
 
 	it('creates an attribute part for an interpolation inside an attribute', async () => {
@@ -160,7 +160,7 @@ describe('TemplateResult.parseParts()', () => {
 		const documentFragment = convertStringToTemplate(templateResult.templateString);
 		const childNodes = [...documentFragment.childNodes];
 		const parts = templateResult.parseParts(childNodes);
-		assert.deepEqual(parts, [{ type: 'node', path: [1, 2] }]);
+		assert.deepEqual(parts, [{ type: 'node', path: [0, 2] }]);
 	});
 });
 
