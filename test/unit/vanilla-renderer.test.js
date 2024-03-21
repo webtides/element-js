@@ -154,7 +154,7 @@ describe(`vanilla-renderer`, () => {
 
 		assert.isTrue(el.offsetWidth < defaultElement.offsetWidth);
 	});
-	it('should become wider with default content than without', async () => {
+	it('should become wider with slotted content than with default', async () => {
 		const defaultElement = await fixture(`<nested-shadow-default-tag></nested-shadow-default-tag>`);
 		await defaultElement.requestUpdate();
 		const otherElement = await fixture(`<nested-shadow-default-tag>NOT_DEFAULT</nested-shadow-default-tag>`);
