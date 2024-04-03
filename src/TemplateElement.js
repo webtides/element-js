@@ -31,7 +31,7 @@ class TemplateElement extends StyledElement {
 	 * This will attach a shadow DOM if the element is supposed to render in shadow DOM.
 	 */
 	connectedCallback() {
-		if (this._options.shadowRender) this.attachShadow({ mode: 'open' });
+		if (this._options.shadowRender && !this.shadowRoot) this.attachShadow({ mode: 'open' });
 		super.connectedCallback();
 	}
 
