@@ -15,6 +15,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.0.0-alpha.12] - 2024-03-03
+
+### Added
+
+-   added declarative shadow dom rendering for template elements
+
+### Fixed
+
+-   fixed issues with whitespace being returned untrimmed in a template result
+
 ## [1.0.0-alpha.11] - 2024-03-13
 
 ### Fixed
