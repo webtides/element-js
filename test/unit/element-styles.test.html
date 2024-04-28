@@ -11,6 +11,10 @@
 			}
 		</style>
 		<link rel="stylesheet" href="./element-styles1.test.css" />
+		<!-- x origin style cssRules cannot be read by GlobalStyleStore-->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" >
+		<!-- x origin style cssRules can be read can when crossorigin attribute is present-->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" crossorigin="anonymous">
 	</head>
 	<body>
 		<style>

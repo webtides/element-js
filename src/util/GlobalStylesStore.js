@@ -53,7 +53,11 @@ class GlobalStylesStore extends Store {
 				if (styleSheet.ownerNode.tagName === 'STYLE') {
 					cssStyleSheet.replaceSync(styleSheet.ownerNode.textContent);
 				} else if (styleSheet.ownerNode.tagName === 'LINK') {
-					Array.from(styleSheet.cssRules).map((rule) => cssStyleSheet.insertRule(rule.cssText));
+					try {
+						Array.from(styleSheet?.cssRules ?? []).map((rule) => cssStyleSheet.insertRule(rule.cssText));
+					} catch (e) {
+						console.error('GlobalStylesStore: cannot read cssRules.', e);
+					}
 				}
 			}
 			cssStyleSheets.push(cssStyleSheet);
