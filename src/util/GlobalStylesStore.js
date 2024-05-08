@@ -56,7 +56,7 @@ class GlobalStylesStore extends Store {
 					try {
 						Array.from(styleSheet?.cssRules ?? []).map((rule) => cssStyleSheet.insertRule(rule.cssText));
 					} catch (e) {
-						console.error('GlobalStylesStore: cannot read cssRules.', e);
+						console.error('GlobalStylesStore: cannot read cssRules. Maybe add crossorigin="anonymous" to your style link?', e);
 					}
 				}
 			}
