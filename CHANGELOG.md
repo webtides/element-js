@@ -15,6 +15,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.0.0-alpha.13] - 2024-05-08
+
+### Fixed
+
+-   catch security errors when `GlobalStylesStore` tries to read css rules from cross-origin stylesheets.
+
 ## [1.0.0-alpha.12] - 2024-03-03
 
 ### Added
