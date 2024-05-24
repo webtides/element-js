@@ -1,29 +1,29 @@
 {
-	"root": true,
-	"extends": ["plugin:prettier/recommended", "plugin:import/recommended"],
-	"parser": "@babel/eslint-parser",
-	"rules": {
-		"prettier/prettier": ["error", { "semi": true }],
-		"import/extensions": ["error", "always"]
-	},
-	"globals": {
-		"document": true,
-		"window": true,
-		"customElements": true,
-		"HTMLElement": true,
-		"requestAnimationFrame": true
-	},
-	"parserOptions": {
-		"ecmaVersion": 2022,
-		"sourceType": "module",
-		"requireConfigFile": false,
-		"babelOptions": {
-			"babelrc": false,
-			"configFile": false
-		}
-	},
-	"env": {
-		"es6": true,
-		"browser": true
-	}
+    "root": true,
+    "extends": ["plugin:prettier/recommended", "plugin:import/recommended"],
+    "parser": "@babel/eslint-parser",
+    "rules": {
+        "prettier/prettier": ["error", { "semi": true }],
+        "import/extensions": ["error", "always"]
+    },
+    "globals": {
+        "document": true,
+        "window": true,
+        "customElements": true,
+        "HTMLElement": true,
+        "requestAnimationFrame": true
+    },
+    "parserOptions": {
+        "ecmaVersion": 2022,
+        "sourceType": "module",
+        "requireConfigFile": false,
+        "babelOptions": {
+            "babelrc": false,
+            "configFile": false
+        }
+    },
+    "env": {
+        "es6": true,
+        "browser": true
+    }
 }

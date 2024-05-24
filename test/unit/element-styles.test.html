@@ -1,191 +1,195 @@
 <html lang="en">
-	<head>
-		<title>Element Styles Test</title>
-		<style>
-			shadow-element .text-orange-specific {
-				color: rgb(255, 120, 10);
-			}
+    <head>
+        <title>Element Styles Test</title>
+        <style>
+            shadow-element .text-orange-specific {
+                color: rgb(255, 120, 10);
+            }
 
-			.text-red {
-				color: rgb(255, 0, 0);
-			}
-		</style>
-		<link rel="stylesheet" href="./element-styles1.test.css" />
-		<!-- x origin style cssRules cannot be read by GlobalStyleStore-->
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" >
-		<!-- x origin style cssRules can be read can when crossorigin attribute is present-->
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" crossorigin="anonymous">
-	</head>
-	<body>
-		<style>
-			.text-yellow {
-				color: rgb(255, 255, 0);
-			}
-		</style>
-		<link rel="stylesheet" href="./element-styles2.test.css" />
-		<h1>DOM</h1>
-		<div>normal div</div>
-		<h2>light-element</h2>
-		<light-element></light-element>
-		<h2>shadow-element</h2>
-		<shadow-element>
-			<p data-slotted>i am slotted p</p>
-			<div data-slotted>i am slotted div</div>
-			<p data-violet class="text-violet">i am slotted violet</p>
-			<p data-specific class="text-violet text-orange-specific">i am slotted violet but orange</p>
-		</shadow-element>
-		<h2>scoped-shadow-element</h2>
-		<scoped-shadow-element></scoped-shadow-element>
+            .text-red {
+                color: rgb(255, 0, 0);
+            }
+        </style>
+        <link rel="stylesheet" href="./element-styles1.test.css" />
+        <!-- x origin style cssRules cannot be read by GlobalStyleStore-->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" />
+        <!-- x origin style cssRules can be read can when crossorigin attribute is present-->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css"
+            crossorigin="anonymous"
+        />
+    </head>
+    <body>
+        <style>
+            .text-yellow {
+                color: rgb(255, 255, 0);
+            }
+        </style>
+        <link rel="stylesheet" href="./element-styles2.test.css" />
+        <h1>DOM</h1>
+        <div>normal div</div>
+        <h2>light-element</h2>
+        <light-element></light-element>
+        <h2>shadow-element</h2>
+        <shadow-element>
+            <p data-slotted>i am slotted p</p>
+            <div data-slotted>i am slotted div</div>
+            <p data-violet class="text-violet">i am slotted violet</p>
+            <p data-specific class="text-violet text-orange-specific">i am slotted violet but orange</p>
+        </shadow-element>
+        <h2>scoped-shadow-element</h2>
+        <scoped-shadow-element></scoped-shadow-element>
 
-		<script type="module">
-			/* eslint-disable no-unused-expressions */
-			import { runTests } from '@web/test-runner-mocha';
-			import { assert, expect, nextFrame } from '@open-wc/testing';
-			import { TemplateElement, html, defineElement } from '../../index';
+        <script type="module">
+            /* eslint-disable no-unused-expressions */
+            import { runTests } from '@web/test-runner-mocha';
+            import { assert, expect, nextFrame } from '@open-wc/testing';
+            import { TemplateElement, html, defineElement } from '../../index';
 
-			const colorRed = 'rgb(255, 0, 0)';
-			const colorViolet = 'rgb(238, 65, 236)';
-			const colorYellow = 'rgb(255, 255, 0)';
-			const colorOrange = 'rgb(255, 120, 10)';
-			const colorGreen = 'rgb(0, 128, 0)';
+            const colorRed = 'rgb(255, 0, 0)';
+            const colorViolet = 'rgb(238, 65, 236)';
+            const colorYellow = 'rgb(255, 255, 0)';
+            const colorOrange = 'rgb(255, 120, 10)';
+            const colorGreen = 'rgb(0, 128, 0)';
 
-			const colorComponent = 'rgb(255, 0, 10)';
-			const colorComponentClass = 'rgb(26, 101, 185)';
+            const colorComponent = 'rgb(255, 0, 10)';
+            const colorComponentClass = 'rgb(26, 101, 185)';
 
-			runTests(() => {
-				class TestElement extends TemplateElement {
-					styles() {
-						return [
-							`
+            runTests(() => {
+                class TestElement extends TemplateElement {
+                    styles() {
+                        return [
+                            `
 							p {color: ${colorComponent}}
 							::host { p {color: ${colorYellow}}}
 							.content ::slotted(*) {color: ${colorYellow}}
 							.text-component {color: ${colorComponentClass}}
 						`,
-						];
-					}
+                        ];
+                    }
 
-					template() {
-						return html` <p ref="coloredP">red content</p>
-							<p ref="textComponent" class="text-component">component text</p>
-							<p ref="violetP" class="text-violet">violet content</p>
-							<p ref="classOrder" class="text-red text-violet">red but violet content</p>
-							<div class="content">
-								<slot></slot>
-							</div>`;
-					}
-				}
+                    template() {
+                        return html` <p ref="coloredP">red content</p>
+                            <p ref="textComponent" class="text-component">component text</p>
+                            <p ref="violetP" class="text-violet">violet content</p>
+                            <p ref="classOrder" class="text-red text-violet">red but violet content</p>
+                            <div class="content">
+                                <slot></slot>
+                            </div>`;
+                    }
+                }
 
-				class ShadowElement extends TestElement {
-					constructor() {
-						super({ shadowRender: true });
-					}
-				}
+                class ShadowElement extends TestElement {
+                    constructor() {
+                        super({ shadowRender: true });
+                    }
+                }
 
-				class ScopedShadowElement extends TestElement {
-					constructor() {
-						super({ shadowRender: true, adoptGlobalStyles: false });
-					}
-				}
+                class ScopedShadowElement extends TestElement {
+                    constructor() {
+                        super({ shadowRender: true, adoptGlobalStyles: false });
+                    }
+                }
 
-				defineElement('scoped-shadow-element', ScopedShadowElement);
-				defineElement('shadow-element', ShadowElement);
-				defineElement('light-element', TestElement);
+                defineElement('scoped-shadow-element', ScopedShadowElement);
+                defineElement('shadow-element', ShadowElement);
+                defineElement('light-element', TestElement);
 
-				const componentBasicStyles = async (el) => {
-					await nextFrame();
-					expect(getComputedStyle(el.$refs.coloredP).color).to.equal(colorComponent);
-				};
+                const componentBasicStyles = async (el) => {
+                    await nextFrame();
+                    expect(getComputedStyle(el.$refs.coloredP).color).to.equal(colorComponent);
+                };
 
-				it('applies component styles in lightDom', () =>
-					componentBasicStyles(document.querySelector('light-element')));
+                it('applies component styles in lightDom', () =>
+                    componentBasicStyles(document.querySelector('light-element')));
 
-				it('applies component styles in shadowDom', () =>
-					componentBasicStyles(document.querySelector('shadow-element')));
+                it('applies component styles in shadowDom', () =>
+                    componentBasicStyles(document.querySelector('shadow-element')));
 
-				const componentClasses = async (el) => {
-					await nextFrame();
-					expect(getComputedStyle(el.$refs.textComponent).color).to.equal(colorComponentClass);
-				};
+                const componentClasses = async (el) => {
+                    await nextFrame();
+                    expect(getComputedStyle(el.$refs.textComponent).color).to.equal(colorComponentClass);
+                };
 
-				it('applies component classes in lightDom', () =>
-					componentClasses(document.querySelector('light-element')));
-				it('applies component classes in shadowDom', () =>
-					componentClasses(document.querySelector('shadow-element')));
+                it('applies component classes in lightDom', () =>
+                    componentClasses(document.querySelector('light-element')));
+                it('applies component classes in shadowDom', () =>
+                    componentClasses(document.querySelector('shadow-element')));
 
-				const globalClasses = async (el) => {
-					await nextFrame();
-					expect(getComputedStyle(el.$refs.violetP).color).to.equal(colorViolet);
-				};
+                const globalClasses = async (el) => {
+                    await nextFrame();
+                    expect(getComputedStyle(el.$refs.violetP).color).to.equal(colorViolet);
+                };
 
-				it('applies global classes in lightDom', () => globalClasses(document.querySelector('light-element')));
+                it('applies global classes in lightDom', () => globalClasses(document.querySelector('light-element')));
 
-				it('applies global classes in shadowDom', () =>
-					globalClasses(document.querySelector('shadow-element')));
+                it('applies global classes in shadowDom', () =>
+                    globalClasses(document.querySelector('shadow-element')));
 
-				const respectOrder = async (el) => {
-					await nextFrame();
-					expect(getComputedStyle(el.$refs.violetP).color).to.equal(colorViolet);
-				};
-				it('respects class order in lightDom', () => respectOrder(document.querySelector('light-element')));
+                const respectOrder = async (el) => {
+                    await nextFrame();
+                    expect(getComputedStyle(el.$refs.violetP).color).to.equal(colorViolet);
+                };
+                it('respects class order in lightDom', () => respectOrder(document.querySelector('light-element')));
 
-				it('respects class order in shadowDom', () => respectOrder(document.querySelector('shadow-element')));
+                it('respects class order in shadowDom', () => respectOrder(document.querySelector('shadow-element')));
 
-				/*
-				 * slots
-				 * */
+                /*
+                 * slots
+                 * */
 
-				it('applies component styles in shadowDom when slotted', async () => {
-					const el = document.querySelector('shadow-element');
-					await nextFrame();
-					const pEl = el.querySelector('[data-slotted]');
-					expect(getComputedStyle(pEl).color).to.equal(colorComponent);
-				});
+                it('applies component styles in shadowDom when slotted', async () => {
+                    const el = document.querySelector('shadow-element');
+                    await nextFrame();
+                    const pEl = el.querySelector('[data-slotted]');
+                    expect(getComputedStyle(pEl).color).to.equal(colorComponent);
+                });
 
-				it('applies styles in shadowDom when styled via ::slotted', async () => {
-					const el = document.querySelector('shadow-element');
-					await nextFrame();
-					const pEl = el.querySelector('div[data-slotted]');
-					expect(getComputedStyle(pEl).color).to.equal(colorYellow);
-				});
+                it('applies styles in shadowDom when styled via ::slotted', async () => {
+                    const el = document.querySelector('shadow-element');
+                    await nextFrame();
+                    const pEl = el.querySelector('div[data-slotted]');
+                    expect(getComputedStyle(pEl).color).to.equal(colorYellow);
+                });
 
-				it('does NOT applies styles in shadowDom when styled via ::slotted and more specific than another rule', async () => {
-					/*
-					 * This is a rather weired one but tested to get the expectaions straight
-					 * https://github.com/w3c/csswg-drafts/issues/1915
-					 * */
-					const el = document.querySelector('shadow-element');
-					await nextFrame();
-					const pEl = el.querySelector('p[data-slotted]');
-					expect(getComputedStyle(pEl).color).to.equal(colorComponent);
-				});
+                it('does NOT applies styles in shadowDom when styled via ::slotted and more specific than another rule', async () => {
+                    /*
+                     * This is a rather weired one but tested to get the expectaions straight
+                     * https://github.com/w3c/csswg-drafts/issues/1915
+                     * */
+                    const el = document.querySelector('shadow-element');
+                    await nextFrame();
+                    const pEl = el.querySelector('p[data-slotted]');
+                    expect(getComputedStyle(pEl).color).to.equal(colorComponent);
+                });
 
-				it('respects specifity in shadow dom even when slotted', async () => {
-					const el = document.querySelector('shadow-element');
-					await nextFrame();
-					const violetP = el.querySelector('[data-violet]');
-					expect(getComputedStyle(violetP).color).to.equal(colorViolet);
-				});
+                it('respects specifity in shadow dom even when slotted', async () => {
+                    const el = document.querySelector('shadow-element');
+                    await nextFrame();
+                    const violetP = el.querySelector('[data-violet]');
+                    expect(getComputedStyle(violetP).color).to.equal(colorViolet);
+                });
 
-				it('respects specifity in shadow dom even when slotted', async () => {
-					const el = document.querySelector('shadow-element');
-					await nextFrame();
-					const specificP = el.querySelector('[data-specific]');
-					expect(getComputedStyle(specificP).color).to.equal(colorOrange);
-				});
+                it('respects specifity in shadow dom even when slotted', async () => {
+                    const el = document.querySelector('shadow-element');
+                    await nextFrame();
+                    const specificP = el.querySelector('[data-specific]');
+                    expect(getComputedStyle(specificP).color).to.equal(colorOrange);
+                });
 
-				it('applies component classes in scoped shadowDom', async () => {
-					const el = document.querySelector('scoped-shadow-element');
-					await nextFrame();
-					expect(getComputedStyle(el.$refs.textComponent).color).to.equal(colorComponentClass);
-				});
+                it('applies component classes in scoped shadowDom', async () => {
+                    const el = document.querySelector('scoped-shadow-element');
+                    await nextFrame();
+                    expect(getComputedStyle(el.$refs.textComponent).color).to.equal(colorComponentClass);
+                });
 
-				it('does not apply global classes in in shadowDom', async () => {
-					const el = document.querySelector('scoped-shadow-element');
-					await nextFrame();
-					expect(getComputedStyle(el.$refs.violetP).color).to.equal(colorComponent);
-				});
-			});
-		</script>
-	</body>
+                it('does not apply global classes in in shadowDom', async () => {
+                    const el = document.querySelector('scoped-shadow-element');
+                    await nextFrame();
+                    expect(getComputedStyle(el.$refs.violetP).color).to.equal(colorComponent);
+                });
+            });
+        </script>
+    </body>
 </html>

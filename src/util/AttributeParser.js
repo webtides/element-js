@@ -4,7 +4,7 @@
  * @returns {boolean}
  */
 export function isObjectLike(value) {
-	return typeof value == 'object' && value !== null;
+    return typeof value == 'object' && value !== null;
 }
 
 /**
@@ -13,11 +13,11 @@ export function isObjectLike(value) {
  * @returns {boolean}
  */
 export function isJSON(value) {
-	try {
-		return JSON.parse(value) && !!value;
-	} catch (e) {
-		return false;
-	}
+    try {
+        return JSON.parse(value) && !!value;
+    } catch (e) {
+        return false;
+    }
 }
 
 /**
@@ -26,7 +26,7 @@ export function isJSON(value) {
  * @returns {boolean}
  */
 export function isBoolean(value) {
-	return value === 'true' || value === 'false';
+    return value === 'true' || value === 'false';
 }
 
 /**
@@ -35,7 +35,7 @@ export function isBoolean(value) {
  * @returns {boolean}
  */
 export function parseBoolean(value) {
-	return value === 'true';
+    return value === 'true';
 }
 
 /**
@@ -44,10 +44,10 @@ export function parseBoolean(value) {
  * @returns {boolean}
  */
 export function isString(value) {
-	return (
-		typeof value === 'string' ||
-		(!!value && typeof value === 'object' && Object.prototype.toString.call(value) === '[object String]')
-	);
+    return (
+        typeof value === 'string' ||
+        (!!value && typeof value === 'object' && Object.prototype.toString.call(value) === '[object String]')
+    );
 }
 
 /**
@@ -56,7 +56,7 @@ export function isString(value) {
  * @returns {boolean}
  */
 export function isNumber(value) {
-	return new RegExp('^-?(0|0\\.\\d+|[1-9]\\d*(\\.\\d+)?)$').test(value);
+    return new RegExp('^-?(0|0\\.\\d+|[1-9]\\d*(\\.\\d+)?)$').test(value);
 }
 
 /**
@@ -65,7 +65,7 @@ export function isNumber(value) {
  * @returns {boolean}
  */
 export function isNaN(value) {
-	return Number.isNaN(value);
+    return Number.isNaN(value);
 }
 
 /**
@@ -75,7 +75,7 @@ export function isNaN(value) {
  * @returns {boolean}
  */
 export function deepEquals(valueA, valueB) {
-	return JSON.stringify(valueA) === JSON.stringify(valueB);
+    return JSON.stringify(valueA) === JSON.stringify(valueB);
 }
 
 /**
@@ -85,23 +85,23 @@ export function deepEquals(valueA, valueB) {
  * @returns {string | number | boolean | object | array}
  */
 export function parseAttribute(value, options = {}) {
-	if (options.parse === false || !isString(value)) {
-		// no-op
-		return value;
-	}
-	if (typeof options.parse === 'function') {
-		// custom parse fn
-		return options.parse(value);
-	}
+    if (options.parse === false || !isString(value)) {
+        // no-op
+        return value;
+    }
+    if (typeof options.parse === 'function') {
+        // custom parse fn
+        return options.parse(value);
+    }
 
-	// default parse
-	let parsedValue = value;
+    // default parse
+    let parsedValue = value;
 
-	if (isJSON(value)) parsedValue = JSON.parse(value);
-	else if (isBoolean(value)) parsedValue = parseBoolean(value);
-	else if (isNumber(value)) parsedValue = parseFloat(value);
+    if (isJSON(value)) parsedValue = JSON.parse(value);
+    else if (isBoolean(value)) parsedValue = parseBoolean(value);
+    else if (isNumber(value)) parsedValue = parseFloat(value);
 
-	return parsedValue;
+    return parsedValue;
 }
 
 /**
@@ -110,9 +110,9 @@ export function parseAttribute(value, options = {}) {
  * @returns {string}
  */
 export function dashToCamel(string) {
-	if (string.indexOf('-') === -1) return string;
+    if (string.indexOf('-') === -1) return string;
 
-	return string.replace(/-[a-z]/g, (matches) => matches[1].toUpperCase());
+    return string.replace(/-[a-z]/g, (matches) => matches[1].toUpperCase());
 }
 
 /**
@@ -121,7 +121,7 @@ export function dashToCamel(string) {
  * @returns {string}
  */
 export function camelToDash(string) {
-	return string.replace(/([A-Z])/g, '-$1').toLowerCase();
+    return string.replace(/([A-Z])/g, '-$1').toLowerCase();
 }
 
 /**
@@ -130,11 +130,11 @@ export function camelToDash(string) {
  * @returns {string}
  */
 export function decodeAttribute(attribute) {
-	return `${attribute}`
-		.replace(/&lt;/g, '<')
-		.replace(/&gt;/g, '>')
-		.replace(/&quot;/g, '"')
-		.replace(/&apos;/g, "'");
+    return `${attribute}`
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&apos;/g, "'");
 }
 
 /**
@@ -143,11 +143,11 @@ export function decodeAttribute(attribute) {
  * @returns {string}
  */
 export function encodeAttribute(attribute) {
-	return `${attribute}`
-		.replace(/'/g, '&apos;')
-		.replace(/"/g, '&quot;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
-		.replace(/\r\n/g, '\n')
-		.replace(/[\r\n]/g, '\n');
+    return `${attribute}`
+        .replace(/'/g, '&apos;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\r\n/g, '\n')
+        .replace(/[\r\n]/g, '\n');
 }

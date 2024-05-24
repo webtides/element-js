@@ -1,6 +1,6 @@
 export default {
-	nodeResolve: true,
-	watch: true,
-	rootDir: './examples',
-	plugins: [],
+    nodeResolve: true,
+    watch: true,
+    rootDir: './examples',
+    plugins: [],
 };

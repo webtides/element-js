@@ -1,27 +1,27 @@
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<title>State Hydration</title>
-		<script type="module" src="dsd-rendering.js"></script>
-		<script src="https://cdn.tailwindcss.com"></script>
-		<style type="text/tailwindcss">
-			.btn {
-				@apply inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
-			}
-		</style>
-	</head>
-	<body class="flex flex-col gap-4 items-center">
-		<h1 class="text-3xl">DSD template rendering</h1>
-		<div class="text-xl">client side template</div>
-		<shadow-element></shadow-element>
-		<div class="text-xl">server side template</div>
-		<shadow-element>
-			<template shadowrootmode="open">
-				<!--template-part-->
-				<div>server side shadow root content</div>
-				<!--/template-part-->
-			</template>
-		</shadow-element>
-	</body>
+    <head>
+        <meta charset="UTF-8" />
+        <title>State Hydration</title>
+        <script type="module" src="dsd-rendering.js"></script>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style type="text/tailwindcss">
+            .btn {
+                @apply inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
+            }
+        </style>
+    </head>
+    <body class="flex flex-col gap-4 items-center">
+        <h1 class="text-3xl">DSD template rendering</h1>
+        <div class="text-xl">client side template</div>
+        <shadow-element></shadow-element>
+        <div class="text-xl">server side template</div>
+        <shadow-element>
+            <template shadowrootmode="open">
+                <!--template-part-->
+                <div>server side shadow root content</div>
+                <!--/template-part-->
+            </template>
+        </shadow-element>
+    </body>
 </html>

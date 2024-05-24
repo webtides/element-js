@@ -10,11 +10,11 @@ import { defineDirective, Directive } from '../util/Directive.js';
  * @returns {string} string of classes joined together
  */
 const classMap = (map) => {
-	const classes = [];
-	for (const [key, value] of Object.entries(map)) {
-		if (value) classes.push(key);
-	}
-	return classes.join(' ');
+    const classes = [];
+    for (const [key, value] of Object.entries(map)) {
+        if (value) classes.push(key);
+    }
+    return classes.join(' ');
 };
 
 /**
@@ -24,11 +24,11 @@ const classMap = (map) => {
  * @returns {string} string of styles joined together
  */
 const styleMap = (map) => {
-	const styles = [];
-	for (const [key, value] of Object.entries(map)) {
-		if (value) styles.push(`${key}:${value};`);
-	}
-	return styles.join(' ');
+    const styles = [];
+    for (const [key, value] of Object.entries(map)) {
+        if (value) styles.push(`${key}:${value};`);
+    }
+    return styles.join(' ');
 };
 
 /**
@@ -39,7 +39,7 @@ const styleMap = (map) => {
  * @returns {TemplateResult | string}
  */
 const when = (condition, trueCase, falseCase) => {
-	return condition ? trueCase : falseCase;
+    return condition ? trueCase : falseCase;
 };
 
 /**
@@ -50,7 +50,7 @@ const when = (condition, trueCase, falseCase) => {
  * @returns {TemplateResult | string}
  */
 const choose = (value, cases, defaultCase) => {
-	return cases[value] || defaultCase;
+    return cases[value] || defaultCase;
 };
 
 /**
@@ -59,47 +59,47 @@ const choose = (value, cases, defaultCase) => {
  * @returns {(function(): Node) | { __unsafeHTML: true, string: string }}
  */
 const unsafeHTML = (string) => {
-	if (!globalThis.DOMParser) {
-		return { __unsafeHTML: true, string };
-	}
-	const node = convertStringToHTML(string).firstChild;
-	const importedNode = globalThis.document?.importNode(node, true);
-	return () => importedNode;
+    if (!globalThis.DOMParser) {
+        return { __unsafeHTML: true, string };
+    }
+    const node = convertStringToHTML(string).firstChild;
+    const importedNode = globalThis.document?.importNode(node, true);
+    return () => importedNode;
 };
 
 /**
  * Renders multiple attributes as key="value" pairs from a map of attributes
  */
 export class SpreadAttributesDirective extends Directive {
-	/**
-	 * @param {Object.<string, any>} attributes
-	 */
-	update(attributes) {
-		// TODO: what if the attribute was already there..?!
-		// TODO: what if the attribute was there from a previous render/update, but not anymore?!
-		for (const name of Object.keys(attributes)) {
-			const value = attributes[name];
-			this.node.setAttribute(
-				camelToDash(name),
-				encodeAttribute(typeof value !== 'string' ? JSON.stringify(value) : value),
-			);
-		}
-	}
+    /**
+     * @param {Object.<string, any>} attributes
+     */
+    update(attributes) {
+        // TODO: what if the attribute was already there..?!
+        // TODO: what if the attribute was there from a previous render/update, but not anymore?!
+        for (const name of Object.keys(attributes)) {
+            const value = attributes[name];
+            this.node.setAttribute(
+                camelToDash(name),
+                encodeAttribute(typeof value !== 'string' ? JSON.stringify(value) : value),
+            );
+        }
+    }
 
-	/**
-	 * @param {Object.<string, any>} attributes
-	 * @returns {string}
-	 */
-	stringify(attributes) {
-		return Object.keys(attributes)
-			.map((name) => {
-				let value = attributes[name];
-				return `${camelToDash(name)}='${encodeAttribute(
-					typeof value !== 'string' ? JSON.stringify(value) : value,
-				)}'`;
-			})
-			.join(' ');
-	}
+    /**
+     * @param {Object.<string, any>} attributes
+     * @returns {string}
+     */
+    stringify(attributes) {
+        return Object.keys(attributes)
+            .map((name) => {
+                let value = attributes[name];
+                return `${camelToDash(name)}='${encodeAttribute(
+                    typeof value !== 'string' ? JSON.stringify(value) : value,
+                )}'`;
+            })
+            .join(' ');
+    }
 }
 
 /**

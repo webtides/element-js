@@ -5,36 +5,36 @@ class UnimportantElement extends BaseElement {}
 defineElement('unimportant-element', UnimportantElement);
 
 class DeeplyExtendedElement extends TemplateElement {
-	constructor(options) {
-		super(options);
-	}
+    constructor(options) {
+        super(options);
+    }
 }
 
 class ExampleShadowElement extends DeeplyExtendedElement {
-	static baseClass = TemplateElement;
+    static baseClass = TemplateElement;
 
-	constructor() {
-		super({ shadowRender: true });
-	}
+    constructor() {
+        super({ shadowRender: true });
+    }
 
-	template() {
-		return html` <slot></slot> `;
-	}
+    template() {
+        return html` <slot></slot> `;
+    }
 }
 defineElement('example-shadow-element', ExampleShadowElement);
 
 class ExampleSlottedElement extends TemplateElement {
-	properties() {
-		return {
-			name: 'John',
-		};
-	}
+    properties() {
+        return {
+            name: 'John',
+        };
+    }
 
-	template() {
-		return html`
-			<unimportant-element></unimportant-element>
-			<example-shadow-element>${this.name}</example-shadow-element>
-		`;
-	}
+    template() {
+        return html`
+            <unimportant-element></unimportant-element>
+            <example-shadow-element>${this.name}</example-shadow-element>
+        `;
+    }
 }
 defineElement('example-slotted-element', ExampleSlottedElement);

@@ -1,64 +1,64 @@
 {
-	"name": "@webtides/element-js",
-	"version": "1.0.0",
-	"module": "index.js",
-	"main": "index.js",
-	"type": "module",
-	"files": [
-		"/docs",
-		"/src",
-		"index.js"
-	],
-	"exports": {
-		".": {
-			"browser": "./index.js",
-			"import": "./index.js",
-			"default": "./index.js"
-		},
-		"./src/*": "./src/*.js",
-		"./src/util/*": "./src/util/*.js",
-		"./src/dom-parts/*": "./src/dom-parts/*.js"
-	},
-	"repository": "https://github.com/webtides/element-js.git",
-	"author": "@webtides",
-	"license": "MIT",
-	"keywords": [
-		"web components",
-		"web component",
-		"components",
-		"component",
-		"custom elements",
-		"elements",
-		"element",
-		"element-js",
-		"shadow-dom"
-	],
-	"dependencies": {},
-	"devDependencies": {
-		"@babel/eslint-parser": "^7.23.3",
-		"@open-wc/testing": "^4.0.0",
-		"@web/dev-server": "^0.4.1",
-		"@web/test-runner": "^0.14.1",
-		"babel-eslint": "^10.1.0",
-		"eslint": "8.55.0",
-		"eslint-config-prettier": "^9.1.0",
-		"eslint-plugin-import": "^2.29.0",
-		"eslint-plugin-prettier": "^5.0.1",
-		"husky": "^8.0.3",
-		"lint-staged": "^15.1.0",
-		"prettier": "^3.1.0"
-	},
-	"lint-staged": {
-		"*.{js,json}": [
-			"prettier --write",
-			"git add"
-		]
-	},
-	"scripts": {
-		"lint": "eslint index.js 'src/**/*.js'",
-		"test": "web-test-runner test/**/*.test.{html,js} --node-resolve",
-		"test:coverage": "web-test-runner test/**/*.test.{html,js} --node-resolve --coverage",
-		"test:watch": "web-test-runner test/**/*.test.{html,js} --node-resolve --watch",
-		"start": "web-dev-server --config web-dev-server.config.mjs"
-	}
+    "name": "@webtides/element-js",
+    "version": "1.0.0",
+    "module": "index.js",
+    "main": "index.js",
+    "type": "module",
+    "files": [
+        "/docs",
+        "/src",
+        "index.js"
+    ],
+    "exports": {
+        ".": {
+            "browser": "./index.js",
+            "import": "./index.js",
+            "default": "./index.js"
+        },
+        "./src/*": "./src/*.js",
+        "./src/util/*": "./src/util/*.js",
+        "./src/dom-parts/*": "./src/dom-parts/*.js"
+    },
+    "repository": "https://github.com/webtides/element-js.git",
+    "author": "@webtides",
+    "license": "MIT",
+    "keywords": [
+        "web components",
+        "web component",
+        "components",
+        "component",
+        "custom elements",
+        "elements",
+        "element",
+        "element-js",
+        "shadow-dom"
+    ],
+    "dependencies": {},
+    "devDependencies": {
+        "@babel/eslint-parser": "^7.23.3",
+        "@open-wc/testing": "^4.0.0",
+        "@web/dev-server": "^0.4.1",
+        "@web/test-runner": "^0.14.1",
+        "babel-eslint": "^10.1.0",
+        "eslint": "8.55.0",
+        "eslint-config-prettier": "^9.1.0",
+        "eslint-plugin-import": "^2.29.0",
+        "eslint-plugin-prettier": "^5.0.1",
+        "husky": "^8.0.3",
+        "lint-staged": "^15.1.0",
+        "prettier": "^3.1.0"
+    },
+    "lint-staged": {
+        "*.{js,json}": [
+            "prettier --write",
+            "git add"
+        ]
+    },
+    "scripts": {
+        "lint": "eslint index.js 'src/**/*.js'",
+        "test": "web-test-runner test/**/*.test.{html,js} --node-resolve",
+        "test:coverage": "web-test-runner test/**/*.test.{html,js} --node-resolve --coverage",
+        "test:watch": "web-test-runner test/**/*.test.{html,js} --node-resolve --watch",
+        "start": "web-dev-server --config web-dev-server.config.mjs"
+    }
 }

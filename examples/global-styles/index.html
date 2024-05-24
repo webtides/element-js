@@ -1,79 +1,79 @@
 <html lang="en">
-	<head>
-		<title>Adopting Global Styles</title>
-		<script type="module" src="./shadow-element.js"></script>
-		<script src="https://cdn.tailwindcss.com"></script>
-		<style type="text/tailwindcss"></style>
-		<style id="globalStyles1">
-			.head-style {
-				background-color: green;
-			}
-		</style>
-		<link rel="stylesheet" href="./styles.css" />
-		<script>
-			/** @type {ElementJsConfig} */
-			globalThis.elementJsConfig = {
-				observeGlobalStyles: true,
-			};
-		</script>
-	</head>
-	<body class="p-4">
-		<style class="globalStyles2">
-			.body-style {
-				background-color: green;
-			}
-		</style>
-		<link rel="stylesheet" href="./styles2.css" />
-		<h1 class="text-3xl mb-4">Adopting Global Styles</h1>
-		<light-element></light-element>
-		<h2 class="text-2xl mb-4">Adopt no global Styles</h2>
-		<shadow-element></shadow-element>
-		<h2 class="text-2xl mb-4">Adopt all global Styles</h2>
-		<styled-shadow-element></styled-shadow-element>
-		<h2 class="text-2xl mb-4">Adopt only one selected global style</h2>
-		<adopt-one-style-shadow-element></adopt-one-style-shadow-element>
-		<h2 class="text-2xl mb-4">Adopt multiple selected global styles</h2>
-		<adopt-multiple-styles-shadow-element></adopt-multiple-styles-shadow-element>
-		<script>
-			const globalStyle = new CSSStyleSheet();
-			globalStyle.replaceSync(`.document-adopted { background-color: green;}`);
-			document.adoptedStyleSheets.push(globalStyle);
+    <head>
+        <title>Adopting Global Styles</title>
+        <script type="module" src="./shadow-element.js"></script>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style type="text/tailwindcss"></style>
+        <style id="globalStyles1">
+            .head-style {
+                background-color: green;
+            }
+        </style>
+        <link rel="stylesheet" href="./styles.css" />
+        <script>
+            /** @type {ElementJsConfig} */
+            globalThis.elementJsConfig = {
+                observeGlobalStyles: true,
+            };
+        </script>
+    </head>
+    <body class="p-4">
+        <style class="globalStyles2">
+            .body-style {
+                background-color: green;
+            }
+        </style>
+        <link rel="stylesheet" href="./styles2.css" />
+        <h1 class="text-3xl mb-4">Adopting Global Styles</h1>
+        <light-element></light-element>
+        <h2 class="text-2xl mb-4">Adopt no global Styles</h2>
+        <shadow-element></shadow-element>
+        <h2 class="text-2xl mb-4">Adopt all global Styles</h2>
+        <styled-shadow-element></styled-shadow-element>
+        <h2 class="text-2xl mb-4">Adopt only one selected global style</h2>
+        <adopt-one-style-shadow-element></adopt-one-style-shadow-element>
+        <h2 class="text-2xl mb-4">Adopt multiple selected global styles</h2>
+        <adopt-multiple-styles-shadow-element></adopt-multiple-styles-shadow-element>
+        <script>
+            const globalStyle = new CSSStyleSheet();
+            globalStyle.replaceSync(`.document-adopted { background-color: green;}`);
+            document.adoptedStyleSheets.push(globalStyle);
 
-			setTimeout(() => {
-				const asyncHeadStyle = document.createElement('style');
-				asyncHeadStyle.setAttribute('async-style', 'text/css');
-				asyncHeadStyle.innerHTML = `
+            setTimeout(() => {
+                const asyncHeadStyle = document.createElement('style');
+                asyncHeadStyle.setAttribute('async-style', 'text/css');
+                asyncHeadStyle.innerHTML = `
 					.async-head-style {
 					  background-color: green;
 					}
 			  	`;
-				document.head.appendChild(asyncHeadStyle);
-			}, 1000);
+                document.head.appendChild(asyncHeadStyle);
+            }, 1000);
 
-			setTimeout(() => {
-				const asyncHeadlink = document.createElement('link');
-				asyncHeadlink.setAttribute('rel', 'stylesheet');
-				asyncHeadlink.setAttribute('href', './styles3.css');
-				document.head.appendChild(asyncHeadlink);
-			}, 2000);
+            setTimeout(() => {
+                const asyncHeadlink = document.createElement('link');
+                asyncHeadlink.setAttribute('rel', 'stylesheet');
+                asyncHeadlink.setAttribute('href', './styles3.css');
+                document.head.appendChild(asyncHeadlink);
+            }, 2000);
 
-			setTimeout(() => {
-				const asyncBodyStyle = document.createElement('style');
-				asyncBodyStyle.innerHTML = `
+            setTimeout(() => {
+                const asyncBodyStyle = document.createElement('style');
+                asyncBodyStyle.innerHTML = `
 					.async-body-style {
 					  background-color: green;
 					}
 			  	`;
-				document.body.appendChild(asyncBodyStyle);
-			}, 3000);
+                document.body.appendChild(asyncBodyStyle);
+            }, 3000);
 
-			setTimeout(() => {
-				const asyncBodyLink = document.createElement('link');
-				asyncBodyLink.rel = 'stylesheet';
-				asyncBodyLink.setAttribute('type', 'text/css');
-				asyncBodyLink.href = './styles4.css';
-				document.body.appendChild(asyncBodyLink);
-			}, 4000);
-		</script>
-	</body>
+            setTimeout(() => {
+                const asyncBodyLink = document.createElement('link');
+                asyncBodyLink.rel = 'stylesheet';
+                asyncBodyLink.setAttribute('type', 'text/css');
+                asyncBodyLink.href = './styles4.css';
+                document.body.appendChild(asyncBodyLink);
+            }, 4000);
+        </script>
+    </body>
 </html>

@@ -1,4 +1,3 @@
-
 ### Element Hierarchy
 
 Pleas keep in mind that lifecycles _do not_ wait for child elements to be connected or updated/rendered.
@@ -6,11 +5,10 @@ Pleas keep in mind that lifecycles _do not_ wait for child elements to be connec
 In the example below we have a simple hierarchy of elements.
 
 ```html
-
 <a-element>
-	<b-element>
-		<c-element></c-element>
-	</b-element>
+    <b-element>
+        <c-element></c-element>
+    </b-element>
 </a-element>
 ```
 
@@ -27,34 +25,34 @@ This loading/connecting behaviour is compliant with how other (normal) DOM eleme
 In the example we render a clock and update the time every second.
 
 ```javascript
-import {TemplateElement, defineElement, html} from '@webtides/element-js';
+import { TemplateElement, defineElement, html } from '@webtides/element-js';
 
 export class ClockElement extends TemplateElement {
-	timer = null;
+    timer = null;
 
-	properties() {
-		return {
-			time: Date.now()
-		};
-	}
+    properties() {
+        return {
+            time: Date.now()
+        };
+    }
 
-	connected() {
-		this.timer = window.setInterval(() => {
-			this.time = Date.now();
-		}, 1000);
-	}
+    connected() {
+        this.timer = window.setInterval(() => {
+            this.time = Date.now();
+        }, 1000);
+    }
 
-	disconnected() {
-		window.clearInterval(this.timer);
-	}
+    disconnected() {
+        window.clearInterval(this.timer);
+    }
 
-	get formattedTime() {
-		return new Date(this.time).toLocaleTimeString();
-	}
+    get formattedTime() {
+        return new Date(this.time).toLocaleTimeString();
+    }
 
-	template() {
-		return html` <span>${this.formattedTime}</span> `;
-	}
+    template() {
+        return html` <span>${this.formattedTime}</span> `;
+    }
 }
 
 defineElement('clock-element', ClockElement);

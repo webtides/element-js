@@ -27,7 +27,7 @@ npm install --save @webtides/element-js
 // or when installed via npm
 import { BaseElement, defineElement, Store } from '@webtides/element-js';
 
-const sharedDate = new  Store({date: Date.now()}) 
+const sharedDate = new Store({ date: Date.now() });
 
 class ExampleElement extends BaseElement {
     // normal public properties
@@ -42,8 +42,8 @@ class ExampleElement extends BaseElement {
     // reactive attributes/properties
     properties() {
         return {
-           familyName: 'Doe',
-           sharedDate
+            familyName: 'Doe',
+            sharedDate
         };
     }
 

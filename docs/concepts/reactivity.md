@@ -1,8 +1,6 @@
-
 ### Reactivity
 
-_element-js_ elements update asynchronously when attributes or reactive properties are changed. Changes will also be
-batched if multiple updates occur. The update itself will always happen in the following frame.
+_element-js_ elements update asynchronously when attributes or reactive properties are changed. Changes will also be batched if multiple updates occur. The update itself will always happen in the following frame.
 
 An update lifecycle roughly looks like this:
 

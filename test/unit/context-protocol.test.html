@@ -1,183 +1,183 @@
 <html>
-	<body>
-		<script>
-			/*
-			 * Vannila Context Request
-			 * */
+    <body>
+        <script>
+            /*
+             * Vannila Context Request
+             * */
 
-			globalThis.vanillaContext = 'Some Context returned from Vanilla JS';
-			globalThis.callbackContext = 'I will be provided via callback';
+            globalThis.vanillaContext = 'Some Context returned from Vanilla JS';
+            globalThis.callbackContext = 'I will be provided via callback';
 
-			document.addEventListener('request-context', (event) => {
-				// global value
-				for (const [key, value] of Object.entries(event.detail)) {
-					if (window.hasOwnProperty(key)) {
-						// vanilla Context request
-						event.stopPropagation();
-						const globalContext = globalThis[key];
-						if (typeof value === 'function') {
-							// call function with context value
-							value(globalContext);
-						} else {
-							// auto define as prop as Requestee is probably a BaseElement
-							event.target[key] = globalContext;
-						}
-					}
-				}
-			});
-		</script>
+            document.addEventListener('request-context', (event) => {
+                // global value
+                for (const [key, value] of Object.entries(event.detail)) {
+                    if (window.hasOwnProperty(key)) {
+                        // vanilla Context request
+                        event.stopPropagation();
+                        const globalContext = globalThis[key];
+                        if (typeof value === 'function') {
+                            // call function with context value
+                            value(globalContext);
+                        } else {
+                            // auto define as prop as Requestee is probably a BaseElement
+                            event.target[key] = globalContext;
+                        }
+                    }
+                }
+            });
+        </script>
 
-		<ancestor-context-element>
-			<parent-context-element>
-				<late-provider>
-					<request-context-element id="primary"></request-context-element>
-				</late-provider>
-				<request-context-element id="secondary"></request-context-element>
-			</parent-context-element>
-		</ancestor-context-element>
+        <ancestor-context-element>
+            <parent-context-element>
+                <late-provider>
+                    <request-context-element id="primary"></request-context-element>
+                </late-provider>
+                <request-context-element id="secondary"></request-context-element>
+            </parent-context-element>
+        </ancestor-context-element>
 
-		<script type="module">
-			/* eslint-disable no-unused-expressions */
-			import { runTests } from '@web/test-runner-mocha';
-			import { assert, expect, nextFrame, chai } from '@open-wc/testing';
-			import { html, defineElement, BaseElement, TemplateElement } from '../../index';
+        <script type="module">
+            /* eslint-disable no-unused-expressions */
+            import { runTests } from '@web/test-runner-mocha';
+            import { assert, expect, nextFrame, chai } from '@open-wc/testing';
+            import { html, defineElement, BaseElement, TemplateElement } from '../../index';
 
-			import { Store } from '../../src/util/Store';
+            import { Store } from '../../src/util/Store';
 
-			import {
-				AncestorContextElement,
-				ParentContextElement,
-				RequestContextElement,
-				LateProvider,
-				primitiveStore,
-			} from './context-protocol.definitions';
+            import {
+                AncestorContextElement,
+                ParentContextElement,
+                RequestContextElement,
+                LateProvider,
+                primitiveStore,
+            } from './context-protocol.definitions';
 
-			defineElement('ancestor-context-element', AncestorContextElement);
-			defineElement('parent-context-element', ParentContextElement);
-			defineElement('request-context-element', RequestContextElement);
-			runTests(() => {
-				// Provider needs to be declared before Requester
-				it('receives global vanilla context', async () => {
-					const el = document.getElementById('primary');
-					expect(el.vanillaContext).to.equal(globalThis.vanillaContext);
-				});
+            defineElement('ancestor-context-element', AncestorContextElement);
+            defineElement('parent-context-element', ParentContextElement);
+            defineElement('request-context-element', RequestContextElement);
+            runTests(() => {
+                // Provider needs to be declared before Requester
+                it('receives global vanilla context', async () => {
+                    const el = document.getElementById('primary');
+                    expect(el.vanillaContext).to.equal(globalThis.vanillaContext);
+                });
 
-				it('secondary also receives global vanilla context', async () => {
-					const el = document.getElementById('secondary');
-					expect(el.vanillaContext).to.equal(globalThis.vanillaContext);
-				});
+                it('secondary also receives global vanilla context', async () => {
+                    const el = document.getElementById('secondary');
+                    expect(el.vanillaContext).to.equal(globalThis.vanillaContext);
+                });
 
-				it('receives global vanilla context vial callback', async () => {
-					const el = document.getElementById('primary');
-					expect(el.callBackCalled).to.be.true;
-				});
+                it('receives global vanilla context vial callback', async () => {
+                    const el = document.getElementById('primary');
+                    expect(el.callBackCalled).to.be.true;
+                });
 
-				it('does not receive anything if provider is missing', async () => {
-					const el = document.getElementById('primary');
-					expect(el.missingVanillaContext).to.be.undefined;
-				});
+                it('does not receive anything if provider is missing', async () => {
+                    const el = document.getElementById('primary');
+                    expect(el.missingVanillaContext).to.be.undefined;
+                });
 
-				it('receives simple parent context', async () => {
-					const el = document.getElementById('primary');
-					expect(el.simpleContext).to.equal(ParentContextElement.SIMPLE_CONTEXT);
-				});
+                it('receives simple parent context', async () => {
+                    const el = document.getElementById('primary');
+                    expect(el.simpleContext).to.equal(ParentContextElement.SIMPLE_CONTEXT);
+                });
 
-				it('multiple requester receive the same value', async () => {
-					const el = document.getElementById('primary');
-					const secondary = document.getElementById('secondary');
-					expect(el.simpleContext).to.equal(secondary.simpleContext);
-				});
+                it('multiple requester receive the same value', async () => {
+                    const el = document.getElementById('primary');
+                    const secondary = document.getElementById('secondary');
+                    expect(el.simpleContext).to.equal(secondary.simpleContext);
+                });
 
-				it('it receives boolean values even if they are falsy', async () => {
-					const el = document.getElementById('primary');
+                it('it receives boolean values even if they are falsy', async () => {
+                    const el = document.getElementById('primary');
 
-					expect(el.booleanContext).to.equal(false);
-				});
+                    expect(el.booleanContext).to.equal(false);
+                });
 
-				it('Receives Ancestor Context if parent does not provide the requested value', async () => {
-					const el = document.getElementById('primary');
-					expect(el.ancestorContext).to.equal(AncestorContextElement.CONTEXT);
-				});
+                it('Receives Ancestor Context if parent does not provide the requested value', async () => {
+                    const el = document.getElementById('primary');
+                    expect(el.ancestorContext).to.equal(AncestorContextElement.CONTEXT);
+                });
 
-				it('Does receive Parent Context if Parent provides the requested value', async () => {
-					const el = document.getElementById('primary');
-					expect(el.multiContext).to.equal(ParentContextElement.MULTI);
-				});
+                it('Does receive Parent Context if Parent provides the requested value', async () => {
+                    const el = document.getElementById('primary');
+                    expect(el.multiContext).to.equal(ParentContextElement.MULTI);
+                });
 
-				it('Does not receive Ancestor Context if parent not provide the requested value', async () => {
-					const el = document.getElementById('primary');
-					expect(el.multiContext).not.to.equal(AncestorContextElement.MULTI);
-				});
+                it('Does not receive Ancestor Context if parent not provide the requested value', async () => {
+                    const el = document.getElementById('primary');
+                    expect(el.multiContext).not.to.equal(AncestorContextElement.MULTI);
+                });
 
-				it('Does receive Store instances from context requests ', async () => {
-					const el = document.getElementById('primary');
-					expect(el.storeContext).to.be.instanceOf(Store);
-				});
+                it('Does receive Store instances from context requests ', async () => {
+                    const el = document.getElementById('primary');
+                    expect(el.storeContext).to.be.instanceOf(Store);
+                });
 
-				it('Does receive Store instances from context requests ', async () => {
-					const el = document.getElementById('primary');
-					expect(el.storeContext).to.equal(primitiveStore);
-				});
+                it('Does receive Store instances from context requests ', async () => {
+                    const el = document.getElementById('primary');
+                    expect(el.storeContext).to.equal(primitiveStore);
+                });
 
-				it('All Receiver do receive the same store instance', async () => {
-					const el = document.getElementById('primary');
-					const secondary = document.getElementById('secondary');
-					expect(secondary.storeContext).to.equal(el.storeContext);
-				});
+                it('All Receiver do receive the same store instance', async () => {
+                    const el = document.getElementById('primary');
+                    const secondary = document.getElementById('secondary');
+                    expect(secondary.storeContext).to.equal(el.storeContext);
+                });
 
-				it('One does receive new Values when store changes its state / value', async () => {
-					const changedValue = 200;
-					primitiveStore.value = changedValue;
-					const el = document.getElementById('primary');
-					expect(el.storeContext.value).to.equal(changedValue);
-				});
+                it('One does receive new Values when store changes its state / value', async () => {
+                    const changedValue = 200;
+                    primitiveStore.value = changedValue;
+                    const el = document.getElementById('primary');
+                    expect(el.storeContext.value).to.equal(changedValue);
+                });
 
-				it('All Receiver do receive updated new values when store changes its state / value', async () => {
-					const changedValue = 300;
-					primitiveStore.value = changedValue;
-					const el = document.getElementById('primary');
-					const secondary = document.getElementById('secondary');
-					expect(secondary.storeContext.value).to.equal(el.storeContext.value);
-				});
+                it('All Receiver do receive updated new values when store changes its state / value', async () => {
+                    const changedValue = 300;
+                    primitiveStore.value = changedValue;
+                    const el = document.getElementById('primary');
+                    const secondary = document.getElementById('secondary');
+                    expect(secondary.storeContext.value).to.equal(el.storeContext.value);
+                });
 
-				it('All Receiver do receive updated values when another changes state value', async () => {
-					const primary = document.getElementById('primary');
-					const secondary = document.getElementById('secondary');
-					primary.storeContext.value = 400;
-					expect(secondary.storeContext.value).to.equal(primary.storeContext.value);
-					secondary.storeContext.value = 500;
-					expect(secondary.storeContext.value).to.equal(primary.storeContext.value);
-				});
+                it('All Receiver do receive updated values when another changes state value', async () => {
+                    const primary = document.getElementById('primary');
+                    const secondary = document.getElementById('secondary');
+                    primary.storeContext.value = 400;
+                    expect(secondary.storeContext.value).to.equal(primary.storeContext.value);
+                    secondary.storeContext.value = 500;
+                    expect(secondary.storeContext.value).to.equal(primary.storeContext.value);
+                });
 
-				it('receives a static context value that is not a property in the Provider', async () => {
-					const el = document.getElementById('primary');
-					expect(el.staticContext).to.equal(ParentContextElement.STATIC);
-				});
+                it('receives a static context value that is not a property in the Provider', async () => {
+                    const el = document.getElementById('primary');
+                    expect(el.staticContext).to.equal(ParentContextElement.STATIC);
+                });
 
-				it('receives value via callback that is inlined into the injectProperties method', async () => {
-					// rare case probably a DON'T ... still possible
-					const el = document.getElementById('primary');
-					expect(el.inlineCallbackValue).to.equal(ParentContextElement.INLINE);
-				});
+                it('receives value via callback that is inlined into the injectProperties method', async () => {
+                    // rare case probably a DON'T ... still possible
+                    const el = document.getElementById('primary');
+                    expect(el.inlineCallbackValue).to.equal(ParentContextElement.INLINE);
+                });
 
-				it('Does receive watcher calls through Store updates even if defaults were defined ', async () => {
-					const el = document.getElementById('primary');
-					el.storeContext.value = 600;
-					// need to await one update
-					await nextFrame();
-					expect(el.watcherReflectedValue).to.equal(el.storeContext.value);
-				});
+                it('Does receive watcher calls through Store updates even if defaults were defined ', async () => {
+                    const el = document.getElementById('primary');
+                    el.storeContext.value = 600;
+                    // need to await one update
+                    await nextFrame();
+                    expect(el.watcherReflectedValue).to.equal(el.storeContext.value);
+                });
 
-				it('It does receive requested Values even if the provider is late (loaded or defined) ', async () => {
-					const el = document.getElementById('primary');
-					// value needs to be undefined initally
-					expect(el.lateContext).to.be.undefined;
-					// element gets defined late
-					defineElement('late-provider', LateProvider);
-					// value is expected to be injected anyways
-					expect(el.lateContext).to.equal(LateProvider.LATE_CONTEXT);
-				});
-			});
-		</script>
-	</body>
+                it('It does receive requested Values even if the provider is late (loaded or defined) ', async () => {
+                    const el = document.getElementById('primary');
+                    // value needs to be undefined initally
+                    expect(el.lateContext).to.be.undefined;
+                    // element gets defined late
+                    defineElement('late-provider', LateProvider);
+                    // value is expected to be injected anyways
+                    expect(el.lateContext).to.equal(LateProvider.LATE_CONTEXT);
+                });
+            });
+        </script>
+    </body>
 </html>

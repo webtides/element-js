@@ -6,7 +6,7 @@ import { TemplateResult } from './TemplateResult.js';
  * @return {TemplateResult}
  */
 const html = function (strings, ...values) {
-	return new TemplateResult(strings, ...values);
+    return new TemplateResult(strings, ...values);
 };
 
 export { html };

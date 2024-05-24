@@ -22,50 +22,50 @@ const interpolation = new RegExp(`(<!--dom-part-(\\d+)--><!--/dom-part-(\\d+)-->
  * @returns {string} X/HTML with prefixed comments or attributes
  */
 export const createTemplateString = (templateStrings, attributePlaceholders = '') => {
-	// TODO: make it easier to identify attribute and node parts for SSR and leave the comments at those positions to be replaced in toString()
-	let partIndex = 0;
-	// join all interpolations (for values) with a special placeholder and remove any whitespace
-	let template = templateStrings.join('\x01').trim();
-	// find (match) all elements to identify their attributes
-	template = template.replace(elements, (_, name, attributesString, trailingSlash) => {
-		let elementTagWithAttributes = name + attributesString.replaceAll('\x01', attributePlaceholders).trimEnd();
-		// TODO the closing case is weird.
-		if (trailingSlash.length) elementTagWithAttributes += voidElements.test(name) ? ' /' : '></' + name;
-		// collect all attribute parts so that we can place matching comment nodes
-		const attributeParts = attributesString.replace(attributes, (attribute, name, valueWithQuotes, directive) => {
-			if (directive && directive === '\x01') {
-				return `<!--\x02$-->`;
-			}
+    // TODO: make it easier to identify attribute and node parts for SSR and leave the comments at those positions to be replaced in toString()
+    let partIndex = 0;
+    // join all interpolations (for values) with a special placeholder and remove any whitespace
+    let template = templateStrings.join('\x01').trim();
+    // find (match) all elements to identify their attributes
+    template = template.replace(elements, (_, name, attributesString, trailingSlash) => {
+        let elementTagWithAttributes = name + attributesString.replaceAll('\x01', attributePlaceholders).trimEnd();
+        // TODO the closing case is weird.
+        if (trailingSlash.length) elementTagWithAttributes += voidElements.test(name) ? ' /' : '></' + name;
+        // collect all attribute parts so that we can place matching comment nodes
+        const attributeParts = attributesString.replace(attributes, (attribute, name, valueWithQuotes, directive) => {
+            if (directive && directive === '\x01') {
+                return `<!--\x02$-->`;
+            }
 
-			// remove quotes from attribute value to normalize the value
-			const value =
-				valueWithQuotes?.startsWith('"') || valueWithQuotes?.startsWith("'")
-					? valueWithQuotes.slice(1, -1)
-					: valueWithQuotes;
-			const partsCount = (attribute.match(/\x01/g) || []).length;
-			const parts = [];
-			for (let index = 0; index < partsCount; index++) {
-				parts.push(`<!--\x02:${name}=${value.replaceAll('\x01', '\x03')}-->`);
-			}
-			return parts.join('');
-		});
-		// TODO create test to check if lf are in place
-		return `
+            // remove quotes from attribute value to normalize the value
+            const value =
+                valueWithQuotes?.startsWith('"') || valueWithQuotes?.startsWith("'")
+                    ? valueWithQuotes.slice(1, -1)
+                    : valueWithQuotes;
+            const partsCount = (attribute.match(/\x01/g) || []).length;
+            const parts = [];
+            for (let index = 0; index < partsCount; index++) {
+                parts.push(`<!--\x02:${name}=${value.replaceAll('\x01', '\x03')}-->`);
+            }
+            return parts.join('');
+        });
+        // TODO create test to check if lf are in place
+        return `
 				${attributesString.includes('\x01') ? attributeParts : ''}\n
 				<${elementTagWithAttributes}>\n
 			`.trim();
-	});
-	// replace interpolation placeholders with our indexed markers
-	template = template.replace(partPositions, (partPosition) => {
-		if (partPosition === '\x01') {
-			return `<!--dom-part-${partIndex}--><!--/dom-part-${partIndex++}-->`;
-		} else if (partPosition === '\x02') {
-			return `dom-part-${partIndex++}`;
-		}
-	});
-	// TODO create test to check if lf are in place
-	// /n is important in the returns as we expect a certain order of text / comments an nodes
-	return `<!--template-part-->\n${template}\n<!--/template-part-->`.trim();
+    });
+    // replace interpolation placeholders with our indexed markers
+    template = template.replace(partPositions, (partPosition) => {
+        if (partPosition === '\x01') {
+            return `<!--dom-part-${partIndex}--><!--/dom-part-${partIndex++}-->`;
+        } else if (partPosition === '\x02') {
+            return `dom-part-${partIndex++}`;
+        }
+    });
+    // TODO create test to check if lf are in place
+    // /n is important in the returns as we expect a certain order of text / comments an nodes
+    return `<!--template-part-->\n${template}\n<!--/template-part-->`.trim();
 };
 
 /**
@@ -75,9 +75,9 @@ export const createTemplateString = (templateStrings, attributePlaceholders = ''
  * @return {String}
  */
 const attribute = (name, value, isSingleValue = true) => {
-	return ` ${name}="${encodeAttribute(isObjectLike(value) ? JSON.stringify(value) : value)}${
-		isSingleValue ? '"' : ''
-	}`;
+    return ` ${name}="${encodeAttribute(isObjectLike(value) ? JSON.stringify(value) : value)}${
+        isSingleValue ? '"' : ''
+    }`;
 };
 
 /**
@@ -85,30 +85,30 @@ const attribute = (name, value, isSingleValue = true) => {
  * @return {String}
  */
 const getValue = (value) => {
-	switch (typeof value) {
-		case 'string':
-			return encodeAttribute(value);
-		case 'boolean':
-		case 'number':
-			return String(value);
-		case 'object':
-			switch (true) {
-				case value === null:
-					return '';
-				case Array.isArray(value):
-					return value.map(getValue).join('');
-				case value instanceof TemplateResult:
-					return value.toString();
-				case value.__unsafeHTML:
-					return value.string;
-				default:
-					console.log('Cannot getValue for', value);
-			}
-			break;
-		case 'function':
-			return getValue(value());
-	}
-	return value == null ? '' : encodeAttribute(String(value));
+    switch (typeof value) {
+        case 'string':
+            return encodeAttribute(value);
+        case 'boolean':
+        case 'number':
+            return String(value);
+        case 'object':
+            switch (true) {
+                case value === null:
+                    return '';
+                case Array.isArray(value):
+                    return value.map(getValue).join('');
+                case value instanceof TemplateResult:
+                    return value.toString();
+                case value.__unsafeHTML:
+                    return value.string;
+                default:
+                    console.log('Cannot getValue for', value);
+            }
+            break;
+        case 'function':
+            return getValue(value());
+    }
+    return value == null ? '' : encodeAttribute(String(value));
 };
 
 /** @type {Map<TemplateStringsArray, *[]>} */
@@ -118,223 +118,223 @@ const parsedUpdates = new WeakMap();
 const templateParts = new WeakMap();
 
 export class TemplateResult {
-	/**
-	 * @param {TemplateStringsArray} strings
-	 * @param {any[]} values
-	 */
-	constructor(strings, ...values) {
-		this.strings = strings;
-		this.values = values;
-	}
+    /**
+     * @param {TemplateStringsArray} strings
+     * @param {any[]} values
+     */
+    constructor(strings, ...values) {
+        this.strings = strings;
+        this.values = values;
+    }
 
-	/**
-	 * @param {Element} domNode
-	 */
-	renderInto(domNode) {
-		let serverSideRendered = false;
-		let templatePart = templateParts.get(domNode);
-		if (!templatePart) {
-			const startNode = Array.from(domNode.childNodes)
-				.filter((node) => node.nodeType === COMMENT_NODE)
-				.find((node) => node.data === 'template-part');
+    /**
+     * @param {Element} domNode
+     */
+    renderInto(domNode) {
+        let serverSideRendered = false;
+        let templatePart = templateParts.get(domNode);
+        if (!templatePart) {
+            const startNode = Array.from(domNode.childNodes)
+                .filter((node) => node.nodeType === COMMENT_NODE)
+                .find((node) => node.data === 'template-part');
 
-			serverSideRendered = startNode !== undefined;
+            serverSideRendered = startNode !== undefined;
 
-			templatePart = new TemplatePart(startNode, this);
-			templateParts.set(domNode, templatePart);
+            templatePart = new TemplatePart(startNode, this);
+            templateParts.set(domNode, templatePart);
 
-			if (!serverSideRendered) {
-				domNode.replaceChildren(...templatePart.childNodes);
-			}
-		} else {
-			templatePart.update(this);
-		}
-	}
+            if (!serverSideRendered) {
+                domNode.replaceChildren(...templatePart.childNodes);
+            }
+        } else {
+            templatePart.update(this);
+        }
+    }
 
-	/**
-	 * @param {String[]} strings
-	 * @return {(() => String)[]}
-	 */
-	parse(strings) {
-		const html = createTemplateString(strings, '\x04');
-		const parts = [];
-		let i = 0;
-		let match = null;
-		while ((match = interpolation.exec(html))) {
-			const pre = html.slice(i, match.index);
-			i = match.index + match[0].length;
-			if (match[2]) {
-				// ChildNodePart
-				const index = match[2];
-				parts.push((value) => `${pre}<!--dom-part-${index}-->${getValue(value)}<!--/dom-part-${index}-->`);
-			} else if (match[4]) {
-				// AttributePart with single interpolation or the first interpolation right after the attribute=
-				const isSingleValue = match[5] !== undefined;
-				let name = match[4];
-				switch (true) {
-					case name[0] === '?':
-						const booleanName = name.slice(1).toLowerCase();
-						parts.push((value) => {
-							if (!value) return '';
-							return `${pre} ${booleanName}=""`;
-						});
-						break;
-					case name[0] === '.':
-						const lower = name.slice(1).toLowerCase();
-						parts.push((value) => {
-							let result = pre;
-							// null, undefined, and false are not shown at all
-							if (value === null || value === undefined || value === '') {
-								result += attribute(lower, '');
-							} else {
-								// in all other cases, just escape it in quotes
-								result += attribute(lower, value, isSingleValue);
-							}
-							return result;
-						});
-						break;
-					case name[0] === '@':
-						name = 'on' + name.slice(1);
-					case name[0] === 'o' && name[1] === 'n':
-						parts.push((value) => {
-							return pre;
-						});
-						break;
-					default:
-						parts.push((value) => {
-							let result = pre;
-							if (value != null) {
-								result += attribute(name, value, isSingleValue);
-							}
-							return result;
-						});
-						break;
-				}
-			} else {
-				// AttributePart in the middle of an attribute value or NodePart
-				parts.push((value) => {
-					let result = pre;
-					// TODO: we currently cannot distinguish between NodeParts and AttributeParts before
-					if (isObjectLike(value) && value.directiveClass) {
-						// NodePart
-						const directive = new value.directiveClass();
-						result += directive.stringify(...value.values);
-					} else if (value != null) {
-						result += encodeAttribute(isObjectLike(value) ? JSON.stringify(value) : value);
-					}
-					return result;
-				});
-			}
-		}
+    /**
+     * @param {String[]} strings
+     * @return {(() => String)[]}
+     */
+    parse(strings) {
+        const html = createTemplateString(strings, '\x04');
+        const parts = [];
+        let i = 0;
+        let match = null;
+        while ((match = interpolation.exec(html))) {
+            const pre = html.slice(i, match.index);
+            i = match.index + match[0].length;
+            if (match[2]) {
+                // ChildNodePart
+                const index = match[2];
+                parts.push((value) => `${pre}<!--dom-part-${index}-->${getValue(value)}<!--/dom-part-${index}-->`);
+            } else if (match[4]) {
+                // AttributePart with single interpolation or the first interpolation right after the attribute=
+                const isSingleValue = match[5] !== undefined;
+                let name = match[4];
+                switch (true) {
+                    case name[0] === '?':
+                        const booleanName = name.slice(1).toLowerCase();
+                        parts.push((value) => {
+                            if (!value) return '';
+                            return `${pre} ${booleanName}=""`;
+                        });
+                        break;
+                    case name[0] === '.':
+                        const lower = name.slice(1).toLowerCase();
+                        parts.push((value) => {
+                            let result = pre;
+                            // null, undefined, and false are not shown at all
+                            if (value === null || value === undefined || value === '') {
+                                result += attribute(lower, '');
+                            } else {
+                                // in all other cases, just escape it in quotes
+                                result += attribute(lower, value, isSingleValue);
+                            }
+                            return result;
+                        });
+                        break;
+                    case name[0] === '@':
+                        name = 'on' + name.slice(1);
+                    case name[0] === 'o' && name[1] === 'n':
+                        parts.push((value) => {
+                            return pre;
+                        });
+                        break;
+                    default:
+                        parts.push((value) => {
+                            let result = pre;
+                            if (value != null) {
+                                result += attribute(name, value, isSingleValue);
+                            }
+                            return result;
+                        });
+                        break;
+                }
+            } else {
+                // AttributePart in the middle of an attribute value or NodePart
+                parts.push((value) => {
+                    let result = pre;
+                    // TODO: we currently cannot distinguish between NodeParts and AttributeParts before
+                    if (isObjectLike(value) && value.directiveClass) {
+                        // NodePart
+                        const directive = new value.directiveClass();
+                        result += directive.stringify(...value.values);
+                    } else if (value != null) {
+                        result += encodeAttribute(isObjectLike(value) ? JSON.stringify(value) : value);
+                    }
+                    return result;
+                });
+            }
+        }
 
-		// We couldn't correctly parse parts from the template
-		if (parts.length !== strings.length - 1) {
-			throw {
-				name: 'ParseTemplateError',
-				message: 'Could not parse parts from template correctly. Parts length has not the expected length.',
-				strings,
-				templateString: html,
-				parts,
-			};
-		}
+        // We couldn't correctly parse parts from the template
+        if (parts.length !== strings.length - 1) {
+            throw {
+                name: 'ParseTemplateError',
+                message: 'Could not parse parts from template correctly. Parts length has not the expected length.',
+                strings,
+                templateString: html,
+                parts,
+            };
+        }
 
-		if (parts.length) {
-			const last = parts[parts.length - 1];
-			const chunk = html.slice(i);
-			parts[parts.length - 1] = (value) => last(value) + chunk;
-		} else {
-			parts.push(() => html);
-		}
-		return parts;
-	}
+        if (parts.length) {
+            const last = parts[parts.length - 1];
+            const chunk = html.slice(i);
+            parts[parts.length - 1] = (value) => last(value) + chunk;
+        } else {
+            parts.push(() => html);
+        }
+        return parts;
+    }
 
-	/**
-	 * @param {Node[]} childNodes
-	 * @return {object[]}
-	 */
-	parseParts(childNodes) {
-		// we always create a template fragment so that we can start at the root for traversing the node path
-		const range = globalThis.document?.createRange();
-		range.setStartBefore(childNodes[0]);
-		range.setEndAfter(childNodes[childNodes.length - 1]);
-		const template = range.cloneContents();
+    /**
+     * @param {Node[]} childNodes
+     * @return {object[]}
+     */
+    parseParts(childNodes) {
+        // we always create a template fragment so that we can start at the root for traversing the node path
+        const range = globalThis.document?.createRange();
+        range.setStartBefore(childNodes[0]);
+        range.setEndAfter(childNodes[childNodes.length - 1]);
+        const template = range.cloneContents();
 
-		const treeWalker = globalThis.document?.createTreeWalker(template, 128);
-		let node = treeWalker.nextNode(); //to skip the root template-part
-		const parts = [];
+        const treeWalker = globalThis.document?.createTreeWalker(template, 128);
+        let node = treeWalker.nextNode(); //to skip the root template-part
+        const parts = [];
 
-		let nestedLevel = 0;
-		// search for parts through numbered comment nodes with placeholders
-		while ((node = treeWalker.nextNode())) {
-			if (/^template-part$/.test(node.data)) {
-				nestedLevel++;
-				continue;
-			}
-			if (/^\/template-part$/.test(node.data)) {
-				if (nestedLevel > 0) {
-					nestedLevel--;
-				}
-				continue;
-			}
-			if (nestedLevel > 0) {
-				continue;
-			}
-			if (/^dom-part-\d+$/.test(node.data)) {
-				parts.push({ type: 'node', path: getNodePath(node) });
-				continue;
-			}
-			if (/^dom-part-\d+:/.test(node.data)) {
-				const [_, ...attribute] = node.data.split(':');
-				const [name, ...initialValue] = attribute.join(':').split('=');
-				parts.push({
-					type: 'attribute',
-					path: getNodePath(node),
-					name: name,
-					initialValue: initialValue.join('='),
-				});
-				continue;
-			}
-			if (/^dom-part-\d+\$/.test(node.data)) {
-				parts.push({ type: 'directive', path: getNodePath(node) });
-			}
-		}
+        let nestedLevel = 0;
+        // search for parts through numbered comment nodes with placeholders
+        while ((node = treeWalker.nextNode())) {
+            if (/^template-part$/.test(node.data)) {
+                nestedLevel++;
+                continue;
+            }
+            if (/^\/template-part$/.test(node.data)) {
+                if (nestedLevel > 0) {
+                    nestedLevel--;
+                }
+                continue;
+            }
+            if (nestedLevel > 0) {
+                continue;
+            }
+            if (/^dom-part-\d+$/.test(node.data)) {
+                parts.push({ type: 'node', path: getNodePath(node) });
+                continue;
+            }
+            if (/^dom-part-\d+:/.test(node.data)) {
+                const [_, ...attribute] = node.data.split(':');
+                const [name, ...initialValue] = attribute.join(':').split('=');
+                parts.push({
+                    type: 'attribute',
+                    path: getNodePath(node),
+                    name: name,
+                    initialValue: initialValue.join('='),
+                });
+                continue;
+            }
+            if (/^dom-part-\d+\$/.test(node.data)) {
+                parts.push({ type: 'directive', path: getNodePath(node) });
+            }
+        }
 
-		// We couldn't correctly parse parts from the template
-		if (parts.length !== this.strings.length - 1) {
-			throw {
-				name: 'ParseTemplateError',
-				message:
-					'Could not parse parts from template correctly. Parts length has not the expected length. -> ' +
-					JSON.stringify({
-						strings: this.strings,
-						templateString: this.templateString,
-						childNodes,
-						template,
-						parts,
-					}),
-			};
-		}
+        // We couldn't correctly parse parts from the template
+        if (parts.length !== this.strings.length - 1) {
+            throw {
+                name: 'ParseTemplateError',
+                message:
+                    'Could not parse parts from template correctly. Parts length has not the expected length. -> ' +
+                    JSON.stringify({
+                        strings: this.strings,
+                        templateString: this.templateString,
+                        childNodes,
+                        template,
+                        parts,
+                    }),
+            };
+        }
 
-		return parts;
-	}
+        return parts;
+    }
 
-	/**
-	 * find interpolations in the given template for nodes and attributes and
-	 * return a string with placeholders as either comment nodes or named attributes.
-	 * @returns {string} template with tagged placeholders for values
-	 */
-	get templateString() {
-		return createTemplateString(this.strings);
-	}
+    /**
+     * find interpolations in the given template for nodes and attributes and
+     * return a string with placeholders as either comment nodes or named attributes.
+     * @returns {string} template with tagged placeholders for values
+     */
+    get templateString() {
+        return createTemplateString(this.strings);
+    }
 
-	toString() {
-		let updates = parsedUpdates.get(this.strings);
+    toString() {
+        let updates = parsedUpdates.get(this.strings);
 
-		if (!updates) {
-			updates = this.parse(this.strings);
-			parsedUpdates.set(this.strings, updates);
-		}
+        if (!updates) {
+            updates = this.parse(this.strings);
+            parsedUpdates.set(this.strings, updates);
+        }
 
-		return this.values.length ? this.values.map((value, index) => updates[index](value)).join('') : updates[0]();
-	}
+        return this.values.length ? this.values.map((value, index) => updates[index](value)).join('') : updates[0]();
+    }
 }

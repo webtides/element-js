@@ -2,11 +2,11 @@
  * @abstract
  */
 export class Part {
-	processor = undefined;
+    processor = undefined;
 
-	/**
-	 * @abstract
-	 * @param {TemplateResult | any[] | any} value
-	 */
-	update(value) {}
+    /**
+     * @abstract
+     * @param {TemplateResult | any[] | any} value
+     */
+    update(value) {}
 }

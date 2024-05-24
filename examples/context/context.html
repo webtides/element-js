@@ -1,48 +1,47 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<title>Example Elements</title>
-		<script type="module" src="other-provide-context.js"></script>
-		<script type="module" src="provide-context.js"></script>
-		<script type="module" src="request-context.js"></script>
-		<script src="https://cdn.tailwindcss.com"></script>
-		<style type="text/tailwindcss">
-			.btn {
-				@apply inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
-			}
-		</style>
-	</head>
-	<script>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Example Elements</title>
+        <script type="module" src="other-provide-context.js"></script>
+        <script type="module" src="provide-context.js"></script>
+        <script type="module" src="request-context.js"></script>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style type="text/tailwindcss">
+            .btn {
+                @apply inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
+            }
+        </style>
+    </head>
+    <script>
+        document.addEventListener('request-context', (event) => {
+            if (event.detail.hasOwnProperty('vanillaContext')) {
+                const callback = event.detail['vanillaContext'];
+                const vanillaContext = 'Some Context returned from Vanilla JS';
+                event.stopPropagation();
+                if (typeof callback === 'function') {
+                    // call function with context value
+                    callback(vanillaContext);
+                } else {
+                    // auto define as prop
+                    event.target['vanillaContext'] = vanillaContext;
+                }
+            }
+        });
+    </script>
 
-		document.addEventListener('request-context', (event) => {
-			if(event.detail.hasOwnProperty('vanillaContext')) {
-				const callback = event.detail['vanillaContext'];
-				const vanillaContext = 'Some Context returned from Vanilla JS';
-				event.stopPropagation();
-				if (typeof callback === 'function') {
-					// call function with context value
-					callback(vanillaContext);
-				} else {
-					// auto define as prop
-					event.target['vanillaContext'] = vanillaContext;
-				}
-			}
-		} )
-	</script>
+    <body class="flex flex-col gap-2">
+        <h1>CONTEXT</h1>
+        <provide-context class="block p-4 border-2 border-green-500">
+            <request-context class="block p-4 border-2 border-blue-500"></request-context>
+        </provide-context>
 
-	<body class="flex flex-col gap-2">
-		<h1>CONTEXT</h1>
-		<provide-context class="block p-4 border-2 border-green-500">
-			<request-context class="block p-4 border-2 border-blue-500"></request-context>
-		</provide-context>
+        <h1>OTHER CONTEXT (No Store)</h1>
+        <other-provide-context class="block p-4 border-2 border-yellow-500">
+            <request-context class="block p-4 border-2 border-red-500"></request-context>
+        </other-provide-context>
 
-		<h1>OTHER CONTEXT (No Store)</h1>
-		<other-provide-context class="block p-4 border-2 border-yellow-500">
-			<request-context class="block p-4 border-2 border-red-500"></request-context>
-		</other-provide-context>
-
-		<h1>NO CONTEXT</h1>
-		<request-context class="block p-4 border-2 border-red-500"></request-context>
-	</body>
+        <h1>NO CONTEXT</h1>
+        <request-context class="block p-4 border-2 border-red-500"></request-context>
+    </body>
 </html>
