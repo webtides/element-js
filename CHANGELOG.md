@@ -15,6 +15,32 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.0.0] - 2024-05-24
+
+### Added
+
+-   Added our own versions of directives and template helpers ([#67](https://github.com/webtides/element-js/pull/67))
+-   Added JSDocs for everything in the codebase. This will especially be helpful when using constructor options.
+-   Added state serialization. This improves hydration from SSR a lot. ([#106](https://github.com/webtides/element-js/pull/106))
+-   added declarative shadow dom rendering for template elements
+
+### Changed
+
+-   _BRAKING_ Uses a new custom renderer for the `TemplateElement`. It replaces the old `lit-html` renderer. The API and usage should be exactly the same. The only thing to do/change is the use of the old `lit-html` directives. For detailed instructions see the upgrade guide. ([#67](https://github.com/webtides/element-js/pull/67))
+-   _BREAKING_ `element-js` will now also trigger the `afterUpdate` hook right after the `connected` hook. This is to reduce the cases where you had to do the same things in `connected` and `afterUpdate`. You can now remove those duplicate calls from the `connected` hook. ([#60](https://github.com/webtides/element-js/pull/60))
+-   _BREAKING_ Changed `package.json` type to `module`. This should hopefully not break anything. `element-js` is either used directly from the browser or through a bundler. In both cases the added type: module should not matter. ([#64](https://github.com/webtides/element-js/pull/64))
+-   _BRAKING_ Changed the default options when using the `dispatch` helper function. `bubbles`, `cancelable` and `composed` will now be `true` by default.
+-   _BRAKING_ Changed adopting global styles to include ALL global styles. Previously only one inline <style> with the ID of '#globalStyles' would be adopted. For more information see the docs.
+
+### Removed
+
+-   _BREAKING_ Removed the `lit-html` dependency. `element-js` is now officially dependency free! ([#67](https://github.com/webtides/element-js/pull/67))
+-   _BREAKING_ Removed the deprecated `BaseElement` constructor option `childListUpdate`. Please use the "mutationObserverOptions" dictionary instead. See the docs for more info. ([#99](https://github.com/webtides/element-js/pull/99))
+-   _BREAKING_ Removed the `hooks` map in the `BaseElement`. Using the hooks() map for lifecycle hooks is deprecated! Please overwrite the existing lifecycle hook functions. See the docs for more info. ([#99](https://github.com/webtides/element-js/pull/99))
+-   _BREAKING_ Removed the `computed` map in the `BaseElement`. Using the computed() map for computed properties is deprecated! Please use regular JS getters and return the computed value. See the docs for more info. ([#99](https://github.com/webtides/element-js/pull/99))
+-   _BREAKING_ Removed all occurrences of `ShadyCSS` in `StyledElement`. ([#99](https://github.com/webtides/element-js/pull/99))
+-   _BRAKING_ Removed the `i18n` helper function. See CHANGELOG how to implement it yourself or use a third party library.
+
 ## [1.0.0-alpha.13] - 2024-05-08
 
 ### Fixed
