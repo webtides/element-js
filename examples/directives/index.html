@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script type="module" src="directives/attribute-element.js"></script>
+
+        <style>
+            attribute-element [attr] {
+                color: red;
+            }
+            attribute-element [optional] {
+                color: green;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container mx-auto p-8 border-4 rounded-lg m-8">
+            <div class="text-xl">attributes:</div>
+            <br />
+            <attribute-element  label="Has Attribute" has-attr="true"></attribute-element>
+            <attribute-element label="Has no Attribute" has-attr="false"></attribute-element>
+            <attribute-element label="Reactive Spread Attribute" id="alternate" has-attr="false"></attribute-element>
+            <attribute-element label="Optional Attribute"  has-optional="true"></attribute-element>
+            <attribute-element id="optional" label="Optional Attribute"  has-optional="true"></attribute-element>
+
+            <script>
+                setInterval(() => {
+                    alternate.hasAttr = !alternate.hasAttr;
+                    optional.hasOptional = !optional.hasOptional;
+                }, 2000);
+            </script>
+        </div>
+    </body>
+</html>
