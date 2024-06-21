@@ -75,14 +75,16 @@ export class SpreadAttributesDirective extends Directive {
      * @param {Object.<string, any>} attributes
      */
     update(attributes) {
-        // TODO: what if the attribute was already there..?!
-        // TODO: what if the attribute was there from a previous render/update, but not anymore?!
         for (const name of Object.keys(attributes)) {
             const value = attributes[name];
-            this.node.setAttribute(
-                camelToDash(name),
-                encodeAttribute(typeof value !== 'string' ? JSON.stringify(value) : value),
-            );
+            if (value === null) {
+                this.node.removeAttribute(camelToDash(name));
+            } else {
+                this.node.setAttribute(
+                    camelToDash(name),
+                    encodeAttribute(typeof value !== 'string' ? JSON.stringify(value) : value),
+                );
+            }
         }
     }
 
@@ -103,9 +105,37 @@ export class SpreadAttributesDirective extends Directive {
 }
 
 /**
+ * Renders an attribute as key="value" if a condition is truthy
+ */
+export class OptionalAttributeDirective extends Directive {
+    /**
+     * @param {boolean} condition
+     * @param {string} attributeName
+     * @param {string|any} attributeValue
+     */
+    update(condition, attributeName, attributeValue = '') {
+        if (condition) {
+            console.log('will set', attributeName, attributeValue);
+            this.node.setAttribute(
+                camelToDash(attributeName),
+                encodeAttribute(typeof attributeValue !== 'string' ? JSON.stringify(attributeValue) : attributeValue),
+            );
+        } else {
+            this.node.removeAttribute(camelToDash(attributeName));
+        }
+    }
+}
+
+/**
  * Renders multiple attributes as key="value" pairs from a map of attributes
  * @param {Object.<string, any>} attributes
  */
 const spreadAttributes = defineDirective(SpreadAttributesDirective);
 
-export { classMap, styleMap, when, choose, unsafeHTML, spreadAttributes };
+/**
+ * Renders an optional attribute based on a condition
+ * @param {Object.<string, any>} attributes
+ */
+const optionalAttribute = defineDirective(OptionalAttributeDirective);
+
+export { classMap, styleMap, when, choose, unsafeHTML, spreadAttributes, optionalAttribute };
