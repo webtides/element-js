@@ -71,6 +71,7 @@ describe('spreadAttributes directive', () => {
         directive.update(attributes);
         assert.isTrue(el.hasAttribute('attr'));
         attributes.attr = null;
+        directive.update(attributes);
         assert.isFalse(el.hasAttribute('attr'));
     });
 });
