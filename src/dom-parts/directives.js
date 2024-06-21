@@ -115,7 +115,6 @@ export class OptionalAttributeDirective extends Directive {
      */
     update(condition, attributeName, attributeValue = '') {
         if (condition) {
-            console.log('will set', attributeName, attributeValue);
             this.node.setAttribute(
                 camelToDash(attributeName),
                 encodeAttribute(typeof attributeValue !== 'string' ? JSON.stringify(attributeValue) : attributeValue),
