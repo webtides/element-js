@@ -1,12 +1,6 @@
 /* eslint-disable no-unused-expressions */
-import { fixture, defineCE, assert } from '@open-wc/testing';
-import { html } from '../../src/TemplateElement.js';
-import {
-    OptionalAttributeDirective,
-    spreadAttributes,
-    SpreadAttributesDirective,
-} from '../../src/dom-parts/directives.js';
-import { stripCommentMarkers } from './renderer/template-bindings.js';
+import { assert } from '@open-wc/testing';
+import { OptionalAttributeDirective } from '../../src/dom-parts/directives.js';
 
 describe('spreadAttributes directive', () => {
     it('adds an attributes when condition is truthy', async () => {
