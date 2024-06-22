@@ -1,4 +1,4 @@
-import { camelToDash, decodeAttribute, encodeAttribute } from '../util/AttributeParser.js';
+import { camelToDash, decodeAttribute, encodeAttribute, isNaN } from '../util/AttributeParser.js';
 import { TemplateResult } from './TemplateResult.js';
 import { convertStringToHTML, convertStringToTemplate } from '../util/DOMHelper.js';
 import { defineDirective, Directive } from '../util/Directive.js';
@@ -77,7 +77,7 @@ export class SpreadAttributesDirective extends Directive {
     update(attributes) {
         for (const name of Object.keys(attributes)) {
             const value = attributes[name];
-            if (value === null) {
+            if (value === undefined || value === null || isNaN(valus)) {
                 this.node.removeAttribute(camelToDash(name));
             } else {
                 this.node.setAttribute(
