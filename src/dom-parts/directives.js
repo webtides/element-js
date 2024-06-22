@@ -77,7 +77,7 @@ export class SpreadAttributesDirective extends Directive {
     update(attributes) {
         for (const name of Object.keys(attributes)) {
             const value = attributes[name];
-            if (value === undefined || value === null || isNaN(valus)) {
+            if (value === undefined || value === null || isNaN(value)) {
                 this.node.removeAttribute(camelToDash(name));
             } else {
                 this.node.setAttribute(
@@ -121,6 +121,20 @@ export class OptionalAttributeDirective extends Directive {
             );
         } else {
             this.node.removeAttribute(camelToDash(attributeName));
+        }
+    }
+    /**
+     * @param {boolean} condition
+     * @param {string} attributeName
+     * @param {string|any} attributeValue
+     */
+    stringify(condition, attributeName, attributeValue = '') {
+        if (condition) {
+            return `${camelToDash(attributeName)}='${encodeAttribute(
+                typeof attributeValue !== 'string' ? JSON.stringify(attributeValue) : attributeValue,
+            )}'`;
+        } else {
+            return '';
         }
     }
 }
