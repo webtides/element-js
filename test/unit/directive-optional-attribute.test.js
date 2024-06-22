@@ -14,7 +14,7 @@ describe('optionalAttribute directive', () => {
         // CSR
         const el = document.createElement('div');
         const directive = new OptionalAttributeDirective(el);
-        directive.update(condition, 'attr', 'attrValue');
+        directive.update(condition, 'attr', 'string');
         assert.isTrue(el.hasAttribute('attr'));
     });
     it('does not add an attributes when condition is falsy', async () => {
@@ -25,7 +25,7 @@ describe('optionalAttribute directive', () => {
         // CSR
         const el = document.createElement('div');
         const directive = new OptionalAttributeDirective(el);
-        directive.update(condition, 'attr', true);
+        directive.update(condition, 'attr', 'string');
         assert.isFalse(el.hasAttribute('attr'));
     });
 
@@ -37,14 +37,14 @@ describe('optionalAttribute directive', () => {
         // CSR
         const el = document.createElement('div');
         const directive = new OptionalAttributeDirective(el);
-        directive.update(condition, 'attr', true);
+        directive.update(condition, 'attr', 'string');
         assert.isTrue(el.hasAttribute('attr'));
         condition = false;
         // SSR
         const templateResult2 = html`<div ${optionalAttribute(condition, 'attr', 'string')}></div>`;
         assert.equal(stripCommentMarkers(templateResult2.toString()), '<div ></div>');
         // CSR
-        directive.update(condition, 'attr', true);
+        directive.update(condition, 'attr', 'string');
         assert.isFalse(el.hasAttribute('attr'));
     });
 });
