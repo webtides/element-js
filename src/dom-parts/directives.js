@@ -151,4 +151,14 @@ const spreadAttributes = defineDirective(SpreadAttributesDirective);
  */
 const optionalAttribute = defineDirective(OptionalAttributeDirective);
 
-export { classMap, styleMap, when, choose, unsafeHTML, spreadAttributes, optionalAttribute };
+export {
+    defineDirective,
+    Directive,
+    classMap,
+    styleMap,
+    when,
+    choose,
+    unsafeHTML,
+    spreadAttributes,
+    optionalAttribute,
+};
