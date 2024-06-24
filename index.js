@@ -4,7 +4,17 @@ import { TemplateElement, html } from './src/TemplateElement.js';
 import { toString } from './src/util/toString.js';
 import { defineElement } from './src/util/defineElement.js';
 import { Store } from './src/util/Store.js';
-import { Directive } from './src/util/Directive.js';
+import {
+    defineDirective,
+    Directive,
+    classMap,
+    styleMap,
+    when,
+    choose,
+    unsafeHTML,
+    spreadAttributes,
+    optionalAttribute,
+} from './src/dom-parts/directives.js';
 
 /**
  * Options object for element-js
@@ -13,4 +23,21 @@ import { Directive } from './src/util/Directive.js';
  * @property {boolean} [observeGlobalStyles] - By default element-js will look for all style elements in the global document and apply them before any custom/element styles inside the shadow DOM. When set to true element-js will also observe the document for any changes regarding styles. This is needed if styles will get added async or late.
  */
 
-export { BaseElement, StyledElement, TemplateElement, Store, Directive, html, toString, defineElement };
+export {
+    BaseElement,
+    StyledElement,
+    TemplateElement,
+    Store,
+    html,
+    toString,
+    defineElement,
+    defineDirective,
+    Directive,
+    classMap,
+    styleMap,
+    when,
+    choose,
+    unsafeHTML,
+    spreadAttributes,
+    optionalAttribute,
+};
