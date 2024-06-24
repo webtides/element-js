@@ -75,6 +75,22 @@ In both cases you must now change the imports to our new directives:
 import { unsafeHTML } from '@webtides/element-js/src/dom-parts/directives';
 ```
 
+### element-js@1.1+
+
+since 1.1 its also possible to import directives directly from the modules index
+
+```javascript
+import {
+    classMap,
+    styleMap,
+    when,
+    choose,
+    unsafeHTML,
+    spreadAttributes,
+    optionalAttribute
+} from '@webtides/element-js';
+```
+
 ## Removed childListUpdate option from constructor options
 
 We removed the deprecated `BaseElement` constructor option `childListUpdate`. Please use the "mutationObserverOptions" dictionary instead.
