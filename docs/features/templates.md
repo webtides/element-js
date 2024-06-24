@@ -135,7 +135,9 @@ Returns:
 
 **spreadAttributes(attributes)**
 
-Renders multiple attributes as key="value" pairs from a map of attributes.
+Renders multiple attributes as key="value" pairs from a map of attributes.  
+Be aware that `spreadAttributes` only works with the given values and does not remember prior iterations.
+Therefore, it will only add / remove values that are present in the given map.
 
 Parameters:
 
@@ -152,6 +154,7 @@ const attrs = { id: 'myElement', ariaLabel: 'Description' };
 const attributeString = spreadAttributes(attrs);
 // When invoked, returns: "id='myElement' aria-label='Description'"
 ```
+ 
 
 ##### Writing custom directives
 
