@@ -29,6 +29,20 @@ describe('optionalAttribute directive', () => {
         assert.isFalse(el.hasAttribute('attr'));
     });
 
+    it('adds a boolean attributes when condition is truthy and the value is an empty string', async () => {
+        // https://developer.mozilla.org/en-US/docs/Web/API/Element/setAttribute#:~:text=into%20a%20string.-,Boolean,-attributes%20are%20considered
+        let condition = true;
+
+        // SSR
+        const templateResult = html`<div ${optionalAttribute(condition, 'attr', '')}></div>`;
+        assert.equal(stripCommentMarkers(templateResult.toString()), '<div attr></div>');
+        // CSR
+        const el = document.createElement('div');
+        const directive = new OptionalAttributeDirective(el);
+        directive.update(condition, 'attr', 'string');
+        assert.isTrue(el.hasAttribute('attr'));
+    });
+
     it('does add and remove an attributes when condition is toggled', async () => {
         let condition = true;
         // SSR

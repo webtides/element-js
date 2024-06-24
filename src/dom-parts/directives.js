@@ -130,6 +130,10 @@ export class OptionalAttributeDirective extends Directive {
      */
     stringify(condition, attributeName, attributeValue = '') {
         if (condition) {
+            if (attributeValue === '') {
+                // empty string toggles boolean attributes
+                return `${camelToDash(attributeName)}`;
+            }
             return `${camelToDash(attributeName)}='${encodeAttribute(
                 typeof attributeValue !== 'string' ? JSON.stringify(attributeValue) : attributeValue,
             )}'`;
