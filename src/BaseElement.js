@@ -297,6 +297,11 @@ class BaseElement extends HTMLElement {
             // property has already been defined as an attribute nothing to do here
             return;
         }
+        if (property == 'conflict') {
+            // property has already been defined as an attribute nothing to do here
+            console.log('some naming proplem', property, this[property]);
+            console.log('some naming proplem--->', this, Reflect.ownKeys(this));
+        }
 
         // if property did not come from an attribute but has the option to reflect // enabled or custom fn
         if (!reflectAttribute && this._options.propertyOptions[property]?.reflect) {
@@ -318,6 +323,7 @@ class BaseElement extends HTMLElement {
             this._state[property].subscribe(this);
         }
 
+        console.log('define prp', property);
         Object.defineProperty(this, property, {
             get: () => {
                 return this._state[property];
