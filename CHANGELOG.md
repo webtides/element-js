@@ -16,6 +16,13 @@ to [Semantic Versioning](http://semver.org/).
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.1.1] - 2024-09-16
+
+### FIXED
+
+- Fixed base url and css rules order in adopted style sheets.
+- Fixed randomUUID not being available in unsecure hosts (like localhost) by adding a helper function
+
 ## [1.1.0] - 2024-06-24
 
 ### Added
