@@ -18,7 +18,7 @@ export class NodePart extends Part {
     constructor(node, initialValue) {
         if (!isObjectLike(initialValue) && !initialValue.directiveClass) {
             throw new Error(
-                'NodePart: value is not a wrapped directive function. You must wrap you custom directive class with the defineDirective function.',
+                `NodePart: value "${initialValue}" is not a wrapped directive function. You must wrap you custom directive class with the defineDirective function.`,
             );
         }
         super();
