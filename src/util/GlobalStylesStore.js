@@ -49,14 +49,24 @@ class GlobalStylesStore extends Store {
 			// TODO: this will always be null as we never set anything to the cache...
 			let cssStyleSheet = this.globalStyleSheetsCache.get(styleSheet.ownerNode);
 			if (!cssStyleSheet) {
-				cssStyleSheet = new CSSStyleSheet();
 				if (styleSheet.ownerNode.tagName === 'STYLE') {
+					cssStyleSheet = new CSSStyleSheet({ media: styleSheet.media, disabled: styleSheet.disabled });
 					cssStyleSheet.replaceSync(styleSheet.ownerNode.textContent);
 				} else if (styleSheet.ownerNode.tagName === 'LINK') {
+					cssStyleSheet = new CSSStyleSheet({
+						baseURL: styleSheet.href,
+						media: styleSheet.media,
+						disabled: styleSheet.disabled,
+					});
 					try {
-						Array.from(styleSheet?.cssRules ?? []).map((rule) => cssStyleSheet.insertRule(rule.cssText));
+						Array.from(styleSheet?.cssRules ?? []).map((rule, index) =>
+							cssStyleSheet.insertRule(rule.cssText, index),
+						);
 					} catch (e) {
-						console.error('GlobalStylesStore: cannot read cssRules. Maybe add crossorigin="anonymous" to your style link?', e);
+						console.error(
+							'GlobalStylesStore: cannot read cssRules. Maybe add crossorigin="anonymous" to your style link?',
+							e,
+						);
 					}
 				}
 			}
