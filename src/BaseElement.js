@@ -2,6 +2,7 @@ import { parseAttribute, isNaN, dashToCamel, camelToDash, isObjectLike } from '.
 import { getAllElementChildren, getClosestParentCustomElementNode, isOfSameNodeType } from './util/DOMHelper.js';
 import { Store } from './util/Store.js';
 import { serializeState, deserializeState, hasSerializedState } from './util/SerializeStateHelper.js';
+import { randomUUID } from './util/crypto.js';
 export { defineElement } from './util/defineElement.js';
 export { toString } from './util/toString.js';
 
@@ -97,7 +98,7 @@ class BaseElement extends HTMLElement {
             this._serializationKey = this.getAttribute('ejs:key');
             deserializeState(this);
         } else {
-            this._serializationKey = globalThis.crypto.randomUUID();
+            this._serializationKey = randomUUID();
             if (globalThis.elementJsConfig?.serializeState) {
                 this.setAttribute('ejs:key', this._serializationKey);
             }
