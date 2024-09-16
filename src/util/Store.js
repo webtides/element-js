@@ -6,6 +6,7 @@ import {
     serializableObjectsCache,
 } from './SerializeStateHelper.js';
 import { BaseElement } from '../BaseElement.js';
+import { randomUUID } from './crypto.js';
 
 /**
  * Options object for the Store
@@ -36,7 +37,7 @@ export class Store {
         if (options?.key) {
             this._serializationKey = options?.key;
         } else {
-            this._serializationKey = globalThis.crypto.randomUUID();
+            this._serializationKey = randomUUID();
         }
 
         if (options?.serializedState) {
