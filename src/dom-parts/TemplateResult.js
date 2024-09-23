@@ -98,6 +98,10 @@ const getValue = (value) => {
                 case Array.isArray(value):
                     return value.map(getValue).join('');
                 case value instanceof TemplateResult:
+                    // TODO: instanceof is not working when element-js is used in different modules...
+                    return value.toString();
+                case value.strings !== undefined && value.values !== undefined:
+                    // TODO: this is also a test for TemplateResult...
                     return value.toString();
                 case value.__unsafeHTML:
                     return value.string;
