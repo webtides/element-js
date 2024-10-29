@@ -120,6 +120,35 @@ class NestingParentTag extends TemplateElement {
 }
 customElements.define('nesting-parent-tag', NestingParentTag);
 
+class InitiallyEmptyTag extends TemplateElement {
+    properties() {
+        return {
+            empty: true,
+            mode: 0,
+        };
+    }
+    template() {
+        if (this.empty) {
+            if (this.mode === 1) {
+                return '';
+            } else if (this.mode === 2) {
+                // TODO these will not work atm - test below
+                return html``;
+            } else if (this.mode === 3) {
+                // TODO these will not work atm - test below
+                return html`empty`;
+            } else if (this.mode === 4) {
+                // TODO these will not work atm - test below
+                return html`<div>empty</div>`;
+            } else {
+                return null;
+            }
+        }
+        return html`<div>not</div>`;
+    }
+}
+customElements.define('initially-empty-tag', InitiallyEmptyTag);
+
 describe(`vanilla-renderer`, () => {
     it('can re-render/update slotted templates', async () => {
         const el = await fixture(`<slotting-parent-tag></slotting-parent-tag>`);
@@ -185,4 +214,39 @@ describe(`vanilla-renderer`, () => {
         await nested.requestUpdate();
         assert.equal(defaultElement.offsetWidth, nested.offsetWidth);
     });
+
+    const testReRender = async (el) => {
+        await el.requestUpdate();
+        assert.equal(el.innerText.length, 0);
+        el.empty = false;
+        await el.requestUpdate();
+        assert.equal(el.innerText.length, 3);
+        el.empty = true;
+        await el.requestUpdate();
+        assert.equal(el.innerText.length, 0);
+    };
+
+    it('should render and rerender even if a template early returns null', async () => {
+        const el = await fixture(`<initially-empty-tag></initially-empty-tag>`);
+        await testReRender(el);
+    });
+
+    it('should render and rerender even if a template early returns an empty string', async () => {
+        const el = await fixture(`<initially-empty-tag mode="1"></initially-empty-tag>`);
+        await testReRender(el);
+    });
+
+    // it('should render and rerender even if a template early returns an empty template part', async () => {
+    //     const el = await fixture(`<initially-empty-tag mode="2"></initially-empty-tag>`);
+    //     await testReRender(el);
+    // });
+    // it('should render and rerender even if a template early returns an initially static template part', async () => {
+    //     const el = await fixture(`<initially-empty-tag mode="3"></initially-empty-tag>`);
+    //     await testReRender(el);
+    // });
+    //
+    // it('should render and rerender even if a template early returns an initially static template part with html', async () => {
+    //     const el = await fixture(`<initially-empty-tag mode="4"></initially-empty-tag>`);
+    //     await testReRender(el);
+    // });
 });

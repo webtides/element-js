@@ -4,7 +4,10 @@
  * @param {Element} domNode
  */
 const render = (template, domNode) => {
-    if (typeof template === 'string') {
+    if (!template) {
+        // empty template was returned
+        domNode.innerHTML = '';
+    } else if (typeof template === 'string') {
         // just a plain string (or literal)
         domNode.innerHTML = template;
     } else {
