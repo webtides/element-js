@@ -236,17 +236,17 @@ describe(`vanilla-renderer`, () => {
         await testReRender(el);
     });
 
-    // it('should render and rerender even if a template early returns an empty template part', async () => {
-    //     const el = await fixture(`<initially-empty-tag mode="2"></initially-empty-tag>`);
-    //     await testReRender(el);
-    // });
-    // it('should render and rerender even if a template early returns an initially static template part', async () => {
-    //     const el = await fixture(`<initially-empty-tag mode="3"></initially-empty-tag>`);
-    //     await testReRender(el);
-    // });
-    //
-    // it('should render and rerender even if a template early returns an initially static template part with html', async () => {
-    //     const el = await fixture(`<initially-empty-tag mode="4"></initially-empty-tag>`);
-    //     await testReRender(el);
-    // });
+    it('should render and rerender even if a template early returns an empty template part', async () => {
+        const el = await fixture(`<initially-empty-tag mode="2"></initially-empty-tag>`);
+        await testReRender(el);
+    });
+    it('should render and rerender even if a template early returns an initially static template part', async () => {
+        const el = await fixture(`<initially-empty-tag mode="3"></initially-empty-tag>`);
+        await testReRender(el);
+    });
+
+    it('should render and rerender even if a template early returns an initially static template part with html', async () => {
+        const el = await fixture(`<initially-empty-tag mode="4"></initially-empty-tag>`);
+        await testReRender(el);
+    });
 });
