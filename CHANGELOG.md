@@ -16,6 +16,12 @@ to [Semantic Versioning](http://semver.org/).
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.1.2] - 2024-10-30
+
+### FIXED
+
+- Fixed rerendering of templates that were initially null, prevent runtime errors
+
 ## [1.1.1] - 2024-09-16
 
 ### FIXED
