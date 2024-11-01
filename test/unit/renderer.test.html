@@ -1,0 +1,88 @@
+<html lang="en">
+    <head>
+        <title>Renderer Test</title>
+
+    </head>
+    <body>
+<!--        <initially-empty-tag mode="0"></initially-empty-tag>-->
+<!--        <initially-empty-tag mode="1"></initially-empty-tag>-->
+<!--        <initially-empty-tag mode="2"></initially-empty-tag>-->
+        <initially-empty-tag mode="3"></initially-empty-tag>
+<!--        <initially-empty-tag mode="4"></initially-empty-tag>-->
+
+        <script type="module">
+            /* eslint-disable no-unused-expressions */
+            import { runTests } from '@web/test-runner-mocha';
+            import { TemplateElement, html } from '../../src/TemplateElement.js';
+            import { defineElement } from '../../src/BaseElement.js';
+            import { assert, defineCE, fixture } from '@open-wc/testing';
+
+            class InitiallyEmptyTag extends TemplateElement {
+                properties() {
+                    return {
+                        empty: true,
+                        mode: 0,
+                    };
+                }
+                template() {
+                    if (this.empty) {
+                        if (this.mode === 1) {
+                            return '';
+                        } else if (this.mode === 2) {
+                            // TODO these will not work atm - test below
+                            return html``;
+                        } else if (this.mode === 3) {
+                            // TODO these will not work atm - test below
+                            return html`empty`;
+                        } else if (this.mode === 4) {
+                            // TODO these will not work atm - test below
+                            return html`<div>empty</div>`;
+                        } else {
+                            return null;
+                        }
+                    }
+                    return html`<div>has content</div>`;
+                }
+            }
+
+            defineElement('initially-empty-tag', InitiallyEmptyTag);
+            runTests(() => {
+                const testReRender = async (el) => {
+                    await el.requestUpdate();
+                    assert.isFalse(el.innerText.includes('has content'));
+                    el.empty = false;
+                    await el.requestUpdate();
+                    assert.isTrue(el.innerText.includes('has content'));
+                    el.empty = true;
+                    await el.requestUpdate();
+                    assert.isFalse(el.innerText.includes('has content'));
+                };
+
+                // it('should render and rerender even if a template early returns null', async () => {
+                //     const el =  document.querySelector('[mode="0"]');
+                //     await testReRender(el);
+                // });
+                //
+                // it('should render and rerender even if a template early returns an empty string', async () => {
+                //     const el =  document.querySelector('[mode="1"]');
+                //     await testReRender(el);
+                // });
+                //
+                // it('should render and rerender even if a template early returns an empty template part', async () => {
+                //     const el = document.querySelector('[mode="2"]');
+                //     await testReRender(el);
+                // });
+                it('should render and rerender even if a template early returns an initially static template part', async () => {
+                    const el = document.querySelector('[mode="3"]');
+                    await testReRender(el);
+                });
+
+                // it('should render and rerender even if a template early returns an initially static template part with html', async () => {
+                //     const el = document.querySelector('[mode="4"]');
+                //     await testReRender(el);
+                // });
+
+            });
+        </script>
+    </body>
+</html>
