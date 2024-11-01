@@ -2,7 +2,7 @@ import { COMMENT_NODE, convertStringToTemplate } from '../util/DOMHelper.js';
 import { Part } from './Part.js';
 import { TemplateResult } from './TemplateResult.js';
 import { AttributePart } from './AttributePart.js';
-import { ChildNodePart } from './ChildNodePart.js';
+import { ChildNodePart, processNodePart } from './ChildNodePart.js';
 import { NodePart } from './NodePart.js';
 
 /** @type {Map<TemplateStringsArray, Part[]>} */
@@ -50,17 +50,30 @@ export class TemplatePart extends Part {
             // if not SSRed, childNodes will only ever have two comment nodes, the start and the end marker
             if (childNodes.length > 2) {
                 serverSideRendered = true;
-                this.childNodes = childNodes;
             }
+
+            this.childNodes = childNodes;
+            this.startNode = startNode;
+            this.endNode = endNode;
         }
 
-        this.parseValue(value);
+        const initialValue = this.parseValue(value);
+
+        if (this.endNode) {
+            this.processor = processNodePart(this.endNode, serverSideRendered ? initialValue : undefined);
+        } else {
+            this.startNode = this.childNodes[0];
+            this.endNode = this.childNodes[this.childNodes.length - 1];
+        }
 
         if (!serverSideRendered) {
             this.updateParts(value.values);
             // We need a childNodes list that is NOT live so that we don't loose elements when they get removed from the dom and we can (re)add them back in later.
             this.childNodes = [...this.childNodes];
+            this.endNode = this.childNodes[this.childNodes.length - 1];
         }
+        this.processor = processNodePart(this.endNode, this);
+        // this.processor?.(this);
     }
 
     /**
@@ -69,6 +82,7 @@ export class TemplatePart extends Part {
     update(value) {
         this.parseValue(value);
         this.updateParts(value.values);
+        this.processor?.(this);
     }
 
     /**
@@ -85,15 +99,19 @@ export class TemplatePart extends Part {
      */
     parseValue(templateResult) {
         if (this.strings !== templateResult.strings) {
-            if (this.childNodes.length === 0) {
-                let fragment = fragmentsCache.get(templateResult.strings);
-                if (!fragment) {
-                    fragment = this.parseFragment(templateResult);
-                    fragmentsCache.set(templateResult.strings, fragment);
-                }
-                const importedFragment = globalThis.document?.importNode(fragment, true);
-                this.childNodes = importedFragment.childNodes;
+            // TODO ??? this.childNodes.length check prevents future updates; MAYBE we find a better check or we`ll ditch it
+            // if (this.childNodes.length === 0) {
+            let fragment = fragmentsCache.get(templateResult.strings);
+            if (!fragment) {
+                fragment = this.parseFragment(templateResult);
+                fragmentsCache.set(templateResult.strings, fragment);
             }
+            // TODO comments are weggedingst after the 2nd render (during diffing !?)
+            const importedFragment = globalThis.document?.importNode(fragment, true);
+            console.log(JSON.stringify(importedFragment.childNodes));
+            console.log(importedFragment.childNodes);
+            this.childNodes = importedFragment.childNodes;
+            // }
 
             let parts = partsCache.get(templateResult.strings);
             if (!parts) {
@@ -121,6 +139,7 @@ export class TemplatePart extends Part {
                 });
             this.strings = templateResult.strings;
         }
+        return this.childNodes;
     }
 
     /**

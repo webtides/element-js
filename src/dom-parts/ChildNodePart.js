@@ -93,7 +93,7 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
  * @return {(function(*): void)|*}
  */
 export const processNodePart = (comment, initialValue) => {
-    let nodes = [];
+    let nodes = initialValue instanceof TemplatePart ? [...initialValue.childNodes] : [];
     let oldValue = initialValue instanceof TemplatePart ? [...initialValue.childNodes] : initialValue;
     // this is for string values to be inserted into the DOM. A cached TextNode will be used so that we don't have to constantly create new DOM nodes.
     let cachedTextNode = undefined;
@@ -147,7 +147,7 @@ export const processNodePart = (comment, initialValue) => {
                         oldValue = newValue;
                         nodes = diffChildNodes(comment.parentNode, nodes, [newValue], comment);
                     } else if (newValue instanceof TemplatePart) {
-                        oldValue = newValue;
+                        oldValue = [...newValue.childNodes];
                         nodes = diffChildNodes(comment.parentNode, nodes, [...newValue.childNodes], comment);
                     } else {
                         console.warn('Could not process value', newValue);
