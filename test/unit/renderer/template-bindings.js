@@ -396,43 +396,41 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
             );
         });
 
-        // TODO: it is actually working but somehow in the tests the DOM element won't update...
-        // it('can remove items from lists with looped bindings', async () => {
-        // 	const el = document.createElement('div');
-        // 	const colors = ['red', 'green', 'blue'];
-        // 	let templateResult = html`<ul>
-        // 		${colors.map((color) => html`<li>${color}</li>`)}
-        // 	</ul>`;
-        // 	render(templateResult, el);
-        // 	assert.equal(stripCommentMarkers(el.innerHTML), '<ul><li>red</li><li>green</li><li>blue</li></ul>');
-        // 	assert.equal(
-        // 		stripCommentMarkers(el.innerHTML),
-        // 		stripCommentMarkers(templateResult.toString()),
-        // 		'CSR template does not match SSR template',
-        // 	);
-        //
-        // 	templateResult = html`<ul>
-        // 		${['red', 'green'].map((color) => html`<li>${color}</li>`)}
-        // 	</ul>`;
-        // 	render(templateResult, el);
-        // 	assert.equal(stripCommentMarkers(el.innerHTML), '<ul><li>red</li><li>green</li></ul>');
-        // });
+        it('can remove items from lists with looped bindings', async () => {
+            const el = document.createElement('div');
+            const colors = ['red', 'green', 'blue'];
+            let templateResult = html`<ul>
+                ${colors.map((color) => html`<li>${color}</li>`)}
+            </ul>`;
+            render(templateResult, el);
+            assert.equal(stripCommentMarkers(el.innerHTML), '<ul><li>red</li><li>green</li><li>blue</li></ul>');
+            assert.equal(
+                stripCommentMarkers(el.innerHTML),
+                stripCommentMarkers(templateResult.toString()),
+                'CSR template does not match SSR template',
+            );
 
-        // TODO: it is actually working but somehow in the tests the DOM element won't update...
-        // it('can switch between primitive values and template literals', async () => {
-        // 	const el = document.createElement('div');
-        // 	const primitiveValue = 'Test';
-        // 	let templateResult = html`<div>${primitiveValue}</div>`;
-        // 	render(templateResult, el);
-        // 	assert.equal(stripCommentMarkers(el.innerHTML), '<div>Test</div>');
-        //
-        // 	templateResult = html`<div>${html`<span>${primitiveValue}</span>`}</div>`;
-        // 	render(templateResult, el);
-        // 	assert.equal(stripCommentMarkers(el.innerHTML), '<div><span>Test</span></div>');
-        //
-        // 	render(html`<div>${primitiveValue}</div>`, el);
-        // 	assert.equal(stripCommentMarkers(el.innerHTML), '<div>Test</div>');
-        // });
+            templateResult = html`<ul>
+                ${['red', 'green'].map((color) => html`<li>${color}</li>`)}
+            </ul>`;
+            render(templateResult, el);
+            assert.equal(stripCommentMarkers(el.innerHTML), '<ul><li>red</li><li>green</li></ul>');
+        });
+
+        it('can switch between primitive values and template literals', async () => {
+            const el = document.createElement('div');
+            const primitiveValue = 'Test';
+            let templateResult = html`<div>${primitiveValue}</div>`;
+            render(templateResult, el);
+            assert.equal(stripCommentMarkers(el.innerHTML), '<div>Test</div>');
+
+            templateResult = html`<div>${html`<span>${primitiveValue}</span>`}</div>`;
+            render(templateResult, el);
+            assert.equal(stripCommentMarkers(el.innerHTML), '<div><span>Test</span></div>');
+
+            render(html`<div>${primitiveValue}</div>`, el);
+            assert.equal(stripCommentMarkers(el.innerHTML), '<div>Test</div>');
+        });
 
         it('can rerender a static string even when empty was rendered initially', async () => {
             const el = document.createElement('div');
