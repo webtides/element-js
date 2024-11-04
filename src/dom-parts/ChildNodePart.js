@@ -8,6 +8,9 @@ import { TemplatePart } from './TemplatePart.js';
  * @return {ChildNode}
  */
 const removeChildNodes = (node) => {
+    if (!Array.isArray(node) && !(node instanceof TemplatePart) && !node.hasChildNodes()) {
+        return node;
+    }
     const range = globalThis.document?.createRange();
     const firstChild = Array.isArray(node)
         ? node[0]
@@ -50,6 +53,21 @@ const removeNodesBetweenComments = (commentNode) => {
 const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, anchorNode) {
     // Diff each node in the child node lists
     let length = Math.max(templateChildNodes.length, domChildNodes.length);
+
+    if (templateChildNodes.length > domChildNodes.length) {
+        const nodesToFill = templateChildNodes.length - domChildNodes.length;
+        for (let i = 0; i < nodesToFill; i++) {
+            domChildNodes.splice(domChildNodes.length - 1, 0, undefined);
+        }
+    }
+
+    if (domChildNodes.length > templateChildNodes.length) {
+        const nodesToFill = domChildNodes.length - templateChildNodes.length;
+        for (let i = 0; i < nodesToFill; i++) {
+            templateChildNodes.splice(templateChildNodes.length - 1, 0, undefined);
+        }
+    }
+
     for (let index = 0; index < length; index++) {
         let domChildNode = domChildNodes[index];
         let templateChildNode = templateChildNodes[index];
@@ -77,7 +95,12 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
         }
 
         // If DOM node is equal to the template node, don't do anything
-        if (domChildNode === templateChildNode) {
+        if (
+            domChildNode === templateChildNode ||
+            (domChildNode.nodeType === COMMENT_NODE &&
+                templateChildNode.nodeType === COMMENT_NODE &&
+                domChildNode.isEqualNode(templateChildNode))
+        ) {
             continue;
         }
 
