@@ -433,5 +433,88 @@ export const testTemplateBindings = function (name, templateTag, html, unsafeHTM
         // 	render(html`<div>${primitiveValue}</div>`, el);
         // 	assert.equal(stripCommentMarkers(el.innerHTML), '<div>Test</div>');
         // });
+
+        it('can rerender a static string even when empty was rendered initially', async () => {
+            const el = document.createElement('div');
+            let templateResult = ``;
+            render(templateResult, el);
+            assert.equal(stripCommentMarkers(el.innerHTML), '');
+            assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
+
+            templateResult = `bar`;
+            render(templateResult, el);
+            assert.equal(stripCommentMarkers(el.innerHTML), 'bar');
+            assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
+        });
+
+        it('can rerender a static string with different text content', async () => {
+            const el = document.createElement('div');
+            let templateResult = `foo`;
+            render(templateResult, el);
+            assert.equal(stripCommentMarkers(el.innerHTML), 'foo');
+            assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
+
+            templateResult = `bar`;
+            render(templateResult, el);
+            assert.equal(stripCommentMarkers(el.innerHTML), 'bar');
+            assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
+        });
+
+        it('can rerender an empty TemplateResult with different text content', async () => {
+            const el = document.createElement('div');
+            let templateResult = html``;
+            render(templateResult, el);
+            assert.equal(stripCommentMarkers(el.innerHTML), '');
+            assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
+
+            templateResult = `bar`;
+            render(templateResult, el);
+            assert.equal(stripCommentMarkers(el.innerHTML), 'bar');
+            assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
+        });
+
+        it('can rerender a TemplateResult with static text with different text content', async () => {
+            const el = document.createElement('div');
+            let templateResult = html`foo`;
+            render(templateResult, el);
+            assert.equal(stripCommentMarkers(el.innerHTML), 'foo');
+            assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
+
+            templateResult = `bar`;
+            render(templateResult, el);
+            assert.equal(stripCommentMarkers(el.innerHTML), 'bar');
+            assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
+        });
+
+        it('can rerender a TemplateResult with html with different html content', async () => {
+            const el = document.createElement('div');
+            let templateResult = html`<div>foo</div>`;
+            render(templateResult, el);
+            assert.equal(stripCommentMarkers(el.innerHTML), '<div>foo</div>');
+            assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
+
+            templateResult = html`<div>bar</div>`;
+            render(templateResult, el);
+            assert.equal(stripCommentMarkers(el.innerHTML), '<div>bar</div>');
+            assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
+
+            templateResult = html`<span>baz</span>`;
+            render(templateResult, el);
+            assert.equal(stripCommentMarkers(el.innerHTML), '<span>baz</span>');
+            assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
+        });
+
+        it('can rerender a TemplateResult with dynamic html with different html content', async () => {
+            const el = document.createElement('div');
+            let templateResult = html`<div>${html`<div>foo</div>`}</div>`;
+            render(templateResult, el);
+            assert.equal(stripCommentMarkers(el.innerHTML), '<div><div>foo</div></div>');
+            assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
+
+            templateResult = html`<div>${html`<div>bar</div>`}</div>`;
+            render(templateResult, el);
+            assert.equal(stripCommentMarkers(el.innerHTML), '<div><div>bar</div></div>');
+            assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
+        });
     });
 };
