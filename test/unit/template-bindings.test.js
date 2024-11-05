@@ -479,6 +479,19 @@ describe(`template bindings for rendering TemplateResults client side and server
         assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
     });
 
+    it('can rerender a TemplateResult with static text with dynamic text content', async () => {
+        const el = document.createElement('div');
+        let templateResult = html`foo bar`;
+        render(templateResult, el);
+        assert.equal(stripCommentMarkers(el.innerHTML), 'foo bar');
+        assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
+
+        templateResult = html`foo bar ${'baz'}`;
+        render(templateResult, el);
+        assert.equal(stripCommentMarkers(el.innerHTML), 'foo bar baz');
+        assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
+    });
+
     it('can rerender a TemplateResult with html with different html content', async () => {
         const el = document.createElement('div');
         let templateResult = html`<div>foo</div>`;
