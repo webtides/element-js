@@ -58,6 +58,8 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
         if (!domChildNode) {
             if (templateChildNode instanceof TemplatePart) {
                 anchorNode.before(...templateChildNode.childNodes);
+            } else if (Array.isArray(templateChildNode)) {
+                anchorNode.before(...templateChildNode);
             } else if (typeof templateChildNode === 'object' && 'ELEMENT_NODE' in templateChildNode) {
                 parentNode.insertBefore(templateChildNode, anchorNode);
             } else {

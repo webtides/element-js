@@ -23,8 +23,17 @@ describe('unsafeHTML directive', () => {
         globalThis.DOMParser = originalDomParser;
     });
 
-    it('returns a Node as a result of the function CSR', async () => {
+    it('returns a list with one Node as a result of the function in CSR with only one node in it', async () => {
         const unsafeContent = unsafeHTML(`<strong>Unsafe HTML</strong>`);
-        assert.equal(unsafeContent().nodeType, ELEMENT_NODE);
+        const nodes = unsafeContent();
+        assert.equal(Array.isArray(nodes), true);
+        assert.equal(nodes.length, 1);
+        assert.equal(nodes[0].nodeType, ELEMENT_NODE);
+    });
+
+    it('returns a list of Nodes as a result of the function in CSR with multiple nodes in it', async () => {
+        const unsafeContent = unsafeHTML(`<strong>Unsafe HTML</strong><p>Unsafe HTML 2</p>`);
+        const nodes = unsafeContent();
+        assert.equal(nodes.length, 2);
     });
 });
