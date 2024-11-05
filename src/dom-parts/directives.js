@@ -56,15 +56,15 @@ const choose = (value, cases, defaultCase) => {
 /**
  * Renders a given string as HTML instead of text or as unescaped string in SSR mode
  * @param {string} string
- * @returns {(function(): Node) | { __unsafeHTML: true, string: string }}
+ * @returns {(function(): [Node]) | { __unsafeHTML: true, string: string }}
  */
 const unsafeHTML = (string) => {
     if (!globalThis.DOMParser) {
         return { __unsafeHTML: true, string };
     }
-    const node = convertStringToHTML(string).firstChild;
-    const importedNode = globalThis.document?.importNode(node, true);
-    return () => importedNode;
+    const body = convertStringToHTML(string);
+    const childNodes = [...body.childNodes];
+    return () => childNodes;
 };
 
 /**
