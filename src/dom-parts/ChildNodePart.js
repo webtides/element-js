@@ -51,9 +51,9 @@ const removeNodesBetweenComments = (commentNode) => {
  * @return {Node[]}
  */
 const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, anchorNode) {
-    // Diff each node in the child node lists
-    let length = Math.max(templateChildNodes.length, domChildNodes.length);
-
+    // We always want to have the two arrays (domChildNodes and templateChildNodes) to have the same length.
+    // We also don't ever want to replace/diff the last node of the domChildNodes as it will always be the
+    // closing comment marker (/template-part) aka the anchorNode. So we push it to the end by inserting undefined items.
     if (templateChildNodes.length > domChildNodes.length) {
         const nodesToFill = templateChildNodes.length - domChildNodes.length;
         for (let i = 0; i < nodesToFill; i++) {
@@ -68,6 +68,8 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
         }
     }
 
+    let length = domChildNodes.length;
+    // Diff each node in the child node lists
     for (let index = 0; index < length; index++) {
         let domChildNode = domChildNodes[index];
         let templateChildNode = templateChildNodes[index];
