@@ -1,19 +1,6 @@
 import { assert, defineCE, fixture } from '@open-wc/testing';
 import { TemplateElement, html } from '../../src/TemplateElement.js';
-import { unsafeHTML } from '../../src/dom-parts/directives.js';
-import { testTemplateBindings } from './renderer/template-bindings.js';
 import { testTemplateRendering } from './renderer/template-rendering.js';
-
-const templateTag = defineCE(
-    class extends TemplateElement {
-        async updateTemplate(template) {
-            this._template = template;
-            await this.requestUpdate();
-        }
-    },
-);
-
-testTemplateBindings('vanilla', templateTag, html, unsafeHTML);
 
 const lightTag = defineCE(
     class extends TemplateElement {

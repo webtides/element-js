@@ -3,7 +3,7 @@ import { fixture, defineCE, assert } from '@open-wc/testing';
 import { html, render } from '../../src/TemplateElement.js';
 import { unsafeHTML } from '../../src/dom-parts/directives.js';
 import { DOCUMENT_FRAGMENT_NODE, ELEMENT_NODE } from '../../src/util/DOMHelper.js';
-import { stripCommentMarkers } from './renderer/template-bindings.js';
+import { stripCommentMarkers } from './template-bindings.test.js';
 
 describe('unsafeHTML directive', () => {
     it('returns a function', async () => {

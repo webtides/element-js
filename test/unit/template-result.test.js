@@ -3,7 +3,7 @@ import { createTemplateString } from '../../src/dom-parts/TemplateResult.js';
 import { html } from '../../src/dom-parts/html.js';
 import { convertStringToTemplate } from '../../src/util/DOMHelper.js';
 import { render } from '../../src/dom-parts/render.js';
-import { stripCommentMarkers } from './renderer/template-bindings.js';
+import { stripCommentMarkers } from './template-bindings.test.js';
 import { defineDirective, Directive } from '../../src/util/Directive.js';
 
 export const stripWhitespace = (html) => html.replace(/\s+/g, ' ').replaceAll('> ', '>').trim();
