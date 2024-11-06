@@ -3,6 +3,7 @@ import { encodeAttribute, isObjectLike } from '../util/AttributeParser.js';
 import { TemplatePart } from './TemplatePart.js';
 
 const voidElements = /^(?:area|base|br|col|embed|hr|img|input|link|meta|source|track|wbr)$/i;
+const rawTextElements = /<(script|style|textarea|title)([^>]*)>(.*?)<\/\1>/i;
 const elements = /<([a-z]+[a-z0-9:._-]*)([^>]*?)(\/?)>/g;
 // TODO: v this will not match any values with escaped quotes like onClick='console.log("\'test")'
 const attributes = /([^\s]*)=((?:")[^"]*(?:")|(?:')[^']*(?:')|[^\s\/>]*)|([^\s\/>]*)/g;
@@ -54,6 +55,37 @@ export const createTemplateString = (templateStrings, attributePlaceholders = ''
 				${attributesString.includes('\x01') ? attributeParts : ''}\n
 				<${elementTagWithAttributes}>\n
 			`.trim();
+    });
+    /**
+     * Processes the HTML template content by identifying specific "raw text" nodes (e.g., <script>, <style>, <textarea>, <title>)
+     * and inserts comments before each instance of an interpolation within these nodes.
+     * The placeholders are represented by a control character (in this case, "\x01").
+     *
+     * Explanation of logic:
+     * - The main regex, `rawTextElements`, identifies and captures specific HTML tags (script, style, textarea, title)
+     *   along with their attributes and content. This regex captures:
+     *     1. `tag`: The tag name (e.g., "textarea").
+     *     2. `attributes`: Any attributes within the opening tag (e.g., `foo="bar"`).
+     *     3. `content`: The inner content within the tag (which may contain interpolations).
+     * - Inside the replace function:
+     *     - The number of placeholder occurrences (`\x01` instances) in `content` is counted to determine
+     *       how many parts (comments) should be generated.
+     *     - An array `parts` is created, where each entry represents a comment to be inserted before the raw text node.
+     *       Each comment includes a modified version of `content` where each placeholder (`\x01`) is replaced with a
+     *       different control character (`\x03`) for later differentiation.
+     *     - The `content` is then modified by removing each interpolation (`\x01` is removed), leaving the raw text
+     *       content without markers.
+     *     - The processed comments in `parts` are joined and placed before the modified raw text node, preserving
+     *       its tag, attributes, and inner content without placeholders.
+     * - The function finally returns the modified template string with comments in the correct places.
+     */
+    template = template.replace(rawTextElements, (match, tag, attributes, content) => {
+        const partsCount = (content.match(/\x01/g) || []).length;
+        const parts = [];
+        for (let index = 0; index < partsCount; index++) {
+            parts.push(`<!--\x02/raw-text-node=${content.replaceAll('\x01', '\x03')}-->`);
+        }
+        return `${parts.join('')}<${tag}${attributes}>${content.replaceAll('\x01', '')}</${tag}>`;
     });
     // replace interpolation placeholders with our indexed markers
     template = template.replace(partPositions, (partPosition) => {
@@ -290,6 +322,17 @@ export class TemplateResult {
                     type: 'attribute',
                     path: getNodePath(node),
                     name: name,
+                    initialValue: initialValue.join('='),
+                });
+                continue;
+            }
+            if (/^dom-part-\d+\/raw-text-node/.test(node.data)) {
+                // For html`<textarea>${'foo'} bar</textarea>` we will get:
+                // <!--dom-part-0/raw-text-node=\x03 bar-->
+                const [_, ...initialValue] = node.data.split('=');
+                parts.push({
+                    type: 'raw-text-node',
+                    path: getNodePath(node),
                     initialValue: initialValue.join('='),
                 });
                 continue;

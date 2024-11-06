@@ -4,6 +4,7 @@ import { TemplateResult } from './TemplateResult.js';
 import { AttributePart } from './AttributePart.js';
 import { ChildNodePart, processNodePart } from './ChildNodePart.js';
 import { NodePart } from './NodePart.js';
+import { RawTextNodePart } from './RawTextNodePart.js';
 
 /** @type {Map<TemplateStringsArray, Part[]>} */
 const partsCache = new WeakMap();
@@ -123,6 +124,9 @@ export class TemplatePart extends Part {
                     }
                     if (part.type === 'attribute') {
                         return new AttributePart(part.node, part.name, part.initialValue);
+                    }
+                    if (part.type === 'raw-text-node') {
+                        return new RawTextNodePart(part.node, part.initialValue);
                     }
                     if (part.type === 'directive') {
                         return new NodePart(part.node, templateResult.values[index]);
