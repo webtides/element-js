@@ -8,7 +8,9 @@ class RawTextNodeElement extends TemplateElement {
     }
 
     template() {
-        return html`<textarea foo="${'bar'}">${this.text} bar ${'baz'}</textarea>`;
+        const templateResult = html`<textarea foo="${'bar'}">${this.text} bar ${'baz'}</textarea>`;
+        console.log('templateResult', templateResult.toString());
+        return templateResult;
     }
 }
 defineElement('raw-text-node-element', RawTextNodeElement);
