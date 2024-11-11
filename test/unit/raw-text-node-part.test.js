@@ -1,7 +1,7 @@
 import { fixture, assert, nextFrame, oneEvent } from '@open-wc/testing';
 import { render } from '../../src/dom-parts/render.js';
 import { html } from '../../src/TemplateElement.js';
-import { stripCommentMarkers } from './renderer/template-bindings.js';
+import { stripCommentMarkers } from './template-bindings.test.js';
 import { RawTextNodePart } from '../../src/dom-parts/RawTextNodePart.js';
 import { convertStringToTemplate } from '../../src/util/DOMHelper.js';
 import { createTemplateString } from '../../src/dom-parts/TemplateResult.js';
