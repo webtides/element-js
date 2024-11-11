@@ -7,8 +7,6 @@ import { Part } from './Part.js';
  * @return {(function(*): void)|*}
  */
 const processBooleanAttribute = (node, name, oldValue) => {
-    // TODO: It would be better if the ?boolean= attribute would not be there in the first place...
-    node.removeAttribute(`?${name}`);
     return (newValue) => {
         const value = !!newValue?.valueOf() && newValue !== 'false';
         if (oldValue !== value) {
@@ -23,8 +21,6 @@ const processBooleanAttribute = (node, name, oldValue) => {
  * @return {(function(*): void)|*}
  */
 const processPropertyAttribute = (node, name) => {
-    // TODO: It would be better if the .property= attribute would not be there in the first place...
-    node.removeAttribute(`.${name}`);
     return (value) => {
         node[name] = value;
     };
@@ -36,9 +32,6 @@ const processPropertyAttribute = (node, name) => {
  * @return {(function(*): void)|*}
  */
 const processEventAttribute = (node, name) => {
-    // TODO: It would be better if the event attribute would not be there in the first place...
-    node.removeAttribute(name);
-
     let oldValue = undefined;
     let type = name.startsWith('@') ? name.slice(1) : name.toLowerCase().slice(2);
 
