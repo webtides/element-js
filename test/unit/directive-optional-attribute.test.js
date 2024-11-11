@@ -21,7 +21,7 @@ describe('optionalAttribute directive', () => {
         let condition = false;
         // SSR
         const templateResult = html`<div ${optionalAttribute(condition, 'attr', 'string')}></div>`;
-        assert.equal(stripCommentMarkers(templateResult.toString()), '<div ></div>');
+        assert.equal(stripCommentMarkers(templateResult.toString()), '<div></div>');
         // CSR
         const el = document.createElement('div');
         const directive = new OptionalAttributeDirective(el);
@@ -56,7 +56,7 @@ describe('optionalAttribute directive', () => {
         condition = false;
         // SSR
         const templateResult2 = html`<div ${optionalAttribute(condition, 'attr', 'string')}></div>`;
-        assert.equal(stripCommentMarkers(templateResult2.toString()), '<div ></div>');
+        assert.equal(stripCommentMarkers(templateResult2.toString()), '<div></div>');
         // CSR
         directive.update(condition, 'attr', 'string');
         assert.isFalse(el.hasAttribute('attr'));
