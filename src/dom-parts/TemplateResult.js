@@ -138,13 +138,10 @@ export const createTemplateString = (templateStrings, ssr = false) => {
 /**
  * @param {String} name
  * @param {any} value
- * @param {Boolean} isSingleValue
  * @return {String}
  */
-const attribute = (name, value, isSingleValue = true) => {
-    return ` ${name}="${encodeAttribute(isObjectLike(value) ? JSON.stringify(value) : value)}${
-        isSingleValue ? '"' : ''
-    }`;
+const attribute = (name, value) => {
+    return ` ${name}="${encodeAttribute(isObjectLike(value) ? JSON.stringify(value) : value)}"`;
 };
 
 /**
@@ -270,7 +267,7 @@ export class TemplateResult {
                                         return '';
                                     }
                                     // in all other cases, just escape it in quotes
-                                    return attribute(propertyName, value, true);
+                                    return attribute(propertyName, value);
                                 },
                             },
                         ];
@@ -312,7 +309,7 @@ export class TemplateResult {
                             // Note: this will coarse the values into strings, but it's probably ok since there can only be multiple values in string attributes?!
                             const parsedValue = initialValue.replace(/\x03/g, () => values[replaceIndex++]);
                             values = [];
-                            return attribute(searchParams.get('name'), parsedValue, true);
+                            return attribute(searchParams.get('name'), parsedValue);
                         },
                     });
                     return attributeUpdates;
