@@ -68,7 +68,7 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
         }
     }
 
-    let length = domChildNodes.length;
+    const length = domChildNodes.length;
     // Diff each node in the child node lists
     for (let index = 0; index < length; index++) {
         let domChildNode = domChildNodes[index];
