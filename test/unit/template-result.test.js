@@ -48,7 +48,7 @@ describe(`TemplateResult.createTemplateString()`, () => {
         const ssrTemplateString = createTemplateString(templateResult.strings, true);
         assert.equal(
             stripCommentMarkers(ssrTemplateString),
-            '<div {{dom-part?type=attribute&name=id&interpolations=1&initialValue=%03}} {{dom-part?type=attribute&name=class&interpolations=1&initialValue=%03}}>Text</div>',
+            '<div {{dom-part?type=attribute&name=id&interpolations=1&initialValue=%03&quotes=%22}} {{dom-part?type=attribute&name=class&interpolations=1&initialValue=%03&quotes=%22}}>Text</div>',
         );
     });
 
@@ -63,7 +63,7 @@ describe(`TemplateResult.createTemplateString()`, () => {
         const ssrTemplateString = createTemplateString(templateResult.strings, true);
         assert.equal(
             stripCommentMarkers(ssrTemplateString),
-            '<input name="foo" {{dom-part?type=attribute&name=value&interpolations=1&initialValue=%03}} />',
+            '<input name="foo" {{dom-part?type=attribute&name=value&interpolations=1&initialValue=%03&quotes=%22}} />',
         );
     });
 
@@ -78,7 +78,7 @@ describe(`TemplateResult.createTemplateString()`, () => {
         const ssrTemplateString = createTemplateString(templateResult.strings, true);
         assert.equal(
             stripCommentMarkers(ssrTemplateString),
-            '<div {{dom-part?type=attribute&name=id&interpolations=1&initialValue=%03}} {{dom-part?type=noop}}{{dom-part?type=attribute&name=class&interpolations=2&initialValue=%03+other+%03}}>Text</div>',
+            '<div {{dom-part?type=attribute&name=id&interpolations=1&initialValue=%03&quotes=%22}} {{dom-part?type=noop}}{{dom-part?type=attribute&name=class&interpolations=2&initialValue=%03+other+%03&quotes=%22}}>Text</div>',
         );
     });
 
@@ -329,8 +329,7 @@ describe('TemplateResult.toString()', () => {
         );
     });
 
-    // TODO: think about what is right here?!
-    it.skip('can use double, single or no quotes for attributes', async () => {
+    it('can use double, single or no quotes for attributes', async () => {
         // prettier-ignore
         const templateResult = html`<div id='${1}' class="${'some-class'}" foo=${'bar'}>Text</div>`;
         assert.equal(
