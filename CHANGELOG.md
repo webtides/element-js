@@ -16,6 +16,15 @@ to [Semantic Versioning](http://semver.org/).
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+
+## [1.1.3] - 2024-11-11
+
+### FIXED
+
+- Fixed unsafeHtml having more than one child ([#135](https://github.com/webtides/element-js/issues/135))
+- Fixed early returns from templates and fixes static html changes not reflecting to DOM ([#132](https://github.com/webtides/element-js/issues/132))
+
+
 ## [1.1.2] - 2024-10-30
 
 ### FIXED
