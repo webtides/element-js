@@ -47,10 +47,9 @@ export const createTemplateString = (templateStrings, ssr = false) => {
             }
 
             // remove quotes from attribute value to normalize the value
-            const value =
-                valueWithQuotes?.startsWith('"') || valueWithQuotes?.startsWith("'")
-                    ? valueWithQuotes.slice(1, -1)
-                    : valueWithQuotes;
+            const hasQuotes = valueWithQuotes?.startsWith('"') || valueWithQuotes?.startsWith("'");
+            const quotes = hasQuotes ? valueWithQuotes.at(0) : '';
+            const value = hasQuotes ? valueWithQuotes.slice(1, -1) : valueWithQuotes;
             const partsCount = (attribute.match(/\x01/g) || []).length;
             const parts = [];
             for (let index = 0; index < partsCount; index++) {
@@ -70,6 +69,7 @@ export const createTemplateString = (templateStrings, ssr = false) => {
                             name,
                             interpolations: partsCount,
                             initialValue: value.replaceAll('\x01', '\x03'),
+                            quotes,
                         });
                 }
                 elementTagWithAttributes = elementTagWithAttributes.replace(attribute, replacement);
@@ -135,10 +135,11 @@ export const createTemplateString = (templateStrings, ssr = false) => {
 /**
  * @param {String} name
  * @param {any} value
+ * @param {string} quotes
  * @return {String}
  */
-const attribute = (name, value) => {
-    return ` ${name}="${encodeAttribute(isObjectLike(value) ? JSON.stringify(value) : value)}"`;
+const attribute = (name, value, quotes = '"') => {
+    return ` ${name}=${quotes}${encodeAttribute(isObjectLike(value) ? JSON.stringify(value) : value)}${quotes}`;
 };
 
 /**
@@ -239,6 +240,7 @@ export class TemplateResult {
                 if (type === 'noop') return [];
                 if (type === 'attribute') {
                     const name = searchParams.get('name');
+                    const quotes = searchParams.get('quotes');
 
                     if (name.startsWith('?')) {
                         const booleanName = name.replace('?', '');
@@ -264,7 +266,7 @@ export class TemplateResult {
                                         return '';
                                     }
                                     // in all other cases, just escape it in quotes
-                                    return attribute(propertyName, value);
+                                    return attribute(propertyName, value, quotes);
                                 },
                             },
                         ];
@@ -306,7 +308,7 @@ export class TemplateResult {
                             // Note: this will coarse the values into strings, but it's probably ok since there can only be multiple values in string attributes?!
                             const parsedValue = initialValue.replace(/\x03/g, () => values[replaceIndex++]);
                             values = [];
-                            return attribute(searchParams.get('name'), parsedValue);
+                            return attribute(searchParams.get('name'), parsedValue, quotes);
                         },
                     });
                     return attributeUpdates;
