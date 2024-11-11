@@ -28,7 +28,6 @@ function makeSSRPlaceholder(type, params) {
  * @returns {string} X/HTML with prefixed comments or attributes
  */
 export const createTemplateString = (templateStrings, ssr = false) => {
-    // TODO: make it easier to identify attribute and node parts for SSR and leave the comments at those positions to be replaced in toString()
     let partIndex = 0;
     // join all interpolations (for values) with a special placeholder and remove any whitespace
     let template = templateStrings.join('\x01').trim();
@@ -60,8 +59,6 @@ export const createTemplateString = (templateStrings, ssr = false) => {
             }
 
             if (parts.length > 0) {
-                // TODO: we need to handle special attributes (?|.|@) differently ?!
-                // TODO: or we can tell multiple attribute interpolations to not set the attribute name?!
                 let replacement = '';
                 if (ssr) {
                     for (let index = 0; index < partsCount - 1; index++) {
