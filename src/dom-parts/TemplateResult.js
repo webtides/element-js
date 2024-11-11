@@ -13,120 +13,21 @@ const partPositions = /[\x01\x02]/g;
 // \x03 COMMENT.ATTRIBUTE_TOKEN
 // \x04 Node.ATTRIBUTE_TOKEN
 
-const partPlaceholders = {
-    CHILD_NODE: '<<part=childNode>>',
-    ATTRIBUTE: '<<part=attribute>>',
-    DIRECTIVE: '<<part=directive>>',
-    RAW_TEXT_NODE: '<<part=rawTextNode>>',
-};
-
-const interpolation = new RegExp(`(<!--dom-part-(\\d+)--><!--/dom-part-(\\d+)-->|(\\S[-\\w]+)="\x04(")?|\x04)`, 'g');
-
-const placeholder = /{{dom-part\?(.*?)}}/g;
-function makePlaceholder(type, params) {
+const ssrPlaceholder = /{{dom-part\?(.*?)}}/g;
+function makeSSRPlaceholder(type, params) {
     const urlSearchParams = new URLSearchParams({ type, ...params });
     const queryString = urlSearchParams.toString();
     return `{{dom-part?${queryString}}}`;
 }
 
-// TODO: instead of only adding placeholders for attributes for ssr, lets add placeholders for all interpolations.
-// TODO: lets use some kind of "Custom Escape Sequence" or "Control Character" for all the different parts
-// TODO: that way when ssring, we can split (with regex) the result and get a modified strings array and cache that
-// TODO: and also by looping over splits, we can know exactly what kind of part we have and create the update function for it
-// TODO: and the best part is, we only need to write the value then and not the part comment markers and everything else
-
 /**
  * Given a template, find part positions as both nodes and attributes and
  * return a string with placeholders as either comment nodes or named attributes.
  * @param {TemplateStringsArray | string[]} templateStrings a template literal tag array
- * @param {string} attributePlaceholders replace placeholders inside attribute values with this value
+ * @param {boolean} ssr replace interpolations with placeholders
  * @returns {string} X/HTML with prefixed comments or attributes
  */
-export const createTemplateString = (templateStrings, attributePlaceholders = '') => {
-    // TODO: make it easier to identify attribute and node parts for SSR and leave the comments at those positions to be replaced in toString()
-    let partIndex = 0;
-    // join all interpolations (for values) with a special placeholder and remove any whitespace
-    let template = templateStrings.join('\x01').trim();
-    // find (match) all elements to identify their attributes
-    template = template.replace(elements, (_, name, attributesString, trailingSlash) => {
-        let elementTagWithAttributes = name + attributesString;
-        // TODO the closing case is weird.
-        if (trailingSlash.length) elementTagWithAttributes += voidElements.test(name) ? ' /' : '></' + name;
-        // collect all attribute parts so that we can place matching comment nodes
-        const attributeParts = attributesString.replace(attributes, (attribute, name, valueWithQuotes, directive) => {
-            if (directive && directive === '\x01') {
-                elementTagWithAttributes = elementTagWithAttributes.replace(attribute, '');
-                return `<!--\x02$-->`;
-            }
-
-            // remove quotes from attribute value to normalize the value
-            const value =
-                valueWithQuotes?.startsWith('"') || valueWithQuotes?.startsWith("'")
-                    ? valueWithQuotes.slice(1, -1)
-                    : valueWithQuotes;
-            const partsCount = (attribute.match(/\x01/g) || []).length;
-            const parts = [];
-            for (let index = 0; index < partsCount; index++) {
-                parts.push(`<!--\x02:${name}=${value.replaceAll('\x01', '\x03')}-->`);
-            }
-
-            if (parts.length > 0) {
-                elementTagWithAttributes = elementTagWithAttributes.replace(attribute, '');
-            }
-
-            return parts.join('');
-        });
-        // TODO create test to check if lf are in place
-        return `
-				${attributesString.includes('\x01') ? attributeParts : ''}\n
-				<${elementTagWithAttributes.trimEnd()}>\n
-			`.trim();
-    });
-    /**
-     * Processes the HTML template content by identifying specific "raw text" nodes (e.g., <script>, <style>, <textarea>, <title>)
-     * and inserts comments before each instance of an interpolation within these nodes.
-     * The placeholders are represented by a control character (in this case, "\x01").
-     *
-     * Explanation of logic:
-     * - The main regex, `rawTextElements`, identifies and captures specific HTML tags (script, style, textarea, title)
-     *   along with their attributes and content. This regex captures:
-     *     1. `tag`: The tag name (e.g., "textarea").
-     *     2. `attributes`: Any attributes within the opening tag (e.g., `foo="bar"`).
-     *     3. `content`: The inner content within the tag (which may contain interpolations).
-     * - Inside the replace function:
-     *     - The number of placeholder occurrences (`\x01` instances) in `content` is counted to determine
-     *       how many parts (comments) should be generated.
-     *     - An array `parts` is created, where each entry represents a comment to be inserted before the raw text node.
-     *       Each comment includes a modified version of `content` where each placeholder (`\x01`) is replaced with a
-     *       different control character (`\x03`) for later differentiation.
-     *     - The `content` is then modified by removing each interpolation (`\x01` is removed), leaving the raw text
-     *       content without markers.
-     *     - The processed comments in `parts` are joined and placed before the modified raw text node, preserving
-     *       its tag, attributes, and inner content without placeholders.
-     * - The function finally returns the modified template string with comments in the correct places.
-     */
-    template = template.replace(rawTextElements, (match, tag, attributes, content) => {
-        const partsCount = (content.match(/\x01/g) || []).length;
-        const parts = [];
-        for (let index = 0; index < partsCount; index++) {
-            parts.push(`<!--\x02/raw-text-node=${content.replaceAll('\x01', '\x03')}-->`);
-        }
-        return `${parts.join('')}<${tag}${attributes}>${content.replaceAll('\x01', '')}</${tag}>`;
-    });
-    // replace interpolation placeholders with our indexed markers
-    template = template.replace(partPositions, (partPosition) => {
-        if (partPosition === '\x01') {
-            return `<!--dom-part-${partIndex}--><!--/dom-part-${partIndex++}-->`;
-        } else if (partPosition === '\x02') {
-            return `dom-part-${partIndex++}`;
-        }
-    });
-    // TODO create test to check if lf are in place
-    // /n is important in the returns as we expect a certain order of text / comments an nodes
-    return `<!--template-part-->\n${template}\n<!--/template-part-->`.trim();
-};
-
-export const createTemplateString2 = (templateStrings, ssr = false) => {
+export const createTemplateString = (templateStrings, ssr = false) => {
     // TODO: make it easier to identify attribute and node parts for SSR and leave the comments at those positions to be replaced in toString()
     let partIndex = 0;
     // join all interpolations (for values) with a special placeholder and remove any whitespace
@@ -141,7 +42,7 @@ export const createTemplateString2 = (templateStrings, ssr = false) => {
             if (directive && directive === '\x01') {
                 elementTagWithAttributes = elementTagWithAttributes.replace(
                     attribute,
-                    ssr ? makePlaceholder('directive') : '',
+                    ssr ? makeSSRPlaceholder('directive') : '',
                 );
                 return `<!--\x02$-->`;
             }
@@ -164,11 +65,11 @@ export const createTemplateString2 = (templateStrings, ssr = false) => {
                 let replacement = '';
                 if (ssr) {
                     for (let index = 0; index < partsCount - 1; index++) {
-                        replacement = replacement + makePlaceholder('noop');
+                        replacement = replacement + makeSSRPlaceholder('noop');
                     }
                     replacement =
                         replacement +
-                        makePlaceholder('attribute', {
+                        makeSSRPlaceholder('attribute', {
                             name,
                             interpolations: partsCount,
                             initialValue: value.replaceAll('\x01', '\x03'),
@@ -215,14 +116,14 @@ export const createTemplateString2 = (templateStrings, ssr = false) => {
             // TODO: maybe we could use url parameters here?! -> ?type=raw-text-node&initialValue=${initialValue}
             parts.push(`<!--\x02/raw-text-node=${content.replaceAll('\x01', '\x03')}-->`);
         }
-        const parsedContent = content.replaceAll('\x01', ssr ? makePlaceholder('raw-text-node') : '');
+        const parsedContent = content.replaceAll('\x01', ssr ? makeSSRPlaceholder('raw-text-node') : '');
         return `${parts.join('')}<${tag}${attributes}>${parsedContent}</${tag}>`;
     });
     // replace interpolation placeholders with our indexed markers
     template = template.replace(partPositions, (partPosition) => {
         if (partPosition === '\x01') {
             if (ssr) {
-                return `<!--dom-part-${partIndex}-->${makePlaceholder('node')}<!--/dom-part-${partIndex++}-->`;
+                return `<!--dom-part-${partIndex}-->${makeSSRPlaceholder('node')}<!--/dom-part-${partIndex++}-->`;
             }
             return `<!--dom-part-${partIndex}--><!--/dom-part-${partIndex++}-->`;
         } else if (partPosition === '\x02') {
@@ -278,15 +179,13 @@ const getValue = (value) => {
 };
 
 /** @type {Map<TemplateStringsArray, string>} */
-const parsedTemplateStringsCache = new WeakMap();
+const ssrTemplateStringsCache = new WeakMap();
 
-// TODO: add type for value
-/** @type {Map<TemplateStringsArray, *[]>} */
-const parsedUpdates = new WeakMap();
-const parsedUpdates2 = new WeakMap();
+/** @type {Map<TemplateStringsArray, (() => String)[]>} */
+const ssrUpdatesCache = new WeakMap();
 
 /** @type {Map<Element, TemplatePart>} */
-const templateParts = new WeakMap();
+const templatePartsCache = new WeakMap();
 
 export class TemplateResult {
     /**
@@ -303,7 +202,7 @@ export class TemplateResult {
      */
     renderInto(domNode) {
         let serverSideRendered = false;
-        let templatePart = templateParts.get(domNode);
+        let templatePart = templatePartsCache.get(domNode);
         if (!templatePart) {
             const startNode = Array.from(domNode.childNodes)
                 .filter((node) => node.nodeType === COMMENT_NODE)
@@ -312,7 +211,7 @@ export class TemplateResult {
             serverSideRendered = startNode !== undefined;
 
             templatePart = new TemplatePart(startNode, this);
-            templateParts.set(domNode, templatePart);
+            templatePartsCache.set(domNode, templatePart);
 
             if (!serverSideRendered) {
                 domNode.replaceChildren(...templatePart.childNodes);
@@ -326,112 +225,18 @@ export class TemplateResult {
      * @param {TemplateStringsArray} strings
      * @return {(() => String)[]}
      */
-    parse(strings) {
-        // const html = createTemplateString(strings, '\x04');
-        const html = createTemplateString2(strings, true);
-        const parts = [];
-        let i = 0;
-        let match = null;
-        while ((match = interpolation.exec(html))) {
-            const pre = html.slice(i, match.index);
-            i = match.index + match[0].length;
-            if (match[2]) {
-                // ChildNodePart
-                const index = match[2];
-                parts.push((value) => `${pre}<!--dom-part-${index}-->${getValue(value)}<!--/dom-part-${index}-->`);
-            } else if (match[4]) {
-                // AttributePart with single interpolation or the first interpolation right after the attribute=
-                const isSingleValue = match[5] !== undefined;
-                let name = match[4];
-                switch (true) {
-                    case name[0] === '?':
-                        const booleanName = name.slice(1).toLowerCase();
-                        parts.push((value) => {
-                            if (!value) return '';
-                            return `${pre} ${booleanName}=""`;
-                        });
-                        break;
-                    case name[0] === '.':
-                        const lower = name.slice(1).toLowerCase();
-                        parts.push((value) => {
-                            let result = pre;
-                            // null, undefined, and false are not shown at all
-                            if (value === null || value === undefined || value === '') {
-                                result += attribute(lower, '');
-                            } else {
-                                // in all other cases, just escape it in quotes
-                                result += attribute(lower, value, isSingleValue);
-                            }
-                            return result;
-                        });
-                        break;
-                    case name[0] === '@':
-                        name = 'on' + name.slice(1);
-                    case name[0] === 'o' && name[1] === 'n':
-                        parts.push((value) => {
-                            return pre;
-                        });
-                        break;
-                    default:
-                        parts.push((value) => {
-                            let result = pre;
-                            if (value != null) {
-                                result += attribute(name, value, isSingleValue);
-                            }
-                            return result;
-                        });
-                        break;
-                }
-            } else {
-                // AttributePart in the middle of an attribute value or NodePart
-                parts.push((value) => {
-                    let result = pre;
-                    // TODO: we currently cannot distinguish between NodeParts and AttributeParts before
-                    if (isObjectLike(value) && value.directiveClass) {
-                        // NodePart
-                        const directive = new value.directiveClass();
-                        result += directive.stringify(...value.values);
-                    } else if (value != null) {
-                        result += encodeAttribute(isObjectLike(value) ? JSON.stringify(value) : value);
-                    }
-                    return result;
-                });
-            }
-        }
-
-        // We couldn't correctly parse parts from the template
-        if (parts.length !== strings.length - 1) {
-            throw {
-                name: 'ParseTemplateError',
-                message: 'Could not parse parts from template correctly. Parts length has not the expected length.',
-                strings,
-                templateString: html,
-                parts,
-            };
-        }
-
-        if (parts.length) {
-            const last = parts[parts.length - 1];
-            const chunk = html.slice(i);
-            parts[parts.length - 1] = (value) => last(value) + chunk;
-        } else {
-            parts.push(() => html);
-        }
-        return parts;
-    }
-
-    parseSSRParts(strings) {
-        let templateString = parsedTemplateStringsCache.get(strings);
+    parseSSRUpdates(strings) {
+        let templateString = ssrTemplateStringsCache.get(strings);
 
         if (!templateString) {
-            templateString = createTemplateString2(strings, true);
-            parsedTemplateStringsCache.set(strings, templateString);
+            templateString = createTemplateString(strings, true);
+            ssrTemplateStringsCache.set(strings, templateString);
         }
 
-        let updates = parsedUpdates2.get(strings);
+        let updates = ssrUpdatesCache.get(strings);
 
         if (!updates) {
-            const partMatches = [...templateString.matchAll(placeholder)].map((match) => match[0]);
+            const partMatches = [...templateString.matchAll(ssrPlaceholder)].map((match) => match[0]);
             updates = partMatches.flatMap((match) => {
                 const placeholderContent = match.replace('{{', '').replace('}}', '');
                 const [_, paramsString] = placeholderContent.split('?');
@@ -525,7 +330,18 @@ export class TemplateResult {
                         },
                     ];
             });
-            parsedUpdates2.set(strings, updates);
+            ssrUpdatesCache.set(strings, updates);
+        }
+
+        // We couldn't correctly parse updates from the template
+        if (updates.length !== strings.length - 1) {
+            throw {
+                name: 'ParseTemplateError',
+                message: 'Could not parse updates from template correctly. Updates length has not the expected length.',
+                strings,
+                templateString,
+                updates,
+            };
         }
 
         return updates;
@@ -622,31 +438,12 @@ export class TemplateResult {
     }
 
     toString() {
-        const updates = this.parseSSRParts(this.strings);
-        let template = parsedTemplateStringsCache.get(this.strings);
-        // TODO: check somewhere that updates.length is one shorter than strings.length
-
-        // updates.forEach((update, index) => {
-        //     // TODO: for attributes with multiple interpolations we need to to get values with higher indexes
-        //     // TODO: and also those value should be handled with noop updates?!
-        //     template = template.replace(placeholder, update.processor(this.values[index]));
-        // });
+        const updates = this.parseSSRUpdates(this.strings);
+        let template = ssrTemplateStringsCache.get(this.strings);
 
         let index = 0;
-        const parsedTemplate = template.replaceAll(placeholder, () => {
+        return template.replaceAll(ssrPlaceholder, () => {
             return updates[index].processor(this.values[index++]);
         });
-
-        // return template;
-        return parsedTemplate;
-
-        // let updates = parsedUpdates.get(this.strings);
-        //
-        // if (!updates) {
-        //     updates = this.parse(this.strings);
-        //     parsedUpdates.set(this.strings, updates);
-        // }
-        //
-        // return this.values.length ? this.values.map((value, index) => updates[index](value)).join('') : updates[0]();
     }
 }
