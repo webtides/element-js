@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-expressions */
 import { fixture, defineCE, assert, nextFrame } from '@open-wc/testing';
-import { TemplateElement, html } from '../../src/TemplateElement';
+import { TemplateElement, html } from '../../src/TemplateElement.js';
 
 const elementTag = defineCE(
     class extends TemplateElement {

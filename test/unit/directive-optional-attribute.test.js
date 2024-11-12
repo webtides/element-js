@@ -2,7 +2,7 @@
 import { assert } from '@open-wc/testing';
 import { optionalAttribute, OptionalAttributeDirective, spreadAttributes } from '../../src/dom-parts/directives.js';
 import { html } from '../../src/dom-parts/html.js';
-import { stripCommentMarkers } from './template-bindings.test.js';
+import { stripCommentMarkers, stripWhitespace } from '../util/testing-helpers.js';
 
 describe('optionalAttribute directive', () => {
     it('adds an attributes when condition is truthy', async () => {

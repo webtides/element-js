@@ -20,6 +20,11 @@ function makeSSRPlaceholder(type, params) {
     return `{{dom-part?${queryString}}}`;
 }
 
+function makePartParams(type, params) {
+    const urlSearchParams = new URLSearchParams({ type, ...params });
+    return urlSearchParams.toString();
+}
+
 /**
  * Given a template, find part positions as both nodes and attributes and
  * return a string with placeholders as either comment nodes or named attributes.
@@ -43,7 +48,8 @@ export const createTemplateString = (templateStrings, ssr = false) => {
                     attribute,
                     ssr ? makeSSRPlaceholder('directive') : '',
                 );
-                return `<!--\x02$-->`;
+                const params = makePartParams('directive');
+                return `<!--\x02?${params}-->`;
             }
 
             // remove quotes from attribute value to normalize the value
@@ -53,8 +59,11 @@ export const createTemplateString = (templateStrings, ssr = false) => {
             const partsCount = (attribute.match(/\x01/g) || []).length;
             const parts = [];
             for (let index = 0; index < partsCount; index++) {
-                // TODO: maybe we could use url parameters here?! -> ?type=attribute&name=${name}&initialValue=${initialValue}
-                parts.push(`<!--\x02:${name}=${value.replaceAll('\x01', '\x03')}-->`);
+                const params = makePartParams('attribute', {
+                    name,
+                    initialValue: value.replaceAll('\x01', '\x03'),
+                });
+                parts.push(`<!--\x02?${params}-->`);
             }
 
             if (parts.length > 0) {
@@ -110,8 +119,10 @@ export const createTemplateString = (templateStrings, ssr = false) => {
         const partsCount = (content.match(/\x01/g) || []).length;
         const parts = [];
         for (let index = 0; index < partsCount; index++) {
-            // TODO: maybe we could use url parameters here?! -> ?type=raw-text-node&initialValue=${initialValue}
-            parts.push(`<!--\x02/raw-text-node=${content.replaceAll('\x01', '\x03')}-->`);
+            const params = makePartParams('raw-text-node', {
+                initialValue: content.replaceAll('\x01', '\x03'),
+            });
+            parts.push(`<!--\x02?${params}-->`);
         }
         const parsedContent = content.replaceAll('\x01', ssr ? makeSSRPlaceholder('raw-text-node') : '');
         return `${parts.join('')}<${tag}${attributes}>${parsedContent}</${tag}>`;
@@ -119,10 +130,8 @@ export const createTemplateString = (templateStrings, ssr = false) => {
     // replace interpolation placeholders with our indexed markers
     template = template.replace(partPositions, (partPosition) => {
         if (partPosition === '\x01') {
-            if (ssr) {
-                return `<!--dom-part-${partIndex}-->${makeSSRPlaceholder('node')}<!--/dom-part-${partIndex++}-->`;
-            }
-            return `<!--dom-part-${partIndex}--><!--/dom-part-${partIndex++}-->`;
+            const placeholder = ssr ? makeSSRPlaceholder('node') : '';
+            return `<!--dom-part-${partIndex}-->${placeholder}<!--/dom-part-${partIndex++}-->`;
         } else if (partPosition === '\x02') {
             return `dom-part-${partIndex++}`;
         }
@@ -378,29 +387,32 @@ export class TemplateResult {
                 parts.push({ type: 'node', path: getNodePath(node) });
                 continue;
             }
-            if (/^dom-part-\d+:/.test(node.data)) {
-                const [_, ...attribute] = node.data.split(':');
-                const [name, ...initialValue] = attribute.join(':').split('=');
+            if (/^dom-part-\d+\?type=attribute&(.*?)$/.test(node.data)) {
+                // For html`<div id="${'foo'}" class="${'bar'}"></div>` we will get:
+                // <!--dom-part-0?type=attribute&name=id&initialValue=\x03--><!--dom-part-1?type=attribute&name=class&initialValue=\x03-->
+                const [_, paramsString] = node.data.split('?');
+                const searchParams = new URLSearchParams(paramsString);
                 parts.push({
                     type: 'attribute',
                     path: getNodePath(node),
-                    name: name,
-                    initialValue: initialValue.join('='),
+                    name: searchParams.get('name'),
+                    initialValue: searchParams.get('initialValue'),
                 });
                 continue;
             }
-            if (/^dom-part-\d+\/raw-text-node/.test(node.data)) {
+            if (/^dom-part-\d+\?type=raw-text-node&(.*?)$/.test(node.data)) {
                 // For html`<textarea>${'foo'} bar</textarea>` we will get:
-                // <!--dom-part-0/raw-text-node=\x03 bar-->
-                const [_, ...initialValue] = node.data.split('=');
+                // <!--dom-part-0?type=raw-text-node&initialValue=\x03 bar-->
+                const [_, paramsString] = node.data.split('?');
+                const searchParams = new URLSearchParams(paramsString);
                 parts.push({
                     type: 'raw-text-node',
                     path: getNodePath(node),
-                    initialValue: initialValue.join('='),
+                    initialValue: searchParams.get('initialValue'),
                 });
                 continue;
             }
-            if (/^dom-part-\d+\$/.test(node.data)) {
+            if (/^dom-part-\d+\?type=directive$/.test(node.data)) {
                 parts.push({ type: 'directive', path: getNodePath(node) });
             }
         }
