@@ -125,31 +125,23 @@ export function camelToDash(string) {
 }
 
 /**
- * Decodes an attribute.
+ * Decodes an attribute according to {@link https://html.spec.whatwg.org/multipage/syntax.html#attributes-2}
  * @param {string} attribute
  * @returns {string}
  */
 export function decodeAttribute(attribute) {
-    return `${attribute}`
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/&apos;/g, "'");
+    return `${attribute}`.replace(/&quot;/g, '"').replace(/&amp;/g, '&');
 }
 
 /**
- * Encodes an attribute.
+ * Encodes an attribute according to {@link https://html.spec.whatwg.org/multipage/syntax.html#attributes-2}
  * @param {string} attribute
  * @returns {string}
  */
 export function encodeAttribute(attribute) {
-    return (
-        `${attribute}`
-            // .replace(/'/g, '&apos;')
-            .replace(/"/g, '&quot;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/\r\n/g, '\n')
-            .replace(/[\r\n]/g, '\n')
-    );
+    return `${attribute}`
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/\r\n/g, '\n')
+        .replace(/[\r\n]/g, '\n');
 }
