@@ -49,23 +49,15 @@ const processEventAttribute = (node, name) => {
  * @return {(function(*): void)|*}
  */
 const processAttribute = (node, name) => {
-    let oldValue,
-        orphan = true;
-    const attributeNode = globalThis.document?.createAttributeNS(null, name);
+    let oldValue;
     return (newValue) => {
         const value = newValue?.valueOf();
         if (oldValue !== value) {
-            if ((oldValue = value) == null) {
-                if (!orphan) {
-                    node.removeAttributeNode(attributeNode);
-                    orphan = true;
-                }
+            oldValue = value;
+            if (value == null) {
+                node.removeAttribute(name);
             } else {
-                attributeNode.value = value;
-                if (orphan) {
-                    node.setAttributeNodeNS(attributeNode);
-                    orphan = false;
-                }
+                node.setAttribute(name, value);
             }
         }
     };

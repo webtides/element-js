@@ -3,11 +3,10 @@ import { createTemplateString } from '../../src/dom-parts/TemplateResult.js';
 import { html } from '../../src/dom-parts/html.js';
 import { convertStringToTemplate } from '../../src/util/DOMHelper.js';
 import { render } from '../../src/dom-parts/render.js';
-import { stripCommentMarkers } from './template-bindings.test.js';
+import { stripCommentMarkers, stripWhitespace } from '../util/testing-helpers.js';
 import { defineDirective, Directive } from '../../src/util/Directive.js';
 
 const directive = defineDirective(class extends Directive {});
-export const stripWhitespace = (html) => html.replace(/\s+/g, ' ').replaceAll('> ', '>').trim();
 
 describe(`TemplateResult.createTemplateString()`, () => {
     it('wraps the template in matching "template-part" comment nodes', async () => {
@@ -42,7 +41,7 @@ describe(`TemplateResult.createTemplateString()`, () => {
         const templateString = createTemplateString(templateResult.strings);
         assert.equal(
             stripWhitespace(templateString),
-            '<!--template-part--><!--dom-part-0:id=\x03--><!--dom-part-1:class=\x03--><div>Text</div><!--/template-part-->',
+            '<!--template-part--><!--dom-part-0?type=attribute&name=id&initialValue=%03--><!--dom-part-1?type=attribute&name=class&initialValue=%03--><div>Text</div><!--/template-part-->',
         );
 
         const ssrTemplateString = createTemplateString(templateResult.strings, true);
@@ -57,7 +56,7 @@ describe(`TemplateResult.createTemplateString()`, () => {
         const templateString = createTemplateString(templateResult.strings);
         assert.equal(
             stripWhitespace(templateString),
-            '<!--template-part--><!--dom-part-0:value=\x03--><input name="foo" /><!--/template-part-->',
+            '<!--template-part--><!--dom-part-0?type=attribute&name=value&initialValue=%03--><input name="foo" /><!--/template-part-->',
         );
 
         const ssrTemplateString = createTemplateString(templateResult.strings, true);
@@ -72,22 +71,13 @@ describe(`TemplateResult.createTemplateString()`, () => {
         const templateString = createTemplateString(templateResult.strings);
         assert.equal(
             stripWhitespace(templateString),
-            '<!--template-part--><!--dom-part-0:id=\x03--><!--dom-part-1:class=\x03 other \x03--><!--dom-part-2:class=\x03 other \x03--><div>Text</div><!--/template-part-->',
+            '<!--template-part--><!--dom-part-0?type=attribute&name=id&initialValue=%03--><!--dom-part-1?type=attribute&name=class&initialValue=%03+other+%03--><!--dom-part-2?type=attribute&name=class&initialValue=%03+other+%03--><div>Text</div><!--/template-part-->',
         );
 
         const ssrTemplateString = createTemplateString(templateResult.strings, true);
         assert.equal(
             stripCommentMarkers(ssrTemplateString),
             '<div {{dom-part?type=attribute&name=id&interpolations=1&initialValue=%03&quotes=%22}} {{dom-part?type=noop}}{{dom-part?type=attribute&name=class&interpolations=2&initialValue=%03+other+%03&quotes=%22}}>Text</div>',
-        );
-    });
-
-    it('can leave (comment) placeholders in attribute values', async () => {
-        const templateResult = html`<div id="${1}" class="${'some'} other ${'class'}">Text</div>`;
-        const templateString = createTemplateString(templateResult.strings);
-        assert.equal(
-            stripWhitespace(templateString),
-            '<!--template-part--><!--dom-part-0:id=\x03--><!--dom-part-1:class=\x03 other \x03--><!--dom-part-2:class=\x03 other \x03--><div>Text</div><!--/template-part-->',
         );
     });
 
@@ -98,7 +88,7 @@ describe(`TemplateResult.createTemplateString()`, () => {
         // TODO: is there a way to test this now?!
         assert.equal(
             stripWhitespace(templateString),
-            '<!--template-part--><!--dom-part-0:id=\x03--><!--dom-part-1:class=\x03--><!--dom-part-2:foo=\x03--><div>Text</div><!--/template-part-->',
+            '<!--template-part--><!--dom-part-0?type=attribute&name=id&initialValue=%03--><!--dom-part-1?type=attribute&name=class&initialValue=%03--><!--dom-part-2?type=attribute&name=foo&initialValue=%03--><div>Text</div><!--/template-part-->',
         );
     });
 
@@ -107,7 +97,7 @@ describe(`TemplateResult.createTemplateString()`, () => {
         const templateString = createTemplateString(templateResult.strings);
         assert.equal(
             stripWhitespace(templateString),
-            '<!--template-part--><!--dom-part-0:id=\x03--><!--dom-part-1:class=\x03--><div><!--dom-part-2--><!--/dom-part-2--></div><!--/template-part-->',
+            '<!--template-part--><!--dom-part-0?type=attribute&name=id&initialValue=%03--><!--dom-part-1?type=attribute&name=class&initialValue=%03--><div><!--dom-part-2--><!--/dom-part-2--></div><!--/template-part-->',
         );
     });
 
@@ -117,7 +107,7 @@ describe(`TemplateResult.createTemplateString()`, () => {
         const templateString = createTemplateString(templateResult.strings);
         assert.equal(
             stripWhitespace(templateString),
-            '<!--template-part--><!--dom-part-0$--><div no-directive>Text</div><!--/template-part-->',
+            '<!--template-part--><!--dom-part-0?type=directive--><div no-directive>Text</div><!--/template-part-->',
         );
     });
 });
@@ -317,7 +307,7 @@ describe('TemplateResult.toString()', () => {
         const templateResult = html`<div id="${1}" class="${'some'}">Text</div>`;
         assert.equal(
             stripWhitespace(templateResult.toString()),
-            '<!--template-part--><!--dom-part-0:id=\x03--><!--dom-part-1:class=\x03--><div id="1" class="some">Text</div><!--/template-part-->',
+            '<!--template-part--><!--dom-part-0?type=attribute&name=id&initialValue=%03--><!--dom-part-1?type=attribute&name=class&initialValue=%03--><div id="1" class="some">Text</div><!--/template-part-->',
         );
     });
 
@@ -325,7 +315,7 @@ describe('TemplateResult.toString()', () => {
         const templateResult = html`<div id="${1}" not-class="${'some'} other ${'class'}">Text</div>`;
         assert.equal(
             stripWhitespace(templateResult.toString()),
-            '<!--template-part--><!--dom-part-0:id=\x03--><!--dom-part-1:not-class=\x03 other \x03--><!--dom-part-2:not-class=\x03 other \x03--><div id="1" not-class="some other class">Text</div><!--/template-part-->',
+            '<!--template-part--><!--dom-part-0?type=attribute&name=id&initialValue=%03--><!--dom-part-1?type=attribute&name=not-class&initialValue=%03+other+%03--><!--dom-part-2?type=attribute&name=not-class&initialValue=%03+other+%03--><div id="1" not-class="some other class">Text</div><!--/template-part-->',
         );
     });
 
@@ -334,7 +324,7 @@ describe('TemplateResult.toString()', () => {
         const templateResult = html`<div id='${1}' class="${'some-class'}" foo=${'bar'}>Text</div>`;
         assert.equal(
             stripWhitespace(templateResult.toString()),
-            '<!--template-part--><!--dom-part-0:id=\x03--><!--dom-part-1:class=\x03--><!--dom-part-2:foo=\x03--><div id=\'1\' class="some-class" foo=bar>Text</div><!--/template-part-->',
+            '<!--template-part--><!--dom-part-0?type=attribute&name=id&initialValue=%03--><!--dom-part-1?type=attribute&name=class&initialValue=%03--><!--dom-part-2?type=attribute&name=foo&initialValue=%03--><div id=\'1\' class="some-class" foo=bar>Text</div><!--/template-part-->',
         );
     });
 
@@ -342,7 +332,7 @@ describe('TemplateResult.toString()', () => {
         const templateResult = html`<div id="${1}" class="${'some'}">${'Text'}</div>`;
         assert.equal(
             stripWhitespace(templateResult.toString()),
-            '<!--template-part--><!--dom-part-0:id=\x03--><!--dom-part-1:class=\x03--><div id="1" class="some"><!--dom-part-2-->Text<!--/dom-part-2--></div><!--/template-part-->',
+            '<!--template-part--><!--dom-part-0?type=attribute&name=id&initialValue=%03--><!--dom-part-1?type=attribute&name=class&initialValue=%03--><div id="1" class="some"><!--dom-part-2-->Text<!--/dom-part-2--></div><!--/template-part-->',
         );
     });
 
@@ -351,7 +341,7 @@ describe('TemplateResult.toString()', () => {
         const templateResult = html`<div ${directive()}>Directive</div>`;
         assert.equal(
             stripWhitespace(templateResult.toString()),
-            '<!--template-part--><!--dom-part-0$--><div >Directive</div><!--/template-part-->',
+            '<!--template-part--><!--dom-part-0?type=directive--><div >Directive</div><!--/template-part-->',
         );
     });
 
@@ -360,7 +350,7 @@ describe('TemplateResult.toString()', () => {
         // TODO: I'm not sure how we can remove that whitespace at the end...
         assert.equal(
             stripWhitespace(templateResult.toString()),
-            '<!--template-part--><!--dom-part-0:?disabled=\x03--><!--dom-part-1:?hidden=\x03--><div disabled="" >Text</div><!--/template-part-->',
+            '<!--template-part--><!--dom-part-0?type=attribute&name=%3Fdisabled&initialValue=%03--><!--dom-part-1?type=attribute&name=%3Fhidden&initialValue=%03--><div disabled="" >Text</div><!--/template-part-->',
         );
     });
 
@@ -369,7 +359,7 @@ describe('TemplateResult.toString()', () => {
         // TODO: make sure that this is the correct and wanted behaviour?! Because in CSR we do not render it as an attribute
         assert.equal(
             stripWhitespace(templateResult.toString()),
-            '<!--template-part--><!--dom-part-0:.data=\x03--><div data="{&quot;foo&quot;:&quot;bar&quot;}">Text</div><!--/template-part-->',
+            '<!--template-part--><!--dom-part-0?type=attribute&name=.data&initialValue=%03--><div data="{&quot;foo&quot;:&quot;bar&quot;}">Text</div><!--/template-part-->',
         );
     });
 
@@ -377,7 +367,7 @@ describe('TemplateResult.toString()', () => {
         const templateResult = html`<div @e="${() => {}}" onClick="${() => {}}" onClick="console.log('')">Text</div>`;
         assert.equal(
             stripWhitespace(templateResult.toString()),
-            '<!--template-part--><!--dom-part-0:@e=\x03--><!--dom-part-1:onClick=\x03--><div onClick="console.log(\'\')">Text</div><!--/template-part-->',
+            '<!--template-part--><!--dom-part-0?type=attribute&name=%40e&initialValue=%03--><!--dom-part-1?type=attribute&name=onClick&initialValue=%03--><div onClick="console.log(\'\')">Text</div><!--/template-part-->',
         );
     });
 });
@@ -394,7 +384,6 @@ describe('TemplateResult SSR', () => {
         const parts = templateResult.parseParts(el.childNodes);
         assert.equal(parts.length, 1);
         assert.equal(parts[0].type, 'node');
-        // TODO: test parts like above...
     });
 
     it('can update previously hydrated templates', async () => {

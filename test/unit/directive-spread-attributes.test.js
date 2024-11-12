@@ -2,7 +2,7 @@
 import { assert } from '@open-wc/testing';
 import { html } from '../../src/TemplateElement.js';
 import { spreadAttributes, SpreadAttributesDirective } from '../../src/dom-parts/directives.js';
-import { stripCommentMarkers } from './template-bindings.test.js';
+import { stripCommentMarkers, stripWhitespace } from '../util/testing-helpers.js';
 
 describe('spreadAttributes directive', () => {
     it('maps primitive values to string attributes', async () => {

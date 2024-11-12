@@ -11,10 +11,12 @@ class AttributesElement extends TemplateElement {
 
     template() {
         const templateResult = html`
-            <div foo="bar" class="before:block before:content-[&apos;Festivus&apos;]">no interpolation</div>
-            <div foo="${'bar'}">single attribute interpolation</div>
-            <div foo="${'bar'}" bar="${'baz'}">multiple attribute interpolations</div>
-            <div foo="${'bar'} baz ${'foo'}">multiple interpolations in single attribute</div>
+            <div foo1="bar" class="before:block before:content-['Festivus']">no interpolation</div>
+            <div foo2="${'bar'}">single attribute interpolation</div>
+            <div foo3="${'bar'}" bar="${'baz'}">multiple attribute interpolations</div>
+            <div foo4="${'bar'} baz ${'foo'} before:content-['Festivus']">
+                multiple interpolations in single attribute
+            </div>
             <div ?true-boolean="${true}" ?false-boolean="${false}">boolean attributes</div>
             <div .data=${JSON.stringify({ foo: 'bar' })} .list="${JSON.stringify(['foo', 'bar'])}">
                 property attributes .data and .list

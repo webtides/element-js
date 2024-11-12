@@ -143,11 +143,13 @@ export function decodeAttribute(attribute) {
  * @returns {string}
  */
 export function encodeAttribute(attribute) {
-    return `${attribute}`
-        .replace(/'/g, '&apos;')
-        .replace(/"/g, '&quot;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\r\n/g, '\n')
-        .replace(/[\r\n]/g, '\n');
+    return (
+        `${attribute}`
+            // .replace(/'/g, '&apos;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\r\n/g, '\n')
+            .replace(/[\r\n]/g, '\n')
+    );
 }

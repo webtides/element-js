@@ -3,17 +3,7 @@ import { render } from '../../src/dom-parts/render.js';
 import { defineDirective, Directive } from '../../src/util/Directive.js';
 import { html } from '../../src/TemplateElement.js';
 import { unsafeHTML } from '../../src/dom-parts/directives.js';
-
-// TODO: for testing that SSR and CSR will render the same thing, it would be good to test with whitespace and comment markers to make sure that they perfectly match!
-// TODO renderer should actually not output any blanks and whitespaces that have to be removed for testing ...
-export const stripCommentMarkers = (html) =>
-    html
-        .replace(/<!--(\/)?(dom|template)-part(-\d+)?((:(@|.|\?)?\w+(=.*)?)?|(\$)?|(\/raw-text-node=.*)?)?-->/g, '')
-        .replace(/\s+/g, ' ')
-        // .replace(/\s{2,}/g, ' ')
-        .replaceAll(' >', '>')
-        .replaceAll('> ', '>')
-        .trim();
+import { stripCommentMarkers } from '../util/testing-helpers.js';
 
 describe(`template bindings for rendering TemplateResults client side and server side`, () => {
     it('creates the correct string from the literal', async () => {
@@ -210,11 +200,9 @@ describe(`template bindings for rendering TemplateResults client side and server
             stripCommentMarkers(el.innerHTML),
             '<a class="link is-active text-blue-600 dark:text-blue-200/50 top-[117px] foo=bar before:content-[\'Festivus\']">Label</a>',
         );
-        // TODO: fix whitespace issues below...
-        // TODO: the escaping will be fixed and changed with #134
         assert.equal(
-            stripCommentMarkers(el.innerHTML.replace('</a>', '</a >')),
-            stripCommentMarkers(templateResult.toString().replaceAll('&apos;Festivus&apos;', "'Festivus'")),
+            stripCommentMarkers(el.innerHTML),
+            stripCommentMarkers(templateResult.toString()),
             'CSR template does not match SSR template',
         );
     });
@@ -257,12 +245,12 @@ describe(`template bindings for rendering TemplateResults client side and server
         const anchor = el.querySelector('a');
         assert.deepEqual(anchor.foo, { foo: 'bar' });
 
-        // TODO: SSR is rendering properties as attributes...
-        // assert.equal(
-        // 	stripCommentMarkers(el.innerHTML),
-        // 	stripCommentMarkers(templateResult.toString()),
-        // 	'CSR template does not match SSR template',
-        // );
+        // SSR is rendering properties as attributes while CSR is only setting the properties
+        assert.notEqual(
+            stripCommentMarkers(el.innerHTML),
+            stripCommentMarkers(templateResult.toString()),
+            'CSR template does match SSR template',
+        );
     });
 
     it('can render special @event bindings inside attributes', async () => {
@@ -280,9 +268,8 @@ describe(`template bindings for rendering TemplateResults client side and server
         >`;
         render(templateResult, el);
         assert.equal(stripCommentMarkers(el.innerHTML), '<a onclick="console.log(\'clicked\')">Label</a>');
-        // TODO: why?! removing blanks in html tags as prettier inserts them (see above)
         assert.equal(
-            stripCommentMarkers(el.innerHTML.replace('onclick', 'onClick').replace('</a>', '</a >')),
+            stripCommentMarkers(el.innerHTML.replace('onclick', 'onClick')),
             stripCommentMarkers(templateResult.toString()),
             'CSR template does not match SSR template',
         );

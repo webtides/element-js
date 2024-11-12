@@ -1,13 +1,10 @@
 import { fixture, assert, nextFrame, oneEvent } from '@open-wc/testing';
 import { render } from '../../src/dom-parts/render.js';
 import { html } from '../../src/TemplateElement.js';
-import { stripCommentMarkers } from './template-bindings.test.js';
+import { stripCommentMarkers, stripWhitespace } from '../util/testing-helpers.js';
 import { RawTextNodePart } from '../../src/dom-parts/RawTextNodePart.js';
 import { convertStringToTemplate } from '../../src/util/DOMHelper.js';
 import { createTemplateString } from '../../src/dom-parts/TemplateResult.js';
-
-// TODO: this is copied and changed from template-result.test.js
-export const stripWhitespace = (html) => html.replace(/\s+/g, ' ').replaceAll('> <', '><').trim();
 
 describe(`RawTextNodePart class`, () => {
     it('stores a node to be processed from the comment marker node', async () => {
@@ -36,7 +33,7 @@ describe(`RawTextNodePart template string parsing`, () => {
         const templateString = createTemplateString(templateResult.strings);
         assert.equal(
             stripWhitespace(templateString),
-            '<!--template-part--><!--dom-part-0/raw-text-node=\x03--><textarea></textarea><!--/template-part-->',
+            '<!--template-part--><!--dom-part-0?type=raw-text-node&initialValue=%03--><textarea></textarea><!--/template-part-->',
         );
     });
 
@@ -45,7 +42,7 @@ describe(`RawTextNodePart template string parsing`, () => {
         const templateString = createTemplateString(templateResult.strings);
         assert.equal(
             stripWhitespace(templateString),
-            '<!--template-part--><!--dom-part-0/raw-text-node=\x03 bar \x03--><!--dom-part-1/raw-text-node=\x03 bar \x03--><textarea> bar </textarea><!--/template-part-->',
+            '<!--template-part--><!--dom-part-0?type=raw-text-node&initialValue=%03+bar+%03--><!--dom-part-1?type=raw-text-node&initialValue=%03+bar+%03--><textarea> bar </textarea><!--/template-part-->',
         );
     });
 });
@@ -78,12 +75,11 @@ describe(`RawTextNodePart template bindings`, () => {
         const templateResult = html`<textarea>${content}</textarea>`;
         render(templateResult, el);
         assert.equal(stripCommentMarkers(el.innerHTML), '<textarea>foo</textarea>');
-        // TODO: make SSR work here as well
-        // assert.equal(
-        //     stripCommentMarkers(el.innerHTML),
-        //     stripCommentMarkers(templateResult.toString()),
-        //     'CSR template does not match SSR template',
-        // );
+        assert.equal(
+            stripCommentMarkers(el.innerHTML),
+            stripCommentMarkers(templateResult.toString()),
+            'CSR template does not match SSR template',
+        );
     });
 
     it('can have multiple interpolations inside a text only element', async () => {
@@ -91,11 +87,10 @@ describe(`RawTextNodePart template bindings`, () => {
         const templateResult = html`<textarea>${'foo'} bar ${'baz'}</textarea>`;
         render(templateResult, el);
         assert.equal(stripCommentMarkers(el.innerHTML), '<textarea>foo bar baz</textarea>');
-        // TODO: make SSR work here as well
-        // assert.equal(
-        //     stripCommentMarkers(el.innerHTML),
-        //     stripCommentMarkers(templateResult.toString()),
-        //     'CSR template does not match SSR template',
-        // );
+        assert.equal(
+            stripCommentMarkers(el.innerHTML),
+            stripCommentMarkers(templateResult.toString()),
+            'CSR template does not match SSR template',
+        );
     });
 });
