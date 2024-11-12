@@ -16,6 +16,11 @@ to [Semantic Versioning](http://semver.org/).
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.1.4] - 2024-11-12
+
+### FIXED
+
+- Fixed rendering interpolations inside textarea nodes ([#133](https://github.com/webtides/element-js/issues/133))
 
 ## [1.1.3] - 2024-11-11
 
