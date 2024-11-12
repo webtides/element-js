@@ -305,3 +305,33 @@ export const diffNodes = function (templateNode, domNode, shouldDiffChildNodes =
         }
     }
 };
+
+/**
+ * Decodes a html string
+ * @param {string} html
+ * @returns {string}
+ */
+export function decodeHTML(html) {
+    return `${html}`
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&apos;/g, "'");
+}
+
+/**
+ * Encodes a html string
+ * @param {string} html
+ * @returns {string}
+ */
+export function encodeHTML(html) {
+    return `${html}`
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;')
+        .replace(/\r\n/g, '\n')
+        .replace(/[\r\n]/g, '\n');
+}

@@ -1,4 +1,4 @@
-import { COMMENT_NODE, getNodePath } from '../util/DOMHelper.js';
+import { COMMENT_NODE, getNodePath, encodeHTML } from '../util/DOMHelper.js';
 import { encodeAttribute, isObjectLike } from '../util/AttributeParser.js';
 import { TemplatePart } from './TemplatePart.js';
 
@@ -158,7 +158,7 @@ const attribute = (name, value, quotes = '"') => {
 const getValue = (value) => {
     switch (typeof value) {
         case 'string':
-            return encodeAttribute(value);
+            return encodeHTML(value);
         case 'boolean':
         case 'number':
             return String(value);
@@ -179,7 +179,7 @@ const getValue = (value) => {
         case 'function':
             return getValue(value());
     }
-    return value == null ? '' : encodeAttribute(String(value));
+    return value == null ? '' : encodeHTML(String(value));
 };
 
 /** @type {Map<TemplateStringsArray, string>} */

@@ -186,6 +186,27 @@ describe(`template bindings for rendering TemplateResults client side and server
         );
     });
 
+    it('correctly sanitizes attribute values', async () => {
+        const el = document.createElement('div');
+        const templateResult = html`
+            <div foo="${'&'}"></div>
+            <div foo="${'<'}"></div>
+            <div foo="${'>'}"></div>
+            <div foo="${"'"}"></div>
+            <div foo="${'"'}"></div>
+        `;
+        render(templateResult, el);
+        assert.equal(
+            stripCommentMarkers(el.innerHTML),
+            '<div foo="&amp;"></div><div foo="<"></div><div foo=">"></div><div foo="\'"></div><div foo="&quot;"></div>',
+        );
+        assert.equal(
+            stripCommentMarkers(el.innerHTML),
+            stripCommentMarkers(templateResult.toString()),
+            'CSR template does not match SSR template',
+        );
+    });
+
     it('can render bindings inside attributes with special characters', async () => {
         const el = document.createElement('div');
         const active = true;
