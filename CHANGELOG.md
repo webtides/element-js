@@ -16,6 +16,12 @@ to [Semantic Versioning](http://semver.org/).
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.1.5] - 2024-11-14
+
+### FIXED
+
+- Fixed using special characters in attribute static strings ([#134](https://github.com/webtides/element-js/issues/134))
+
 ## [1.1.4] - 2024-11-12
 
 ### FIXED
