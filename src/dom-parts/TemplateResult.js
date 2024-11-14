@@ -8,18 +8,30 @@ const elements = /<([a-z]+[a-z0-9:._-]*)([^>]*?)(\/?)>/g;
 // TODO: v this will not match any values with escaped quotes like onClick='console.log("\'test")'
 const attributes = /([^\s]*)=((?:")[^"]*(?:")|(?:')[^']*(?:')|[^\s\/>]*)|([^\s\/>]*)/g;
 const partPositions = /[\x01\x02]/g;
+const ssrPlaceholder = /{{dom-part\?(.*?)}}/g;
 // \x01 Node.ELEMENT_NODE
 // \x02 Node.ATTRIBUTE_NODE
 // \x03 COMMENT.ATTRIBUTE_TOKEN
 // \x04 Node.ATTRIBUTE_TOKEN
 
-const ssrPlaceholder = /{{dom-part\?(.*?)}}/g;
-function makeSSRPlaceholder(type, params) {
+/**
+ * Creates a URL query string for meta information to pass along ssr part placeholders
+ * @param type
+ * @param params
+ * @return {string}
+ */
+function makeSSRPlaceholderParams(type, params) {
     const urlSearchParams = new URLSearchParams({ type, ...params });
     const queryString = urlSearchParams.toString();
     return `{{dom-part?${queryString}}}`;
 }
 
+/**
+ * Creates a URL query string for meta information to pass along part comments
+ * @param {string} type
+ * @param {{}} params
+ * @return {string}
+ */
 function makePartParams(type, params) {
     const urlSearchParams = new URLSearchParams({ type, ...params });
     return urlSearchParams.toString();
@@ -46,7 +58,7 @@ export const createTemplateString = (templateStrings, ssr = false) => {
             if (directive && directive === '\x01') {
                 elementTagWithAttributes = elementTagWithAttributes.replace(
                     attribute,
-                    ssr ? makeSSRPlaceholder('directive') : '',
+                    ssr ? makeSSRPlaceholderParams('directive') : '',
                 );
                 const params = makePartParams('directive');
                 return `<!--\x02?${params}-->`;
@@ -70,11 +82,11 @@ export const createTemplateString = (templateStrings, ssr = false) => {
                 let replacement = '';
                 if (ssr) {
                     for (let index = 0; index < partsCount - 1; index++) {
-                        replacement = replacement + makeSSRPlaceholder('noop');
+                        replacement = replacement + makeSSRPlaceholderParams('noop');
                     }
                     replacement =
                         replacement +
-                        makeSSRPlaceholder('attribute', {
+                        makeSSRPlaceholderParams('attribute', {
                             name,
                             interpolations: partsCount,
                             initialValue: value.replaceAll('\x01', '\x03'),
@@ -124,13 +136,13 @@ export const createTemplateString = (templateStrings, ssr = false) => {
             });
             parts.push(`<!--\x02?${params}-->`);
         }
-        const parsedContent = content.replaceAll('\x01', ssr ? makeSSRPlaceholder('raw-text-node') : '');
+        const parsedContent = content.replaceAll('\x01', ssr ? makeSSRPlaceholderParams('raw-text-node') : '');
         return `${parts.join('')}<${tag}${attributes}>${parsedContent}</${tag}>`;
     });
     // replace interpolation placeholders with our indexed markers
     template = template.replace(partPositions, (partPosition) => {
         if (partPosition === '\x01') {
-            const placeholder = ssr ? makeSSRPlaceholder('node') : '';
+            const placeholder = ssr ? makeSSRPlaceholderParams('node') : '';
             return `<!--dom-part-${partIndex}-->${placeholder}<!--/dom-part-${partIndex++}-->`;
         } else if (partPosition === '\x02') {
             return `dom-part-${partIndex++}`;
