@@ -112,6 +112,31 @@ describe(`TemplateResult.createTemplateString()`, () => {
     });
 });
 
+describe('TemplateResult.renderInto()', () => {
+    it('can render static strings', async () => {
+        const el = document.createElement('div');
+        let name = 'John';
+        const templateResult = `<div>${name}</div>`;
+        render(templateResult, el);
+        assert.equal(el.innerHTML, '<div>John</div>');
+    });
+
+    it('can re-render and update between static strings and dynamic template results', async () => {
+        const el = document.createElement('div');
+        let templateResult = html`<div>${'1'}</div>`;
+        render(templateResult, el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div>1</div>');
+
+        templateResult = `<div>${'2'}</div>`;
+        render(templateResult, el);
+        assert.equal(el.innerHTML, '<div>2</div>');
+
+        templateResult = html`<div>${'3'}</div>`;
+        render(templateResult, el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div>3</div>');
+    });
+});
+
 describe('TemplateResult.parseSSRUpdates()', () => {
     it('creates no parts if no interpolations are present', async () => {
         const templateResult = html`<div>Text</div>`;

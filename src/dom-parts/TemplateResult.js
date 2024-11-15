@@ -217,14 +217,18 @@ export class TemplateResult {
      * @param {Element} domNode
      */
     renderInto(domNode) {
-        let serverSideRendered = false;
-        let templatePart = templatePartsCache.get(domNode);
-        if (!templatePart) {
-            const startNode = Array.from(domNode.childNodes)
-                .filter((node) => node.nodeType === COMMENT_NODE)
-                .find((node) => node.data === 'template-part');
+        const startNode = Array.from(domNode.childNodes)
+            .filter((node) => node.nodeType === COMMENT_NODE)
+            .find((node) => node.data === 'template-part');
 
-            serverSideRendered = startNode !== undefined;
+        let serverSideRendered = startNode !== undefined;
+
+        let templatePart = templatePartsCache.get(domNode);
+
+        if (!templatePart || !startNode) {
+            if (!startNode) {
+                domNode.replaceChildren();
+            }
 
             templatePart = new TemplatePart(startNode, this);
             templatePartsCache.set(domNode, templatePart);
