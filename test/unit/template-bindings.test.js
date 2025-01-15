@@ -464,6 +464,38 @@ describe(`template bindings for rendering TemplateResults client side and server
         assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
     });
 
+    it('can rerender arrays of TemplateResults with more or less items', async () => {
+        const el = document.createElement('div');
+        let templateResult = html`<ul>
+            ${[1, 2].map((item) => html`<li>${item}</li>`)}
+        </ul>`;
+        render(templateResult, el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<ul><li>1</li><li>2</li></ul>');
+        assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
+
+        templateResult = html`<ul>
+            ${[1, 2, 3].map((item) => html`<li>${item}</li>`)}
+        </ul>`;
+        render(templateResult, el);
+        assert.equal(
+            stripCommentMarkers(el.innerHTML),
+            '<ul><li>1</li><li>2</li><li>3</li></ul>',
+            'Cannot render array with more TemplateResult items than before',
+        );
+        assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
+
+        templateResult = html`<ul>
+            ${[1, 2].map((item) => html`<li>${item}</li>`)}
+        </ul>`;
+        render(templateResult, el);
+        assert.equal(
+            stripCommentMarkers(el.innerHTML),
+            '<ul><li>1</li><li>2</li></ul>',
+            'Cannot render array with less TemplateResult items than before',
+        );
+        assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
+    });
+
     it('can rerender an empty TemplateResult with different text content', async () => {
         const el = document.createElement('div');
         let templateResult = html``;
