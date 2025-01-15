@@ -1,5 +1,6 @@
-import { assert, defineCE, fixture } from '@open-wc/testing';
+import { assert, defineCE, fixture, nextFrame, waitUntil } from '@open-wc/testing';
 import { TemplateElement, html } from '../../src/TemplateElement.js';
+import { stripCommentMarkers } from '../util/testing-helpers.js';
 
 const lightTag = defineCE(
     class extends TemplateElement {
@@ -104,6 +105,27 @@ class NestingParentTag extends TemplateElement {
 }
 customElements.define('nesting-parent-tag', NestingParentTag);
 
+class ArrayRenderingTag extends TemplateElement {
+    properties() {
+        return {
+            list: [1],
+        };
+    }
+
+    fillArray(amount = 0) {
+        this.list = [...Array(amount).keys()];
+    }
+
+    template() {
+        return html`<div>
+            <ul ref="list" data-length="${this.list.length}">
+                ${this.list.map((index) => html`<li>${index}</li>`)}
+            </ul>
+        </div>`;
+    }
+}
+customElements.define('array-rendering-tag', ArrayRenderingTag);
+
 describe(`template rendering`, () => {
     it('renders template in light dom by default', async () => {
         const el = await fixture(`<${lightTag}></${lightTag}>`);
@@ -195,5 +217,32 @@ describe(`vanilla-renderer`, () => {
         const nested = parentElement.querySelector('nested-shadow-default-tag');
         await nested.requestUpdate();
         assert.equal(defaultElement.offsetWidth, nested.offsetWidth);
+    });
+
+    it('renders changes to arrays properly', async () => {
+        const arrayElement = await fixture(`<array-rendering-tag></array-rendering-tag>`);
+        await nextFrame();
+        assert.equal(
+            stripCommentMarkers(arrayElement.innerHTML),
+            '<div><ul ref="list" data-length="1"><li>1</li></ul></div>',
+        );
+
+        arrayElement.list = [1, 2];
+        await nextFrame();
+
+        assert.equal(
+            stripCommentMarkers(arrayElement.innerHTML),
+            '<div><ul ref="list" data-length="2"><li>1</li><li>2</li></ul></div>',
+        );
+        arrayElement.list = [1, 2, 3];
+        await nextFrame();
+        assert.equal(
+            stripCommentMarkers(arrayElement.innerHTML),
+            '<div><ul ref="list" data-length="3"><li>1</li><li>2</li><li>3</li></ul></div>',
+        );
+
+        arrayElement.list = [];
+        await nextFrame();
+        assert.equal(stripCommentMarkers(arrayElement.innerHTML), '<div><ul ref="list" data-length="0"></ul></div>');
     });
 });
