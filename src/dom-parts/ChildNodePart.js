@@ -54,28 +54,32 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
     // TODO: when diffing arrays there is sometimes two lists of TemplateParts instead of lists of childNodes
     const offset = domChildNodes.includes(anchorNode) ? 1 : 0;
 
-    // We always want to have the two arrays (domChildNodes and templateChildNodes) to have the same length.
+    // release first level references to prevent cache mutation
+    const cloneDomChildNodes = [...domChildNodes];
+    const cloneTemplateChildNodes = [...templateChildNodes];
+
+    // We always want to have the two arrays (domChildNodes and cloneTemplateChildNodes) to have the same length.
     // We also don't ever want to replace/diff the last node of the domChildNodes as it will always be the
     // closing comment marker (/template-part) aka the anchorNode. So we push it to the end by inserting undefined items.
-    if (templateChildNodes.length > domChildNodes.length) {
-        const nodesToFill = templateChildNodes.length - domChildNodes.length;
+    if (cloneTemplateChildNodes.length > cloneDomChildNodes.length) {
+        const nodesToFill = cloneTemplateChildNodes.length - cloneDomChildNodes.length;
         for (let i = 0; i < nodesToFill; i++) {
-            domChildNodes.splice(domChildNodes.length - offset, 0, undefined);
+            cloneDomChildNodes.splice(cloneDomChildNodes.length - offset, 0, undefined);
         }
     }
 
-    if (domChildNodes.length > templateChildNodes.length) {
-        const nodesToFill = domChildNodes.length - templateChildNodes.length;
+    if (cloneDomChildNodes.length > cloneTemplateChildNodes.length) {
+        const nodesToFill = cloneDomChildNodes.length - cloneTemplateChildNodes.length;
         for (let i = 0; i < nodesToFill; i++) {
-            templateChildNodes.splice(templateChildNodes.length - offset, 0, undefined);
+            cloneTemplateChildNodes.splice(cloneTemplateChildNodes.length - offset, 0, undefined);
         }
     }
 
-    const length = domChildNodes.length;
+    const length = cloneDomChildNodes.length;
     // Diff each node in the child node lists
     for (let index = 0; index < length; index++) {
-        let domChildNode = domChildNodes[index];
-        let templateChildNode = templateChildNodes[index];
+        let domChildNode = cloneDomChildNodes[index];
+        let templateChildNode = cloneTemplateChildNodes[index];
 
         // If the DOM node doesn't exist, append/copy the template node
         if (!domChildNode) {
@@ -112,7 +116,8 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
         // Everything else is somehow different and can be replaced
         parentNode.replaceChild(templateChildNode, domChildNode);
     }
-    return templateChildNodes;
+    // TODO agree on what is to be returned.  Maybe it makes sense to update the reference after processing
+    return cloneTemplateChildNodes;
 };
 
 /**
