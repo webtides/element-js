@@ -82,7 +82,7 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
         let templateChildNode = cloneTemplateChildNodes[index];
 
         // If the DOM node doesn't exist, append/copy the template node
-        if (!domChildNode) {
+        if (domChildNode === undefined) {
             if (templateChildNode instanceof TemplatePart) {
                 anchorNode.before(...templateChildNode.childNodes);
             } else if (Array.isArray(templateChildNode)) {
@@ -98,7 +98,7 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
         }
 
         // If the template node doesn't exist, remove the node in the DOM
-        if (!templateChildNode) {
+        if (templateChildNode === undefined) {
             parentNode.removeChild(removeChildNodes(domChildNode));
             continue;
         }
