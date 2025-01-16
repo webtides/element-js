@@ -8,24 +8,12 @@ import { TemplatePart } from './TemplatePart.js';
  * @return {ChildNode}
  */
 const removeChildNodes = (node) => {
-    if (!Array.isArray(node) && !(node instanceof TemplatePart) && !node.hasChildNodes()) {
-        return node;
+    if (Array.isArray(node) || node instanceof TemplatePart || node.hasChildNodes?.()) {
+        for (const childNode of Array.isArray(node) ? node : [...node.childNodes]) {
+            childNode.remove();
+        }
     }
-    const range = globalThis.document?.createRange();
-    const firstChild = Array.isArray(node)
-        ? node[0]
-        : node instanceof TemplatePart
-          ? node.childNodes[0]
-          : node.firstChild;
-    const lastChild = Array.isArray(node)
-        ? node[node.length - 1]
-        : node instanceof TemplatePart
-          ? node.childNodes[node.childNodes.length - 1]
-          : node.lastChild;
-    range.setStartAfter(firstChild);
-    range.setEndAfter(lastChild);
-    range.deleteContents();
-    return firstChild;
+    return node;
 };
 
 /**
@@ -55,31 +43,31 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
     const offset = domChildNodes.includes(anchorNode) ? 1 : 0;
 
     // release first level references to prevent cache mutation
-    const cloneDomChildNodes = [...domChildNodes];
-    const cloneTemplateChildNodes = [...templateChildNodes];
+    const clonedDomChildNodes = [...domChildNodes];
+    const clonedTemplateChildNodes = [...templateChildNodes];
 
     // We always want to have the two arrays (domChildNodes and cloneTemplateChildNodes) to have the same length.
     // We also don't ever want to replace/diff the last node of the domChildNodes as it will always be the
     // closing comment marker (/template-part) aka the anchorNode. So we push it to the end by inserting undefined items.
-    if (cloneTemplateChildNodes.length > cloneDomChildNodes.length) {
-        const nodesToFill = cloneTemplateChildNodes.length - cloneDomChildNodes.length;
+    if (clonedTemplateChildNodes.length > clonedDomChildNodes.length) {
+        const nodesToFill = clonedTemplateChildNodes.length - clonedDomChildNodes.length;
         for (let i = 0; i < nodesToFill; i++) {
-            cloneDomChildNodes.splice(cloneDomChildNodes.length - offset, 0, undefined);
+            clonedDomChildNodes.splice(clonedDomChildNodes.length - offset, 0, undefined);
         }
     }
 
-    if (cloneDomChildNodes.length > cloneTemplateChildNodes.length) {
-        const nodesToFill = cloneDomChildNodes.length - cloneTemplateChildNodes.length;
+    if (clonedDomChildNodes.length > clonedTemplateChildNodes.length) {
+        const nodesToFill = clonedDomChildNodes.length - clonedTemplateChildNodes.length;
         for (let i = 0; i < nodesToFill; i++) {
-            cloneTemplateChildNodes.splice(cloneTemplateChildNodes.length - offset, 0, undefined);
+            clonedTemplateChildNodes.splice(clonedTemplateChildNodes.length - offset, 0, undefined);
         }
     }
 
-    const length = cloneDomChildNodes.length;
+    const length = clonedDomChildNodes.length;
     // Diff each node in the child node lists
     for (let index = 0; index < length; index++) {
-        let domChildNode = cloneDomChildNodes[index];
-        let templateChildNode = cloneTemplateChildNodes[index];
+        let domChildNode = clonedDomChildNodes[index];
+        let templateChildNode = clonedTemplateChildNodes[index];
 
         // If the DOM node doesn't exist, append/copy the template node
         if (domChildNode === undefined) {
@@ -99,16 +87,19 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
 
         // If the template node doesn't exist, remove the node in the DOM
         if (templateChildNode === undefined) {
-            parentNode.removeChild(removeChildNodes(domChildNode));
+            const nodeToBeRemoved = removeChildNodes(domChildNode);
+            if (nodeToBeRemoved !== undefined && 'ELEMENT_NODE' in nodeToBeRemoved) {
+                parentNode.removeChild(nodeToBeRemoved);
+            } else {
+                console.log('This should not happen... what do we do about this node?!', nodeToBeRemoved);
+            }
             continue;
         }
 
         // If DOM node is equal to the template node, don't do anything
         if (
             domChildNode === templateChildNode ||
-            (domChildNode.nodeType === COMMENT_NODE &&
-                templateChildNode.nodeType === COMMENT_NODE &&
-                domChildNode.isEqualNode(templateChildNode))
+            (domChildNode.nodeType && templateChildNode.nodeType && domChildNode.isEqualNode(templateChildNode))
         ) {
             continue;
         }
@@ -117,7 +108,7 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
         parentNode.replaceChild(templateChildNode, domChildNode);
     }
     // TODO agree on what is to be returned.  Maybe it makes sense to update the reference after processing
-    return cloneTemplateChildNodes;
+    return templateChildNodes;
 };
 
 /**
