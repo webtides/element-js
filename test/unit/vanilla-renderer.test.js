@@ -1,5 +1,6 @@
-import { assert, defineCE, fixture } from '@open-wc/testing';
+import { assert, defineCE, fixture, nextFrame, waitUntil } from '@open-wc/testing';
 import { TemplateElement, html } from '../../src/TemplateElement.js';
+import { stripCommentMarkers } from '../util/testing-helpers.js';
 
 const lightTag = defineCE(
     class extends TemplateElement {
@@ -47,16 +48,18 @@ class NestedShadowTag extends TemplateElement {
     }
 
     template() {
-        return html`<slot></slot>`;
+        return html` <slot></slot>`;
     }
 }
+
 customElements.define('nested-shadow-tag', NestedShadowTag);
 
 class NestedShadowDefaultTag extends NestedShadowTag {
     template() {
-        return html`<slot>DEFAULT</slot>`;
+        return html` <slot>DEFAULT</slot>`;
     }
 }
+
 customElements.define('nested-shadow-default-tag', NestedShadowDefaultTag);
 
 class SlottingParentTag extends TemplateElement {
@@ -67,28 +70,38 @@ class SlottingParentTag extends TemplateElement {
     }
 
     template() {
-        return html` <nested-shadow-tag><div>${this.text}</div></nested-shadow-tag> `;
+        return html`
+            <nested-shadow-tag>
+                <div>${this.text}</div>
+            </nested-shadow-tag>
+        `;
     }
 }
+
 customElements.define('slotting-parent-tag', SlottingParentTag);
+
 class SlottingParentDefaultTag extends TemplateElement {
     template() {
-        return html`<nested-shadow-default-tag></nested-shadow-default-tag> `;
+        return html` <nested-shadow-default-tag></nested-shadow-default-tag> `;
     }
 }
+
 customElements.define('slotting-parent-default-tag', SlottingParentDefaultTag);
+
 class SlottingParentNotDefaultTag extends TemplateElement {
     template() {
-        return html`<nested-shadow-default-tag>NOT_DEFAULT</nested-shadow-default-tag> `;
+        return html` <nested-shadow-default-tag>NOT_DEFAULT</nested-shadow-default-tag> `;
     }
 }
+
 customElements.define('slotting-parent-not-default-tag', SlottingParentNotDefaultTag);
 
 class NestedLightTag extends TemplateElement {
     template() {
-        return html`<div>Foo</div>`;
+        return html` <div>Foo</div>`;
     }
 }
+
 customElements.define('nested-light-tag', NestedLightTag);
 
 class NestingParentTag extends TemplateElement {
@@ -99,10 +112,52 @@ class NestingParentTag extends TemplateElement {
     }
 
     template() {
-        return html`<nested-light-tag><div>${this.text}</div></nested-light-tag>`;
+        return html` <nested-light-tag>
+            <div>${this.text}</div>
+        </nested-light-tag>`;
     }
 }
+
 customElements.define('nesting-parent-tag', NestingParentTag);
+
+class ArrayRenderingTag extends TemplateElement {
+    properties() {
+        return {
+            list: [1],
+        };
+    }
+
+    template() {
+        return html` <div>
+            <ul ref="list" data-length="${this.list.length}">
+                ${this.list.map((index) => html` <li>${index}</li>`)}
+            </ul>
+        </div>`;
+    }
+}
+
+customElements.define('array-rendering-tag', ArrayRenderingTag);
+
+class ConditionalArrayRenderingTag extends TemplateElement {
+    properties() {
+        return {
+            list: [1],
+            renderArray: true,
+        };
+    }
+
+    template() {
+        return html`<div>
+            ${this.renderArray
+                ? html`<ul ref="list" data-length="${this.list.length}">
+                      ${this.list.map((index) => html` <li>${index}</li>`)}
+                  </ul>`
+                : html`<strong>no list</strong>`}
+        </div>`;
+    }
+}
+
+customElements.define('conditional-array-rendering-tag', ConditionalArrayRenderingTag);
 
 describe(`template rendering`, () => {
     it('renders template in light dom by default', async () => {
@@ -195,5 +250,45 @@ describe(`vanilla-renderer`, () => {
         const nested = parentElement.querySelector('nested-shadow-default-tag');
         await nested.requestUpdate();
         assert.equal(defaultElement.offsetWidth, nested.offsetWidth);
+    });
+
+    it.only('renders changes to arrays properly', async () => {
+        const arrayElement = await fixture(`<array-rendering-tag></array-rendering-tag>`);
+        await nextFrame();
+        assert.equal(
+            stripCommentMarkers(arrayElement.innerHTML),
+            '<div><ul ref="list" data-length="1"><li>1</li></ul></div>',
+        );
+
+        arrayElement.list = [1, 2];
+        await nextFrame();
+
+        assert.equal(
+            stripCommentMarkers(arrayElement.innerHTML),
+            '<div><ul ref="list" data-length="2"><li>1</li><li>2</li></ul></div>',
+        );
+        arrayElement.list = [1, 2, 3];
+        await nextFrame();
+        assert.equal(
+            stripCommentMarkers(arrayElement.innerHTML),
+            '<div><ul ref="list" data-length="3"><li>1</li><li>2</li><li>3</li></ul></div>',
+        );
+
+        arrayElement.list = [];
+        await nextFrame();
+        assert.equal(stripCommentMarkers(arrayElement.innerHTML), '<div><ul ref="list" data-length="0"></ul></div>');
+    });
+
+    it.only('renders arrays and other content conditionally', async () => {
+        const arrayElement = await fixture(`<conditional-array-rendering-tag></conditional-array-rendering-tag>`);
+        await nextFrame();
+        assert.equal(
+            stripCommentMarkers(arrayElement.innerHTML),
+            '<div><ul ref="list" data-length="1"><li>1</li></ul></div>',
+        );
+        arrayElement.renderArray = false;
+        await nextFrame();
+
+        assert.equal(stripCommentMarkers(arrayElement.innerHTML), '<div><strong>no list</strong></div>');
     });
 });
