@@ -28,10 +28,15 @@ class ExampleTestElement extends TemplateElement {
         // 	</div>
         // `;
         // return html`<div>${html`<strong>${this.text}</strong>`}</div>`;
+        // return html`
+        // 	<ul>
+        // 		${list.map((item) => html`<li>${item}</li>`)}
+        // 	</ul>
+        // `;
         return html`
-        	<ul>
-        		${list.map((item) => html`<li>${item}</li>`)}
-        	</ul>
+        	<div>
+        		${list.map((item) => item)}
+        	</div>
         `;
         // prettier-ignore
         // return html` <div foo="${'bar'}" bar='${'baz'}' baz=${'blup'} class="link active disabled"></div> `;

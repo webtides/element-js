@@ -464,6 +464,32 @@ describe(`template bindings for rendering TemplateResults client side and server
         assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
     });
 
+    it('can rerender arrays of primitive values with more or less items', async () => {
+        const el = document.createElement('div');
+        let templateResult = html`<div>${[1, 2].map((item) => item)}</div>`;
+        render(templateResult, el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div>12</div>');
+        assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
+
+        templateResult = html`<div>${[1, 2, 3].map((item) => item)}</div>`;
+        render(templateResult, el);
+        assert.equal(
+            stripCommentMarkers(el.innerHTML),
+            '<div>123</div>',
+            'Cannot render array with more primitive value items than before',
+        );
+        assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
+
+        templateResult = html`<div>${[1, 2].map((item) => item)}</div>`;
+        render(templateResult, el);
+        assert.equal(
+            stripCommentMarkers(el.innerHTML),
+            '<div>12</div>',
+            'Cannot render array with less primitive value items than before',
+        );
+        assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
+    });
+
     it('can rerender arrays of TemplateResults with more or less items', async () => {
         const el = document.createElement('div');
         let templateResult = html`<ul>
