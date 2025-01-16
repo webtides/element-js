@@ -12,6 +12,8 @@ class ExampleTestElement extends TemplateElement {
             foo: '',
             bar: '',
             text: '',
+            list: [1],
+            renderArray: true,
         };
     }
 
@@ -33,11 +35,18 @@ class ExampleTestElement extends TemplateElement {
         // 		${list.map((item) => html`<li>${item}</li>`)}
         // 	</ul>
         // `;
-        return html`
-        	<div>
-        		${list.map((item) => item)}
-        	</div>
-        `;
+        // return html`
+        // 	<div>
+        // 		${list.map((item) => item)}
+        // 	</div>
+        // `;
+        return html`<div>
+            ${this.renderArray
+            ? html`<ul ref="list" data-length="${this.list.length}">
+                      ${this.list.map((index) => html` <li>${index}</li>`)}
+                  </ul>`
+            : html`<strong>no list</strong>`}
+        </div>`;
         // prettier-ignore
         // return html` <div foo="${'bar'}" bar='${'baz'}' baz=${'blup'} class="link active disabled"></div> `;
         // return html`${this.text}`;
