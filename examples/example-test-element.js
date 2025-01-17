@@ -40,6 +40,11 @@ class ExampleTestElement extends TemplateElement {
         // 		${list.map((item) => item)}
         // 	</div>
         // `;
+
+        // return html`<ul ref="list">
+        //     ${this.list.map((index) => html` <li>${index}</li>`)}
+        // </ul>`;
+
         return html`<div>
             ${this.renderArray
             ? html`<ul ref="list" data-length="${this.list.length}">
