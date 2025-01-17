@@ -4,19 +4,6 @@ import { TemplateResult } from './TemplateResult.js';
 import { TemplatePart } from './TemplatePart.js';
 
 /**
- * @param {Node | TemplatePart | any[]} node
- * @return {ChildNode}
- */
-const removeChildNodes = (node) => {
-    if (Array.isArray(node) || node instanceof TemplatePart || node.hasChildNodes?.()) {
-        for (const childNode of Array.isArray(node) ? node : [...node.childNodes]) {
-            childNode.remove();
-        }
-    }
-    return node;
-};
-
-/**
  * @param {Element} commentNode
  */
 const removeNodesBetweenComments = (commentNode) => {
@@ -85,13 +72,19 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
             continue;
         }
 
-        // If the template node doesn't exist, remove the node in the DOM
         if (templateChildNode === undefined) {
-            const nodeToBeRemoved = removeChildNodes(domChildNode);
-            if (nodeToBeRemoved !== undefined && 'ELEMENT_NODE' in nodeToBeRemoved) {
-                parentNode.removeChild(nodeToBeRemoved);
+            // If the template node doesn't exist, remove the node in the DOM
+            if ('ELEMENT_NODE' in domChildNode) {
+                // remove dom node
+                parentNode.removeChild(domChildNode);
+            } else if (Array.isArray(domChildNode) || domChildNode instanceof TemplatePart) {
+                // remove childNodes
+                const childNodes = Array.isArray(domChildNode) ? domChildNode : [...domChildNode.childNodes];
+                for (const childNode of childNodes) {
+                    childNode.remove();
+                }
             } else {
-                console.log('This should not happen... what do we do about this node?!', nodeToBeRemoved);
+                console.log('This should not happen... what do we do about this node?!', domChildNode);
             }
             continue;
         }
@@ -105,7 +98,17 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
         }
 
         // Everything else is somehow different and can be replaced
-        parentNode.replaceChild(templateChildNode, domChildNode);
+        if (parentNode.contains(domChildNode)) {
+            parentNode.replaceChild(templateChildNode, domChildNode);
+        } else {
+            console.warn(
+                'This should not happen',
+                parentNode,
+                parentNode.contains(domChildNode),
+                templateChildNode,
+                domChildNode,
+            );
+        }
     }
     // TODO agree on what is to be returned.  Maybe it makes sense to update the reference after processing
     return templateChildNodes;
@@ -118,7 +121,7 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
  */
 export const processNodePart = (comment, initialValue) => {
     let nodes = initialValue instanceof TemplatePart ? [...initialValue.childNodes] : [];
-    let oldValue = initialValue instanceof TemplatePart ? [...initialValue.childNodes] : initialValue;
+    let oldValue = initialValue instanceof TemplatePart ? initialValue.strings : initialValue;
     // this is for string values to be inserted into the DOM. A cached TextNode will be used so that we don't have to constantly create new DOM nodes.
     let cachedTextNode = undefined;
 
@@ -165,17 +168,16 @@ export const processNodePart = (comment, initialValue) => {
                     oldValue = newValue;
                     break;
                 }
-                // if the new value is a node or a fragment, and it's different from the live node, then it's diffed.
-                if (oldValue !== newValue) {
-                    if ('ELEMENT_NODE' in newValue) {
-                        oldValue = newValue;
-                        nodes = diffChildNodes(comment.parentNode, nodes, [newValue], comment);
-                    } else if (newValue instanceof TemplatePart) {
-                        oldValue = [...newValue.childNodes];
-                        nodes = diffChildNodes(comment.parentNode, nodes, [...newValue.childNodes], comment);
-                    } else {
-                        console.warn('Could not process value', newValue);
-                    }
+
+                if (newValue instanceof TemplatePart && oldValue !== newValue.strings) {
+                    // if the new value is a node or a fragment, and it's different from the live node, then it's diffed.
+                    // static strings have changed in tpl part
+                    oldValue = newValue.strings;
+                    nodes = diffChildNodes(comment.parentNode, nodes, [...newValue.childNodes], comment);
+                } else if (oldValue !== newValue && 'ELEMENT_NODE' in newValue) {
+                    // DOM Node changed, needs diffing
+                    oldValue = newValue;
+                    nodes = diffChildNodes(comment.parentNode, nodes, [newValue], comment);
                 }
                 break;
             case 'function':
@@ -273,8 +275,10 @@ export class ChildNodePart extends Part {
         if (value instanceof TemplateResult || Array.isArray(value)) {
             this.updateParts(value);
         }
-
-        this.processor?.(parsedValue);
+        if (Array.isArray(value)) {
+            // processor is only needed for arrays as they are no self updating / processing parts
+            this.processor?.(parsedValue);
+        }
     }
 
     /**
@@ -323,6 +327,7 @@ export class ChildNodePart extends Part {
             let value = values[index];
 
             if (value instanceof TemplateResult) {
+                // TODO this is probably wrong. Should only be taken from parts cache if it has the same type (eg. template vs string, mixed types arrays)
                 let templatePart = this.parts[index];
                 if (!templatePart) {
                     const templatePartCommentNodes = this.childNodes?.filter(
