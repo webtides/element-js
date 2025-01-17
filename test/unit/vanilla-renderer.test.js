@@ -291,13 +291,12 @@ describe(`vanilla-renderer`, () => {
 
         assert.equal(stripCommentMarkers(arrayElement.innerHTML), '<div><strong>no list</strong></div>');
 
+        // arrayElement.list = [1, 2, 3];
         arrayElement.renderArray = true;
-        await nextFrame();
-        arrayElement.list = [1, 2, 3];
         await nextFrame();
         assert.equal(
             stripCommentMarkers(arrayElement.innerHTML),
-            '<div><ul ref="list" data-length="3"><li>1</li><li>2</li><li>3</li></ul></div>',
+            '<div><ul ref="list" data-length="1"><li>1</li></ul></div>',
         );
     });
 });

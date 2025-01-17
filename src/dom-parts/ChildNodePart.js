@@ -110,7 +110,6 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
             );
         }
     }
-    // TODO agree on what is to be returned.  Maybe it makes sense to update the reference after processing
     return templateChildNodes;
 };
 
