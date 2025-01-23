@@ -89,11 +89,15 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
             continue;
         }
 
-        // If DOM node is equal to the template node, don't do anything
+        // If DOM node is equal to the template node, don't do anything in the DOM
         if (
             domChildNode === templateChildNode ||
             (domChildNode.nodeType && templateChildNode.nodeType && domChildNode.isEqualNode(templateChildNode))
         ) {
+            // but we need to assign the current DOM node into the templateChildNodes
+            // as they will be returned here at the end and become the domNodes for the next diffing.
+            const childIndex = templateChildNodes.indexOf(templateChildNode);
+            templateChildNodes[childIndex] = domChildNode;
             continue;
         }
 
@@ -274,8 +278,8 @@ export class ChildNodePart extends Part {
         if (value instanceof TemplateResult || Array.isArray(value)) {
             this.updateParts(value);
         }
-        if (Array.isArray(value)) {
-            // processor is only needed for arrays as they are no self updating / processing parts
+
+        if (!(value instanceof TemplateResult)) {
             this.processor?.(parsedValue);
         }
     }
