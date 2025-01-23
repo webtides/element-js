@@ -279,6 +279,29 @@ describe(`vanilla-renderer`, () => {
         assert.equal(stripCommentMarkers(arrayElement.innerHTML), '<div><ul ref="list" data-length="0"></ul></div>');
     });
 
+    it.only('renders in-place changes to arrays properly', async () => {
+        const arrayElement = await fixture(`<array-rendering-tag></array-rendering-tag>`);
+        await nextFrame();
+        assert.equal(
+            stripCommentMarkers(arrayElement.innerHTML),
+            '<div><ul ref="list" data-length="1"><li>1</li></ul></div>',
+        );
+
+        arrayElement.list = [1, 2, 3];
+        await nextFrame();
+        assert.equal(
+            stripCommentMarkers(arrayElement.innerHTML),
+            '<div><ul ref="list" data-length="3"><li>1</li><li>2</li><li>3</li></ul></div>',
+        );
+
+        arrayElement.list = [1, 69, 3];
+        await nextFrame();
+        assert.equal(
+            stripCommentMarkers(arrayElement.innerHTML),
+            '<div><ul ref="list" data-length="3"><li>1</li><li>69</li><li>3</li></ul></div>',
+        );
+    });
+
     it.only('renders arrays and other content conditionally', async () => {
         const arrayElement = await fixture(`<conditional-array-rendering-tag></conditional-array-rendering-tag>`);
         await nextFrame();
