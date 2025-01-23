@@ -16,6 +16,13 @@ to [Semantic Versioning](http://semver.org/).
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.1.6] - 2025-01-23
+
+### FIXED
+
+- Fixed diffing arrays of template results and re-rendering between array parts and other parts ([#145](https://github.com/webtides/element-js/pull/145))
+- Fixed re-rendering between static strings and dynamic html ([#141](https://github.com/webtides/element-js/pull/141))
+
 ## [1.1.5] - 2024-11-14
 
 ### FIXED
