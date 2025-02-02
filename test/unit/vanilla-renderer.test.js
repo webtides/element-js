@@ -143,10 +143,18 @@ class ConditionalArrayRenderingTag extends TemplateElement {
         return {
             list: [1],
             renderArray: true,
+            flatList: false,
         };
     }
 
     template() {
+        if (this.flatList) {
+            return html`<div>
+                ${this.renderArray
+                    ? html`${this.list.map((index) => html` <div>${index}</div>`)}`
+                    : html`<strong>no list</strong>`}
+            </div>`;
+        }
         return html`<div>
             ${this.renderArray
                 ? html`<ul ref="list" data-length="${this.list.length}">
@@ -321,5 +329,21 @@ describe(`vanilla-renderer`, () => {
             stripCommentMarkers(arrayElement.innerHTML),
             '<div><ul ref="list" data-length="1"><li>1</li></ul></div>',
         );
+    });
+    it.only('renders a flat list of elements vs other content conditionally', async () => {
+        const arrayElement = await fixture(
+            `<conditional-array-rendering-tag flat-list="true"></conditional-array-rendering-tag>`,
+        );
+        await nextFrame();
+        assert.equal(stripCommentMarkers(arrayElement.innerHTML), '<div><div>1</div></div>');
+        arrayElement.renderArray = false;
+        await nextFrame();
+
+        assert.equal(stripCommentMarkers(arrayElement.innerHTML), '<div><strong>no list</strong></div>');
+
+        arrayElement.list = [1, 2, 3];
+        arrayElement.renderArray = true;
+        await nextFrame();
+        assert.equal(stripCommentMarkers(arrayElement.innerHTML), '<div><div>1</div><div>2</div><div>3</div></div>');
     });
 });
