@@ -47,9 +47,7 @@ class ExampleTestElement extends TemplateElement {
 
         return html`<div>
             ${this.renderArray
-            ? html`<ul ref="list" data-length="${this.list.length}">
-                      ${this.list.map((index) => html` <li>${index}</li>`)}
-                  </ul>`
+            ? html`${this.list.map((index) => html`<div>${index}</div>`)}`
             : html`<strong>no list</strong>`}
         </div>`;
         // prettier-ignore
