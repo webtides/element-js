@@ -166,7 +166,12 @@ export const processNodePart = (comment, initialValue) => {
                         removeNodesBetweenComments(comment);
                         nodes = [];
                     } else {
-                        nodes = diffChildNodes(comment.parentNode, oldValue || [], newValue, comment);
+                        // TODO: this will always diff the arrays although they might not have changed...
+                        // we have to unwrap any complex objects inside the array so that we can diff arrays of childNodes
+                        const newNodes = newValue.flatMap((value) => {
+                            return value instanceof TemplatePart ? value.childNodes : value;
+                        });
+                        nodes = diffChildNodes(comment.parentNode, nodes, newNodes, comment);
                     }
                     oldValue = newValue;
                     break;
@@ -279,9 +284,7 @@ export class ChildNodePart extends Part {
             this.updateParts(value);
         }
 
-        if (!(value instanceof TemplateResult)) {
-            this.processor?.(parsedValue);
-        }
+        this.processor?.(parsedValue);
     }
 
     /**
