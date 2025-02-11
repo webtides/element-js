@@ -59,8 +59,10 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
         // If the DOM node doesn't exist, append/copy the template node
         if (domChildNode === undefined) {
             if (templateChildNode instanceof TemplatePart) {
+                // TODO: this should hopefully not happen anymore because we unwrap arrays in processNodePart ?!
                 anchorNode.before(...templateChildNode.childNodes);
             } else if (Array.isArray(templateChildNode)) {
+                // TODO: this should hopefully not happen anymore because we unwrap arrays in processNodePart ?!
                 anchorNode.before(...templateChildNode);
             } else if (typeof templateChildNode === 'object' && 'ELEMENT_NODE' in templateChildNode) {
                 parentNode.insertBefore(templateChildNode, anchorNode);
@@ -167,11 +169,19 @@ export const processNodePart = (comment, initialValue) => {
                         nodes = [];
                     } else {
                         // TODO: this will always diff the arrays although they might not have changed...
-                        // we have to unwrap any complex objects inside the array so that we can diff arrays of childNodes
-                        const newNodes = newValue.flatMap((value) => {
-                            return value instanceof TemplatePart ? value.childNodes : value;
-                        });
-                        nodes = diffChildNodes(comment.parentNode, nodes, newNodes, comment);
+                        const unwrapArray = (nodes) => {
+                            // we have to unwrap any complex objects inside the array so that we can diff arrays of childNodes
+                            return nodes.flatMap((value) => {
+                                if (value instanceof TemplatePart) {
+                                    return value.childNodes;
+                                }
+                                if (Array.isArray(value)) {
+                                    return unwrapArray(value);
+                                }
+                                return value;
+                            });
+                        };
+                        nodes = diffChildNodes(comment.parentNode, nodes, unwrapArray(newValue), comment);
                     }
                     oldValue = newValue;
                     break;
