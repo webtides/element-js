@@ -191,7 +191,7 @@ export const processNodePart = (comment, initialValue) => {
                     // if the new value is a node or a fragment, and it's different from the live node, then it's diffed.
                     // static strings have changed in tpl part
                     oldValue = newValue.strings;
-                    nodes = diffChildNodes(comment.parentNode, nodes, [...newValue.childNodes], comment);
+                    nodes = diffChildNodes(comment.parentNode, nodes, newValue.childNodes, comment);
                 } else if (oldValue !== newValue && 'ELEMENT_NODE' in newValue) {
                     // DOM Node changed, needs diffing
                     oldValue = newValue;
