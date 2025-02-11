@@ -12,7 +12,7 @@ class ExampleTestElement extends TemplateElement {
             foo: '',
             bar: '',
             text: '',
-            list: [1],
+            list: [1, 2],
             renderArray: true,
         };
     }
@@ -45,10 +45,32 @@ class ExampleTestElement extends TemplateElement {
         //     ${this.list.map((index) => html` <li>${index}</li>`)}
         // </ul>`;
 
+        // return html`<div>
+        //     ${this.renderArray
+        //     ? html`<ul ref="list" data-length="${this.list.length}">
+        //               ${this.list.map((index) => html` <li>${index}</li>`)}
+        //           </ul>`
+        //     : html`<strong>no list</strong>`}
+        // </div>`;
+
+        const templateFn = () => {
+            if (this.renderArray) {
+                return html`<ul ref="list" data-length="${this.list.length}">
+                    ${this.list.map((index) => html` <li>${index}</li>`)}
+                </ul>`;
+            }
+            return html`<strong>no list</strong>`;
+        };
+
+        const templateFn2 = () => {
+            if (this.renderArray) {
+                return this.list.map((index) => html` <li>${index}</li>`);
+            }
+            return html`<strong>no list</strong>`;
+        };
+
         return html`<div>
-            ${this.renderArray
-            ? html`${this.list.map((index) => html`<div>${index}</div>`)}`
-            : html`<strong>no list</strong>`}
+            ${templateFn2()}
         </div>`;
         // prettier-ignore
         // return html` <div foo="${'bar'}" bar='${'baz'}' baz=${'blup'} class="link active disabled"></div> `;
