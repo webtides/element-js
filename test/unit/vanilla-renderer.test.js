@@ -151,7 +151,7 @@ class ConditionalArrayRenderingTag extends TemplateElement {
         if (this.flatList) {
             return html`<div>
                 ${this.renderArray
-                    ? html`${this.list.map((index) => html` <div>${index}</div>`)}`
+                    ? this.list.map((index) => html` <div>${index}</div>`)
                     : html`<strong>no list</strong>`}
             </div>`;
         }
