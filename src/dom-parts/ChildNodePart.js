@@ -201,12 +201,6 @@ export const processNodePart = (comment, initialValue) => {
  * For updating a text node, a sequence of child nodes or an array of `any` values
  */
 export class ChildNodePart extends Part {
-    /** @type {Node | undefined} */
-    startNode = undefined;
-
-    /** @type {Node | undefined} */
-    endNode = undefined;
-
     // TODO: this is only for array values
     /** @type {Part[]} */
     parts = [];
@@ -230,6 +224,7 @@ export class ChildNodePart extends Part {
 
         super();
 
+        let endNode = undefined;
         let serverSideRendered = false;
         if (startNode) {
             startNode.__part = this; // add Part to comment node for debugging in the browser
@@ -242,7 +237,7 @@ export class ChildNodePart extends Part {
                 childNode = childNode.nextSibling;
             }
 
-            const endNode = childNode;
+            endNode = childNode;
             childNodes.push(endNode);
 
             // if not SSRed, childNodes will only ever have two comment nodes, the start and the end marker
@@ -251,15 +246,13 @@ export class ChildNodePart extends Part {
             }
 
             this.childNodes = childNodes;
-            this.startNode = startNode;
-            this.endNode = endNode;
         }
 
         // value can become array | TemplatePart | any
         const initialValue = this.parseValue(value);
 
-        if (this.endNode) {
-            this.processor = processNodePart(this.endNode, serverSideRendered ? initialValue : undefined);
+        if (endNode) {
+            this.processor = processNodePart(endNode, serverSideRendered ? initialValue : undefined);
         }
 
         if (!serverSideRendered) {
