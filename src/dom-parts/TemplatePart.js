@@ -61,6 +61,7 @@ export class TemplatePart extends Part {
         this.parseValue(value);
 
         if (!serverSideRendered) {
+            // TODO: this is causing double diffing because of the this.parseValue() before, ChildNode parts will be constructed + processed
             this.updateParts(value.values);
             // We need a childNodes list that is NOT live so that we don't loose elements when they get removed from the dom and we can (re)add them back in later.
             this.childNodes = [...this.childNodes];
