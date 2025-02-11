@@ -357,6 +357,7 @@ export class ChildNodePart extends Part {
                 }
                 parsedValues[index] = childNodePart;
             } else {
+                // TODO: what if the value from the function is a TemplatePart or an array?! Should we do this first thing?!
                 parsedValues[index] = typeof value === 'function' ? value() : value;
             }
         }
