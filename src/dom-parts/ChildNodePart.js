@@ -280,6 +280,28 @@ export class ChildNodePart extends Part {
             this.updateParts(value);
         }
 
+        // If value is a TemplateResult and we previously called the templatePart update,
+        // it has already been written to the DOM by the processor.
+        // Maybe not the very first time?! But definitely on updates.
+        //
+        // If we then call the processor again in ChildNodePart, we reach the point where
+        // diffDomChildNodes ends up diffing the same content a second time,
+        // even though it is already in the DOM.
+        //
+        // Additionally, the cached "nodes" list in the nested TemplatePart processor
+        // has been updated, but here in the processor for ChildNodePart,
+        // the old/incorrect DOM is still in the cache...
+        //
+        // 0. Maybe we shouldn’t cache "nodes" like this, but always retrieve the
+        //    actual current DOM?!
+        // 1. Actually, shouldn't ChildNode NEVER?! write to the DOM if the value
+        //    is a TemplateResult?
+        // 2. Or only if there is a significant change in the static HTML
+        //    (e.g., the strings array is different)?!
+        // 3. Or should I not call the processor at all in that case,
+        //    but instead call TemplateResult renderInto()?
+        //    But what would the domNode be?!
+
         this.processor?.(parsedValue);
     }
 
