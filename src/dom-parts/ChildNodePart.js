@@ -58,13 +58,7 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
 
         // If the DOM node doesn't exist, append/copy the template node
         if (domChildNode === undefined) {
-            if (templateChildNode instanceof TemplatePart) {
-                // TODO: this should hopefully not happen anymore because we unwrap arrays in processNodePart ?!
-                anchorNode.before(...templateChildNode.childNodes);
-            } else if (Array.isArray(templateChildNode)) {
-                // TODO: this should hopefully not happen anymore because we unwrap arrays in processNodePart ?!
-                anchorNode.before(...templateChildNode);
-            } else if (typeof templateChildNode === 'object' && 'ELEMENT_NODE' in templateChildNode) {
+            if (typeof templateChildNode === 'object' && 'ELEMENT_NODE' in templateChildNode) {
                 parentNode.insertBefore(templateChildNode, anchorNode);
             } else {
                 // TODO: this might not be performant?! Can we maybe handle this in processDomNode?!
