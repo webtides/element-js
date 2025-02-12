@@ -80,7 +80,7 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
                     childNode.remove();
                 }
             } else {
-                console.log('This should not happen... what do we do about this node?!', domChildNode);
+                console.log('This should not happen... what do we do about this node?!', { domChildNode });
             }
             continue;
         }
@@ -101,13 +101,12 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
         if (parentNode.contains(domChildNode)) {
             parentNode.replaceChild(templateChildNode, domChildNode);
         } else {
-            console.warn(
-                'This should not happen',
+            console.warn('This should not happen', {
                 parentNode,
-                parentNode.contains(domChildNode),
+                'parentNode.contains(domChildNode)': parentNode.contains(domChildNode),
                 templateChildNode,
                 domChildNode,
-            );
+            });
         }
     }
     return templateChildNodes;
