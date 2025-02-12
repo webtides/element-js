@@ -310,7 +310,7 @@ describe(`vanilla-renderer`, () => {
         );
     });
 
-    it.only('renders arrays and other content conditionally', async () => {
+    it('renders arrays and other content conditionally', async () => {
         const arrayElement = await fixture(`<conditional-array-rendering-tag></conditional-array-rendering-tag>`);
         await nextFrame();
         assert.equal(
@@ -330,7 +330,8 @@ describe(`vanilla-renderer`, () => {
             '<div><ul ref="list" data-length="1"><li>1</li></ul></div>',
         );
     });
-    it.only('renders a flat list of elements vs other content conditionally', async () => {
+
+    it('renders a flat list of elements vs other content conditionally', async () => {
         const arrayElement = await fixture(
             `<conditional-array-rendering-tag flat-list="true"></conditional-array-rendering-tag>`,
         );
