@@ -58,11 +58,7 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
 
         // If the DOM node doesn't exist, append/copy the template node
         if (domChildNode === undefined) {
-            if (templateChildNode instanceof TemplatePart) {
-                anchorNode.before(...templateChildNode.childNodes);
-            } else if (Array.isArray(templateChildNode)) {
-                anchorNode.before(...templateChildNode);
-            } else if (typeof templateChildNode === 'object' && 'ELEMENT_NODE' in templateChildNode) {
+            if (typeof templateChildNode === 'object' && 'ELEMENT_NODE' in templateChildNode) {
                 parentNode.insertBefore(templateChildNode, anchorNode);
             } else {
                 // TODO: this might not be performant?! Can we maybe handle this in processDomNode?!
@@ -84,7 +80,7 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
                     childNode.remove();
                 }
             } else {
-                console.log('This should not happen... what do we do about this node?!', domChildNode);
+                console.log('This should not happen... what do we do about this node?!', { domChildNode });
             }
             continue;
         }
@@ -105,13 +101,12 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
         if (parentNode.contains(domChildNode)) {
             parentNode.replaceChild(templateChildNode, domChildNode);
         } else {
-            console.warn(
-                'This should not happen',
+            console.warn('This should not happen', {
                 parentNode,
-                parentNode.contains(domChildNode),
+                'parentNode.contains(domChildNode)': parentNode.contains(domChildNode),
                 templateChildNode,
                 domChildNode,
-            );
+            });
         }
     }
     return templateChildNodes;
@@ -166,7 +161,20 @@ export const processNodePart = (comment, initialValue) => {
                         removeNodesBetweenComments(comment);
                         nodes = [];
                     } else {
-                        nodes = diffChildNodes(comment.parentNode, oldValue || [], newValue, comment);
+                        // TODO: this will always diff the arrays although they might not have changed...
+                        const unwrapArray = (nodes) => {
+                            // we have to unwrap any complex objects inside the array so that we can diff arrays of childNodes
+                            return nodes.flatMap((value) => {
+                                if (value instanceof TemplatePart) {
+                                    return value.childNodes;
+                                }
+                                if (Array.isArray(value)) {
+                                    return unwrapArray(value);
+                                }
+                                return value;
+                            });
+                        };
+                        nodes = diffChildNodes(comment.parentNode, nodes, unwrapArray(newValue), comment);
                     }
                     oldValue = newValue;
                     break;
@@ -176,7 +184,7 @@ export const processNodePart = (comment, initialValue) => {
                     // if the new value is a node or a fragment, and it's different from the live node, then it's diffed.
                     // static strings have changed in tpl part
                     oldValue = newValue.strings;
-                    nodes = diffChildNodes(comment.parentNode, nodes, [...newValue.childNodes], comment);
+                    nodes = diffChildNodes(comment.parentNode, nodes, newValue.childNodes, comment);
                 } else if (oldValue !== newValue && 'ELEMENT_NODE' in newValue) {
                     // DOM Node changed, needs diffing
                     oldValue = newValue;
@@ -196,12 +204,6 @@ export const processNodePart = (comment, initialValue) => {
  * For updating a text node, a sequence of child nodes or an array of `any` values
  */
 export class ChildNodePart extends Part {
-    /** @type {Node | undefined} */
-    startNode = undefined;
-
-    /** @type {Node | undefined} */
-    endNode = undefined;
-
     // TODO: this is only for array values
     /** @type {Part[]} */
     parts = [];
@@ -225,6 +227,7 @@ export class ChildNodePart extends Part {
 
         super();
 
+        let endNode = undefined;
         let serverSideRendered = false;
         if (startNode) {
             startNode.__part = this; // add Part to comment node for debugging in the browser
@@ -237,7 +240,7 @@ export class ChildNodePart extends Part {
                 childNode = childNode.nextSibling;
             }
 
-            const endNode = childNode;
+            endNode = childNode;
             childNodes.push(endNode);
 
             // if not SSRed, childNodes will only ever have two comment nodes, the start and the end marker
@@ -246,15 +249,13 @@ export class ChildNodePart extends Part {
             }
 
             this.childNodes = childNodes;
-            this.startNode = startNode;
-            this.endNode = endNode;
         }
 
         // value can become array | TemplatePart | any
         const initialValue = this.parseValue(value);
 
-        if (this.endNode) {
-            this.processor = processNodePart(this.endNode, serverSideRendered ? initialValue : undefined);
+        if (endNode) {
+            this.processor = processNodePart(endNode, serverSideRendered ? initialValue : undefined);
         }
 
         if (!serverSideRendered) {
@@ -279,9 +280,7 @@ export class ChildNodePart extends Part {
             this.updateParts(value);
         }
 
-        if (!(value instanceof TemplateResult)) {
-            this.processor?.(parsedValue);
-        }
+        this.processor?.(parsedValue);
     }
 
     /**
@@ -354,6 +353,7 @@ export class ChildNodePart extends Part {
                 }
                 parsedValues[index] = childNodePart;
             } else {
+                // TODO: what if the value from the function is a TemplatePart or an array?! Should we do this first thing?!
                 parsedValues[index] = typeof value === 'function' ? value() : value;
             }
         }
