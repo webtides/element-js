@@ -77,10 +77,11 @@ export class TemplatePart extends Part {
      * @param {TemplateResult} value
      */
     update(value) {
-        this.parseValue(value);
+        const shouldUpdateDOM = this.parseValue(value);
+        if (shouldUpdateDOM) {
+            this.processor?.(this);
+        }
         this.updateParts(value.values);
-        this.childNodes = [...this.childNodes];
-        this.processor?.(this);
     }
 
     /**
@@ -94,6 +95,7 @@ export class TemplatePart extends Part {
 
     /**
      * @param {TemplateResult} templateResult
+     * @return {boolean} whether the part needs to be updated in the DOM
      */
     parseValue(templateResult) {
         if (this.strings !== templateResult.strings) {
@@ -133,8 +135,10 @@ export class TemplatePart extends Part {
                     throw `cannot map part: ${part}`;
                 });
             this.strings = templateResult.strings;
+            this.childNodes = [...this.childNodes];
+            return true;
         }
-        return this.childNodes;
+        return false;
     }
 
     /**
