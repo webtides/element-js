@@ -33,6 +33,7 @@ export class TemplatePart extends Part {
 
         super();
 
+        let endNode = undefined;
         let serverSideRendered = false;
         if (startNode) {
             startNode.__part = this; // add Part to comment node for debugging in the browser
@@ -45,7 +46,7 @@ export class TemplatePart extends Part {
                 childNode = childNode.nextSibling;
             }
 
-            const endNode = childNode;
+            endNode = childNode;
             childNodes.push(endNode);
 
             // if not SSRed, childNodes will only ever have two comment nodes, the start and the end marker
@@ -54,23 +55,19 @@ export class TemplatePart extends Part {
             }
 
             this.childNodes = childNodes;
-            this.startNode = startNode;
-            this.endNode = endNode;
         }
 
         this.parseValue(value);
 
         if (!serverSideRendered) {
+            // TODO: this is causing double diffing because of the this.parseValue() before, ChildNode parts will be constructed + processed
             this.updateParts(value.values);
-            // We need a childNodes list that is NOT live so that we don't loose elements when they get removed from the dom and we can (re)add them back in later.
-            this.childNodes = [...this.childNodes];
         }
 
-        this.startNode = this.childNodes[0];
-        this.endNode = this.childNodes[this.childNodes.length - 1];
+        endNode = this.childNodes[this.childNodes.length - 1];
 
-        if (this.endNode) {
-            this.processor = processNodePart(this.endNode, this);
+        if (endNode) {
+            this.processor = processNodePart(endNode, this);
         }
     }
 
@@ -78,10 +75,11 @@ export class TemplatePart extends Part {
      * @param {TemplateResult} value
      */
     update(value) {
-        this.parseValue(value);
+        const shouldUpdateDOM = this.parseValue(value);
+        if (shouldUpdateDOM) {
+            this.processor?.(this);
+        }
         this.updateParts(value.values);
-        this.childNodes = [...this.childNodes];
-        this.processor?.(this);
     }
 
     /**
@@ -95,6 +93,7 @@ export class TemplatePart extends Part {
 
     /**
      * @param {TemplateResult} templateResult
+     * @return {boolean} whether the part needs to be updated in the DOM
      */
     parseValue(templateResult) {
         if (this.strings !== templateResult.strings) {
@@ -134,8 +133,10 @@ export class TemplatePart extends Part {
                     throw `cannot map part: ${part}`;
                 });
             this.strings = templateResult.strings;
+            this.childNodes = [...this.childNodes];
+            return true;
         }
-        return this.childNodes;
+        return false;
     }
 
     /**
