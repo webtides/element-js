@@ -85,7 +85,7 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
                 parentNode.removeChild(domChildNode);
             } else if (Array.isArray(domChildNode) || domChildNode instanceof TemplatePart) {
                 // remove childNodes
-                const childNodes = Array.isArray(domChildNode) ? domChildNode : [...domChildNode.childNodes];
+                const childNodes = Array.isArray(domChildNode) ? domChildNode : domChildNode.childNodes;
                 for (const childNode of childNodes) {
                     childNode.remove();
                 }
@@ -128,7 +128,7 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
  * @return {(function(*): void)|*}
  */
 export const processNodePart = (comment, initialValue) => {
-    let nodes = initialValue instanceof TemplatePart ? [...initialValue.childNodes] : [];
+    let nodes = initialValue instanceof TemplatePart ? initialValue.childNodes : [];
     let oldValue = initialValue instanceof TemplatePart ? initialValue.strings : initialValue;
     // this is for string values to be inserted into the DOM. A cached TextNode will be used so that we don't have to constantly create new DOM nodes.
     let cachedTextNode = undefined;
@@ -273,8 +273,6 @@ export class ChildNodePart extends Part {
                 this.updateParts(value);
             }
 
-            // We need a childNodes list that is NOT live so that we don't lose elements when they get removed from the dom and we can (re)add them back in later.
-            this.childNodes = [...this.childNodes];
             this.processor?.(initialValue);
         }
     }
