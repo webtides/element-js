@@ -273,7 +273,9 @@ export class ChildNodePart extends Part {
                 this.updateParts(value);
             }
 
-            this.processor?.(initialValue);
+            if (!(value instanceof TemplateResult)) {
+                this.processor?.(initialValue);
+            }
         }
     }
 
