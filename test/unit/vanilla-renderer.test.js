@@ -149,11 +149,11 @@ class ConditionalArrayRenderingTag extends TemplateElement {
 
     template() {
         if (this.flatList) {
-            return html`<div>
+            return html`
                 ${this.renderArray
-                    ? this.list.map((index) => html` <div>${index}</div>`)
+                    ? this.list.map((index) => html`<div>${index}</div>`)
                     : html`<strong>no list</strong>`}
-            </div>`;
+            `;
         }
         return html`<div>
             ${this.renderArray
@@ -167,19 +167,27 @@ class ConditionalArrayRenderingTag extends TemplateElement {
 
 customElements.define('conditional-array-rendering-tag', ConditionalArrayRenderingTag);
 
+console.log('### VANILLA');
+
 describe(`template rendering`, () => {
+    console.log('### VANILLA DESC');
+    it('checks the vanilly atests', () => {
+        console.log('### VANILLA TESTS');
+    });
+
     it('renders template in light dom by default', async () => {
+        console.log('### VANILLA FIRST');
         const el = await fixture(`<${lightTag}></${lightTag}>`);
         assert.isNull(el.shadowRoot);
         assert.lightDom.equal(el, '<div>light content</div>');
     });
-
+    //
     it('can render template in shadow dom by setting shadowRender: true via constructor options', async () => {
         const el = await fixture(`<${shadowTag}></${shadowTag}>`);
         assert.isNotNull(el.shadowRoot);
         assert.shadowDom.equal(el, '<div>shadow content</div>');
     });
-
+    //
     it('can defer rendering template by setting deferUpdate: true via constructor options', async () => {
         const el = await fixture(`<${deferTag}></${deferTag}>`);
         assert.equal(el.innerHTML.trim(), '');
@@ -187,13 +195,11 @@ describe(`template rendering`, () => {
         await el.requestUpdate();
         assert.lightDom.equal(el, '<div>deferred content</div>');
     });
-
     it('can render standard strings as template instead of html template results', async () => {
         const el = await fixture(`<${noHtmlTag}></${noHtmlTag}>`);
         assert.lightDom.equal(el, '<div>no html template result content</div>');
     });
 });
-
 describe(`vanilla-renderer`, () => {
     it('can re-render/update slotted templates', async () => {
         const el = await fixture(`<slotting-parent-tag></slotting-parent-tag>`);
@@ -260,7 +266,7 @@ describe(`vanilla-renderer`, () => {
         assert.equal(defaultElement.offsetWidth, nested.offsetWidth);
     });
 
-    it.only('renders changes to arrays properly', async () => {
+    it('renders changes to arrays properly', async () => {
         const arrayElement = await fixture(`<array-rendering-tag></array-rendering-tag>`);
         await nextFrame();
         assert.equal(
@@ -287,7 +293,7 @@ describe(`vanilla-renderer`, () => {
         assert.equal(stripCommentMarkers(arrayElement.innerHTML), '<div><ul ref="list" data-length="0"></ul></div>');
     });
 
-    it.only('renders in-place changes to arrays properly', async () => {
+    it('renders in-place changes to arrays properly', async () => {
         const arrayElement = await fixture(`<array-rendering-tag></array-rendering-tag>`);
         await nextFrame();
         assert.equal(
@@ -336,15 +342,18 @@ describe(`vanilla-renderer`, () => {
             `<conditional-array-rendering-tag flat-list="true"></conditional-array-rendering-tag>`,
         );
         await nextFrame();
-        assert.equal(stripCommentMarkers(arrayElement.innerHTML), '<div><div>1</div></div>');
+        assert.equal(stripCommentMarkers(arrayElement.innerHTML), '<div>1</div>');
+        console.log('###', arrayElement.innerHTML);
         arrayElement.renderArray = false;
         await nextFrame();
 
         assert.equal(stripCommentMarkers(arrayElement.innerHTML), '<div><strong>no list</strong></div>');
+        console.log('###2', arrayElement.innerHTML);
 
         arrayElement.list = [1, 2, 3];
         arrayElement.renderArray = true;
         await nextFrame();
         assert.equal(stripCommentMarkers(arrayElement.innerHTML), '<div><div>1</div><div>2</div><div>3</div></div>');
+        console.log('###2', arrayElement.innerHTML);
     });
 });

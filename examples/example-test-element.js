@@ -53,12 +53,12 @@ class ExampleTestElement extends TemplateElement {
 
         // return html`<div>
         //     ${this.renderArray
-        //     ? html`<ul ref="list" data-length="${this.list.length}">
+        //         ? html`<ul ref="list" data-length="${this.list.length}">
         //               ${this.list.map((index) => html` <li>${index}</li>`)}
         //           </ul>`
-        //     : html`<strong>no list</strong>`}
+        //         : html`<strong>no list</strong>`}
         // </div>`;
-
+        //
         // const templateFn = () => {
         //     if (this.renderArray) {
         //         return html`<ul ref="list" data-length="${this.list.length}">
@@ -67,17 +67,15 @@ class ExampleTestElement extends TemplateElement {
         //     }
         //     return html`<strong>no list</strong>`;
         // };
-        //
-        // const templateFn2 = () => {
-        //     if (this.renderArray) {
-        //         return this.list.map((index) => html` <li>${index}</li>`);
-        //     }
-        //     return html`<strong>no list</strong>`;
-        // };
-        //
-        // return html`<div>
-        //     ${templateFn2()}
-        // </div>`;
+
+        const templateFn2 = () => {
+            if (this.renderArray) {
+                return this.list.map((index) => html` <li>${index}</li>`);
+            }
+            return html`<strong>no list</strong>`;
+        };
+
+        return html`<div>${templateFn2()}</div>`;
 
         return html`
             <div>
