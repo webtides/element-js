@@ -76,6 +76,7 @@ export class TemplatePart extends Part {
      */
     update(value) {
         const shouldUpdateDOM = this.parseValue(value);
+        // TODO: we must also check if values have different types and if so, we must update the DOM
         if (shouldUpdateDOM) {
             this.processor?.(this);
         }
@@ -96,6 +97,8 @@ export class TemplatePart extends Part {
      * @return {boolean} whether the part needs to be updated in the DOM
      */
     parseValue(templateResult) {
+        // TODO: I think we also need new childNodes because otherwhise there will be nothing new to dom diff
+        // TODO: we probably need to check for value differences here as well as the strings
         if (this.strings !== templateResult.strings) {
             let fragment = fragmentsCache.get(templateResult.strings);
             if (!fragment) {

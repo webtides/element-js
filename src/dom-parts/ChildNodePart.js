@@ -190,6 +190,7 @@ export const processNodePart = (comment, initialValue) => {
                     break;
                 }
 
+                // TODO: sometimes the strings are the same, but the value types have changed eg. from array to templatepart - then we must also diff!!
                 if (newValue instanceof TemplatePart && oldValue !== newValue.strings) {
                     // if the new value is a node or a fragment, and it's different from the live node, then it's diffed.
                     // static strings have changed in tpl part
