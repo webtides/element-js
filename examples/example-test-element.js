@@ -92,12 +92,12 @@ class ExampleTestElement extends TemplateElement {
         if (example === '7') {
             const templateFn2 = () => {
                 if (this.renderArray) {
-                    return this.list.map((index) => html` <li>${index}</li>`);
+                    return this.list.map((index) => html` <div>${index}</div>`);
                 }
                 return html`<strong>no list</strong>`;
             };
 
-            return html`<div>${templateFn2()}</div>`;
+            return html`${templateFn2()}`;
         }
 
         if (example === '8') {

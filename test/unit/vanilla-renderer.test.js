@@ -347,13 +347,13 @@ describe(`vanilla-renderer`, () => {
         arrayElement.renderArray = false;
         await nextFrame();
 
-        assert.equal(stripCommentMarkers(arrayElement.innerHTML), '<div><strong>no list</strong></div>');
+        assert.equal(stripCommentMarkers(arrayElement.innerHTML), '<strong>no list</strong>');
         console.log('###2', arrayElement.innerHTML);
 
         arrayElement.list = [1, 2, 3];
         arrayElement.renderArray = true;
         await nextFrame();
-        assert.equal(stripCommentMarkers(arrayElement.innerHTML), '<div><div>1</div><div>2</div><div>3</div></div>');
+        assert.equal(stripCommentMarkers(arrayElement.innerHTML), '<div>1</div><div>2</div><div>3</div>');
         console.log('###2', arrayElement.innerHTML);
     });
 });
