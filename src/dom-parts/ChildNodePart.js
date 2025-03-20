@@ -29,6 +29,25 @@ const removeNodesBetweenComments = (commentNode) => {
 };
 
 /**
+ * @param {Element} commentNode
+ * @param {boolean} includeComments
+ * @return {Element[]}
+ */
+const getNodesBetweenComments = (commentNode, includeComments = false) => {
+    const nodes = [];
+    let currentNode = includeComments ? commentNode : commentNode.previousSibling;
+    while (currentNode) {
+        if (includeComments) nodes.unshift(currentNode);
+        if (currentNode.nodeType === COMMENT_NODE && currentNode.data === commentNode.data.replace('/', '')) {
+            break;
+        }
+        if (!includeComments) nodes.unshift(currentNode);
+        currentNode = currentNode.previousSibling;
+    }
+    return nodes;
+};
+
+/**
  * @param {Node} parentNode
  * @param {Node[]} domChildNodes
  * @param {Node[]} templateChildNodes
@@ -143,16 +162,7 @@ export const processNodePart = (comment, initialValue) => {
                     oldValue = newValue;
                     if (!cachedTextNode) cachedTextNode = globalThis.document?.createTextNode('');
                     cachedTextNode.data = newValue;
-
-                    if (comment.previousSibling?.data === comment.data.replace('/', '')) {
-                        // the part is empty - we haven't rendered it yet
-                        comment.parentNode.insertBefore(cachedTextNode, comment);
-                    } else {
-                        // the part was already rendered (either server side or on the client)
-                        comment.previousSibling.data = newValue;
-                    }
-
-                    nodes = [cachedTextNode];
+                    nodes = diffChildNodes(comment.parentNode, nodes, [cachedTextNode], comment);
                 }
                 break;
             // null (= typeof "object") and undefined are used to clean up previous content
@@ -180,6 +190,13 @@ export const processNodePart = (comment, initialValue) => {
                                 }
                                 if (Array.isArray(value)) {
                                     return unwrapArray(value);
+                                }
+                                if (
+                                    typeof value === 'boolean' ||
+                                    typeof value === 'number' ||
+                                    typeof value === 'string'
+                                ) {
+                                    return document.createTextNode(value);
                                 }
                                 return value;
                             });
