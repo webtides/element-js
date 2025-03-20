@@ -22,6 +22,18 @@ class ExampleTestElement extends TemplateElement {
     template() {
         const example = new URLSearchParams(window.location.search).get('example');
 
+        if (example === '0') {
+            return html`${this.renderArray ? this.list : html`${this.text}`}`;
+        }
+
+        if (example === '00') {
+            return html` ${this.renderArray ? this.list : html`<strong>no list</strong>`}`;
+        }
+
+        if (example === '000') {
+            return html` ${this.renderArray ? html`${this.list}` : html`<strong>no list</strong>`}`;
+        }
+
         if (example === '1') {
             const p = document.createElement('p');
             p.textContent = 'DOM Element';
