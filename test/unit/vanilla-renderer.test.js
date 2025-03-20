@@ -166,17 +166,20 @@ class ConditionalArrayRenderingTag extends TemplateElement {
 }
 
 customElements.define('conditional-array-rendering-tag', ConditionalArrayRenderingTag);
+class OnePropTag extends TemplateElement {
+    properties() {
+        return {
+            prop: 'init',
+        };
+    }
 
-console.log('### VANILLA');
-
+    template() {
+        return html`${this.prop}`;
+    }
+}
+customElements.define('one-prop-tag', OnePropTag);
 describe(`template rendering`, () => {
-    console.log('### VANILLA DESC');
-    it('checks the vanilly atests', () => {
-        console.log('### VANILLA TESTS');
-    });
-
     it('renders template in light dom by default', async () => {
-        console.log('### VANILLA FIRST');
         const el = await fixture(`<${lightTag}></${lightTag}>`);
         assert.isNull(el.shadowRoot);
         assert.lightDom.equal(el, '<div>light content</div>');
@@ -337,23 +340,33 @@ describe(`vanilla-renderer`, () => {
         );
     });
 
+    it.only('renders a property even if the type changes between complex and primitive', async () => {
+        const element = await fixture(`<one-prop-tag></one-prop-tag>`);
+        await nextFrame();
+        assert.equal(stripCommentMarkers(element.innerHTML), 'init');
+        element.prop = 'bar';
+        await nextFrame();
+        assert.equal(stripCommentMarkers(element.innerHTML), 'bar');
+
+        // TODO uncomment once serialization is commited
+        // element.prop = [1, 2, 3];
+        // await nextFrame();
+        // assert.equal(stripCommentMarkers(element.innerHTML), '1,2,3');
+    });
+
     it('renders a flat list of elements vs other content conditionally', async () => {
         const arrayElement = await fixture(
             `<conditional-array-rendering-tag flat-list="true"></conditional-array-rendering-tag>`,
         );
         await nextFrame();
         assert.equal(stripCommentMarkers(arrayElement.innerHTML), '<div>1</div>');
-        console.log('###', arrayElement.innerHTML);
         arrayElement.renderArray = false;
         await nextFrame();
 
         assert.equal(stripCommentMarkers(arrayElement.innerHTML), '<strong>no list</strong>');
-        console.log('###2', arrayElement.innerHTML);
-
         arrayElement.list = [1, 2, 3];
         arrayElement.renderArray = true;
         await nextFrame();
         assert.equal(stripCommentMarkers(arrayElement.innerHTML), '<div>1</div><div>2</div><div>3</div>');
-        console.log('###2', arrayElement.innerHTML);
     });
 });
