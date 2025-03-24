@@ -340,7 +340,7 @@ describe(`vanilla-renderer`, () => {
         );
     });
 
-    it.only('renders a property even if the type changes between complex and primitive', async () => {
+    it('renders a property even if the type changes between complex and primitive', async () => {
         const element = await fixture(`<one-prop-tag></one-prop-tag>`);
         await nextFrame();
         assert.equal(stripCommentMarkers(element.innerHTML), 'init');
