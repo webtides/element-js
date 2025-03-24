@@ -1,6 +1,6 @@
 import { defineElement } from '../src/BaseElement.js';
 import { TemplateElement, html } from '../src/TemplateElement.js';
-import { choose } from '../src/dom-parts/directives.js';
+import { choose, unsafeHTML } from '../src/dom-parts/directives.js';
 
 class ExampleTestElement extends TemplateElement {
     constructor() {
@@ -23,15 +23,23 @@ class ExampleTestElement extends TemplateElement {
         const example = new URLSearchParams(window.location.search).get('example');
 
         if (example === '0') {
-            return html`${this.renderArray ? this.list : html`${this.text}`}`;
+            return html`${this.renderArray ? this.list : this.text}`;
         }
 
         if (example === '00') {
-            return html` ${this.renderArray ? this.list : html`<strong>no list</strong>`}`;
+            return html`${this.renderArray ? this.list : html`${this.text}`}`;
         }
 
         if (example === '000') {
-            return html` ${this.renderArray ? html`${this.list}` : html`<strong>no list</strong>`}`;
+            return html` ${this.renderArray ? this.list : html`<strong>no list</strong>`}`;
+        }
+
+        if (example === '0000') {
+            return html`${this.renderArray ? html`${this.list}` : html`<strong>no list</strong>`}`;
+        }
+
+        if (example === '00000') {
+            return html`<div>${unsafeHTML(`<strong>Unsafe HTML</strong>`)}</div>`;
         }
 
         if (example === '1') {

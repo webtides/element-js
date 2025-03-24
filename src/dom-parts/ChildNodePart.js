@@ -15,16 +15,22 @@ const insertNodesBetweenComments = (commentNode, nodes) => {
 
 /**
  * @param {Element} commentNode
+ * @param {Element[]} nodes
+ */
+const replaceNodesBetweenComments = (commentNode, nodes) => {
+    removeNodesBetweenComments(commentNode);
+    for (const node of nodes) {
+        commentNode.parentNode.insertBefore(node, commentNode);
+    }
+};
+
+/**
+ * @param {Element} commentNode
  */
 const removeNodesBetweenComments = (commentNode) => {
-    while (commentNode.previousSibling) {
-        if (
-            commentNode.previousSibling.nodeType === COMMENT_NODE &&
-            commentNode.previousSibling.data === commentNode.data.replace('/', '')
-        ) {
-            break;
-        }
-        commentNode.parentNode.removeChild(commentNode.previousSibling);
+    const nodes = getNodesBetweenComments(commentNode);
+    for (const node of nodes) {
+        commentNode.parentNode.removeChild(node);
     }
 };
 
@@ -36,11 +42,22 @@ const removeNodesBetweenComments = (commentNode) => {
 const getNodesBetweenComments = (commentNode, includeComments = false) => {
     const nodes = [];
     let currentNode = includeComments ? commentNode : commentNode.previousSibling;
+    let nestingLevel = 0;
+
     while (currentNode) {
         if (includeComments) nodes.unshift(currentNode);
-        if (currentNode.nodeType === COMMENT_NODE && currentNode.data === commentNode.data.replace('/', '')) {
-            break;
+
+        if (currentNode.nodeType === COMMENT_NODE && currentNode.data === commentNode.data) {
+            nestingLevel++;
         }
+
+        if (currentNode.nodeType === COMMENT_NODE && currentNode.data === commentNode.data.replace('/', '')) {
+            if (nestingLevel === 0) {
+                break;
+            }
+            nestingLevel--;
+        }
+
         if (!includeComments) nodes.unshift(currentNode);
         currentNode = currentNode.previousSibling;
     }
@@ -55,11 +72,13 @@ const getNodesBetweenComments = (commentNode, includeComments = false) => {
  * @return {Node[]}
  */
 const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, anchorNode) {
+    const nodesBetweenComments = getNodesBetweenComments(anchorNode, false);
+    console.log('nodes', { nodesBetweenComments, templateChildNodes });
     // TODO: when diffing arrays there is sometimes two lists of TemplateParts instead of lists of childNodes
     const offset = domChildNodes.includes(anchorNode) ? 1 : 0;
 
     // release first level references to prevent cache mutation
-    const clonedDomChildNodes = [...domChildNodes];
+    const clonedDomChildNodes = [...nodesBetweenComments];
     const clonedTemplateChildNodes = [...templateChildNodes];
 
     // We always want to have the two arrays (domChildNodes and cloneTemplateChildNodes) to have the same length.
@@ -68,14 +87,16 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
     if (clonedTemplateChildNodes.length > clonedDomChildNodes.length) {
         const nodesToFill = clonedTemplateChildNodes.length - clonedDomChildNodes.length;
         for (let i = 0; i < nodesToFill; i++) {
-            clonedDomChildNodes.splice(clonedDomChildNodes.length - offset, 0, undefined);
+            // clonedDomChildNodes.splice(clonedDomChildNodes.length - offset, 0, undefined);
+            clonedDomChildNodes.push(undefined);
         }
     }
 
     if (clonedDomChildNodes.length > clonedTemplateChildNodes.length) {
         const nodesToFill = clonedDomChildNodes.length - clonedTemplateChildNodes.length;
         for (let i = 0; i < nodesToFill; i++) {
-            clonedTemplateChildNodes.splice(clonedTemplateChildNodes.length - offset, 0, undefined);
+            // clonedTemplateChildNodes.splice(clonedTemplateChildNodes.length - offset, 0, undefined);
+            clonedTemplateChildNodes.push(undefined);
         }
     }
 
@@ -141,6 +162,32 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
     return templateChildNodes;
 };
 
+function getType(value) {
+    if (typeof value === 'function') return getType(value());
+    if (Array.isArray(value)) return 'array';
+    if (value instanceof TemplatePart) return 'templatePart';
+    // if (value === null) return 'null';
+    // return typeof value;
+    return 'text';
+}
+
+// TODO: handle funcitons?!
+const unwrapArray = (nodes) => {
+    // we have to unwrap any complex objects inside the array so that we can diff arrays of childNodes
+    return nodes.flatMap((value) => {
+        if (value instanceof TemplatePart) {
+            return value.childNodes;
+        }
+        if (Array.isArray(value)) {
+            return unwrapArray(value);
+        }
+        if (typeof value === 'boolean' || typeof value === 'number' || typeof value === 'string') {
+            return document.createTextNode(value);
+        }
+        return value;
+    });
+};
+
 /**
  * @param {Node} comment
  * @param {TemplatePart | any[] | any} initialValue
@@ -151,8 +198,33 @@ export const processNodePart = (comment, initialValue) => {
     let oldValue = initialValue instanceof TemplatePart ? initialValue.strings : initialValue;
     // this is for string values to be inserted into the DOM. A cached TextNode will be used so that we don't have to constantly create new DOM nodes.
     let cachedTextNode = undefined;
+    let oldValueType = getType(initialValue);
 
     const processNodeValue = (newValue) => {
+        let newValueType = getType(newValue);
+        if (typeof newValue === 'function') {
+            newValue = newValue();
+        }
+        console.log('processNodeValue', { oldValueType, newValueType });
+
+        if (oldValueType !== newValueType && newValueType === 'templatePart') {
+            replaceNodesBetweenComments(comment, newValue.childNodes);
+            oldValueType = newValueType;
+            return;
+        }
+
+        if (oldValueType !== newValueType && newValueType === 'text') {
+            replaceNodesBetweenComments(comment, [document.createTextNode(newValue)]);
+            oldValueType = newValueType;
+            return;
+        }
+
+        if (oldValueType !== newValueType && newValueType === 'array') {
+            replaceNodesBetweenComments(comment, unwrapArray(newValue));
+            oldValueType = newValueType;
+            return;
+        }
+
         switch (typeof newValue) {
             // primitives are handled as text content
             case 'string':
@@ -212,7 +284,8 @@ export const processNodePart = (comment, initialValue) => {
                     // if the new value is a node or a fragment, and it's different from the live node, then it's diffed.
                     // static strings have changed in tpl part
                     oldValue = newValue.strings;
-                    nodes = diffChildNodes(comment.parentNode, nodes, newValue.childNodes, comment);
+                    nodes = diffChildNodes(comment.parentNode, nodes, newValue.childNodes.slice(1, -1), comment);
+                    // nodes = diffChildNodes(comment.parentNode, nodes, newValue.childNodes, comment);
                 } else if (oldValue !== newValue && 'ELEMENT_NODE' in newValue) {
                     // DOM Node changed, needs diffing
                     oldValue = newValue;
@@ -288,7 +361,7 @@ export class ChildNodePart extends Part {
 
         if (!serverSideRendered) {
             if (value instanceof TemplateResult || Array.isArray(value)) {
-                this.updateParts(value);
+                // this.updateParts(value);
             }
 
             if (!(value instanceof TemplateResult)) {
@@ -308,7 +381,12 @@ export class ChildNodePart extends Part {
             this.updateParts(value);
         }
 
-        this.processor?.(parsedValue);
+        // TODO: the parsedValue maybe is not correct?!
+        // TODO: but maybe this can be ommited again for templateresults and arrays?! since we are replacing nodes now instead of diffing...
+        if (!(value instanceof TemplateResult)) {
+            this.processor?.(parsedValue);
+        }
+        // this.processor?.(parsedValue);
     }
 
     /**
@@ -343,8 +421,17 @@ export class ChildNodePart extends Part {
                         .filter((node) => node.nodeType === COMMENT_NODE)
                         .find((node) => node.data.includes('/dom-part-'));
                     // INFO: this is similar to TemplateResult#237
-                    insertNodesBetweenComments(endNode, this.templatePart.childNodes);
+                    replaceNodesBetweenComments(endNode, this.templatePart.childNodes);
                 }
+            } else if (this.templatePart.strings !== value.strings) {
+                // this means we have a different TemplateResult here with maybe different parts also
+                this.templatePart = new TemplatePart(undefined, value);
+                // TODO: we should already have the "endNode" from the constructor...
+                const endNode = Array.from(this.childNodes)
+                    .filter((node) => node.nodeType === COMMENT_NODE)
+                    .find((node) => node.data.includes('/dom-part-'));
+                // INFO: this is similar to TemplateResult#237
+                replaceNodesBetweenComments(endNode, this.templatePart.childNodes);
             }
             return this.templatePart;
         }
