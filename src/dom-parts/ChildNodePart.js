@@ -2,10 +2,11 @@ import { COMMENT_NODE, ELEMENT_NODE } from '../util/DOMHelper.js';
 import { Part } from './Part.js';
 import { TemplateResult } from './TemplateResult.js';
 import { TemplatePart } from './TemplatePart.js';
+import { PartMarkers } from './PartMarkers.js';
 
 /**
- * @param {Element} commentNode
- * @param {Element[]} nodes
+ * @param {Comment} commentNode
+ * @param {Node[]} nodes
  */
 const insertNodesBetweenComments = (commentNode, nodes) => {
     for (const node of nodes) {
@@ -14,8 +15,8 @@ const insertNodesBetweenComments = (commentNode, nodes) => {
 };
 
 /**
- * @param {Element} commentNode
- * @param {Element[]} nodes
+ * @param {Comment} commentNode
+ * @param {Node[]} nodes
  */
 const replaceNodesBetweenComments = (commentNode, nodes) => {
     removeNodesBetweenComments(commentNode);
@@ -25,7 +26,7 @@ const replaceNodesBetweenComments = (commentNode, nodes) => {
 };
 
 /**
- * @param {Element} commentNode
+ * @param {Comment} commentNode
  */
 const removeNodesBetweenComments = (commentNode) => {
     const nodes = getNodesBetweenComments(commentNode);
@@ -35,9 +36,9 @@ const removeNodesBetweenComments = (commentNode) => {
 };
 
 /**
- * @param {Element} commentNode
+ * @param {Comment} commentNode
  * @param {boolean} includeComments
- * @return {Element[]}
+ * @return {Node[]}
  */
 const getNodesBetweenComments = (commentNode, includeComments = false) => {
     const nodes = [];
@@ -68,12 +69,11 @@ const getNodesBetweenComments = (commentNode, includeComments = false) => {
  * @param {Node} parentNode
  * @param {Node[]} domChildNodes
  * @param {Node[]} templateChildNodes
- * @param {Node} anchorNode
+ * @param {Comment} anchorNode
  * @return {Node[]}
  */
 const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, anchorNode) {
     const nodesBetweenComments = getNodesBetweenComments(anchorNode, false);
-    console.log('nodes', { nodesBetweenComments, templateChildNodes });
     // TODO: when diffing arrays there is sometimes two lists of TemplateParts instead of lists of childNodes
     const offset = domChildNodes.includes(anchorNode) ? 1 : 0;
 
@@ -189,7 +189,7 @@ const unwrapArray = (nodes) => {
 };
 
 /**
- * @param {Node} comment
+ * @param {Comment} comment
  * @param {TemplatePart | any[] | any} initialValue
  * @return {(function(*): void)|*}
  */
@@ -205,7 +205,6 @@ export const processNodePart = (comment, initialValue) => {
         if (typeof newValue === 'function') {
             newValue = newValue();
         }
-        console.log('processNodeValue', { oldValueType, newValueType });
 
         if (oldValueType !== newValueType && newValueType === 'templatePart') {
             replaceNodesBetweenComments(comment, newValue.childNodes);
@@ -305,6 +304,9 @@ export const processNodePart = (comment, initialValue) => {
  * For updating a text node, a sequence of child nodes or an array of `any` values
  */
 export class ChildNodePart extends Part {
+    /** @type {PartMarkers} */
+    markers = undefined;
+
     // TODO: this is only for array values
     /** @type {Part[]} */
     parts = [];
@@ -314,59 +316,32 @@ export class ChildNodePart extends Part {
 
     // TODO: maybe we can store a generic vale|parsedValue that can be either parts[] | templatePart | any
 
-    /** @type {Node[]} */
-    childNodes = [];
-
     /**
      * @param {Node} startNode - the start comment marker node
      * @param {any | any[]} value
      */
     constructor(startNode, value) {
-        if (startNode && startNode?.nodeType !== COMMENT_NODE) {
-            throw new Error('ChildNodePart: startNode is not a comment node');
+        if (!startNode || startNode?.nodeType !== COMMENT_NODE) {
+            throw new Error(
+                startNode ? 'ChildNodePart: startNode is undefined' : 'ChildNodePart: startNode is not a comment node',
+            );
         }
 
         super();
 
-        let endNode = undefined;
-        let serverSideRendered = false;
-        if (startNode) {
-            startNode.__part = this; // add Part to comment node for debugging in the browser
-
-            const placeholder = startNode.data;
-            const childNodes = [startNode];
-            let childNode = startNode.nextSibling;
-            while (childNode && childNode.data !== `/${placeholder}`) {
-                childNodes.push(childNode);
-                childNode = childNode.nextSibling;
-            }
-
-            endNode = childNode;
-            childNodes.push(endNode);
-
-            // if not SSRed, childNodes will only ever have two comment nodes, the start and the end marker
-            if (childNodes.length > 2) {
-                serverSideRendered = true;
-            }
-
-            this.childNodes = childNodes;
-        }
+        startNode.__part = this; // add Part to comment node for debugging in the browser
+        this.markers = PartMarkers.createFromStartNode(startNode);
 
         // value can become array | TemplatePart | any
         const initialValue = this.parseValue(value);
 
-        if (endNode) {
-            this.processor = processNodePart(endNode, serverSideRendered ? initialValue : undefined);
-        }
+        this.processor = processNodePart(
+            this.markers?.endNode,
+            this.markers?.serverSideRendered ? initialValue : undefined,
+        );
 
-        if (!serverSideRendered) {
-            if (value instanceof TemplateResult || Array.isArray(value)) {
-                // this.updateParts(value);
-            }
-
-            if (!(value instanceof TemplateResult)) {
-                this.processor?.(initialValue);
-            }
+        if (!this.markers?.serverSideRendered && !(value instanceof TemplateResult)) {
+            this.processor?.(initialValue);
         }
     }
 
@@ -381,12 +356,10 @@ export class ChildNodePart extends Part {
             this.updateParts(value);
         }
 
-        // TODO: the parsedValue maybe is not correct?!
         // TODO: but maybe this can be ommited again for templateresults and arrays?! since we are replacing nodes now instead of diffing...
         if (!(value instanceof TemplateResult)) {
             this.processor?.(parsedValue);
         }
-        // this.processor?.(parsedValue);
     }
 
     /**
@@ -410,28 +383,20 @@ export class ChildNodePart extends Part {
     parseValue(value) {
         if (value instanceof TemplateResult) {
             if (!this.templatePart) {
-                const startNode = Array.from(this.childNodes)
+                const startNode = Array.from(this.markers?.childNodes)
                     .filter((node) => node.nodeType === COMMENT_NODE)
                     .find((node) => node.data === 'template-part');
                 this.templatePart = new TemplatePart(startNode, value);
                 const serverSideRendered = startNode !== undefined;
                 if (!serverSideRendered) {
-                    // TODO: we should already have the "endNode" from the constructor...
-                    const endNode = Array.from(this.childNodes)
-                        .filter((node) => node.nodeType === COMMENT_NODE)
-                        .find((node) => node.data.includes('/dom-part-'));
                     // INFO: this is similar to TemplateResult#237
-                    replaceNodesBetweenComments(endNode, this.templatePart.childNodes);
+                    replaceNodesBetweenComments(this.markers?.endNode, this.templatePart.childNodes);
                 }
             } else if (this.templatePart.strings !== value.strings) {
                 // this means we have a different TemplateResult here with maybe different parts also
                 this.templatePart = new TemplatePart(undefined, value);
-                // TODO: we should already have the "endNode" from the constructor...
-                const endNode = Array.from(this.childNodes)
-                    .filter((node) => node.nodeType === COMMENT_NODE)
-                    .find((node) => node.data.includes('/dom-part-'));
                 // INFO: this is similar to TemplateResult#237
-                replaceNodesBetweenComments(endNode, this.templatePart.childNodes);
+                replaceNodesBetweenComments(this.markers?.endNode, this.templatePart.childNodes);
             }
             return this.templatePart;
         }
@@ -455,7 +420,7 @@ export class ChildNodePart extends Part {
                 // TODO this is probably wrong. Should only be taken from parts cache if it has the same type (eg. template vs string, mixed types arrays)
                 let templatePart = this.parts[index];
                 if (!templatePart) {
-                    const templatePartCommentNodes = this.childNodes?.filter(
+                    const templatePartCommentNodes = this.markers?.childNodes?.filter(
                         (node) => node && node.nodeType === COMMENT_NODE && node.data === 'template-part',
                     );
                     const startNode = templatePartCommentNodes[index];
@@ -467,7 +432,7 @@ export class ChildNodePart extends Part {
                 let childNodePart = this.parts[index];
                 if (!childNodePart) {
                     // TODO: this seems not correct :( (maybe Template vs DOM Parts !?)
-                    const templatePartCommentNodes = this.childNodes?.filter(
+                    const templatePartCommentNodes = this.markers?.childNodes?.filter(
                         (node) => node && node.nodeType === COMMENT_NODE && node.data === 'template-part',
                     );
                     const startNode = templatePartCommentNodes[index];
