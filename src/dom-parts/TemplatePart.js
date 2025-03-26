@@ -2,17 +2,21 @@ import { COMMENT_NODE, convertStringToTemplate } from '../util/DOMHelper.js';
 import { Part } from './Part.js';
 import { TemplateResult } from './TemplateResult.js';
 import { AttributePart } from './AttributePart.js';
-import { ChildNodePart, processNodePart } from './ChildNodePart.js';
+import { ChildNodePart, getNodesBetweenComments, replaceNodesBetweenComments } from './ChildNodePart.js';
 import { NodePart } from './NodePart.js';
 import { RawTextNodePart } from './RawTextNodePart.js';
+import { PartMarkers } from './PartMarkers.js';
 
-/** @type {Map<TemplateStringsArray, Part[]>} */
+/** @type {WeakMap<TemplateStringsArray, Part[]>} */
 const partsCache = new WeakMap();
 
-/** @type {Map<TemplateStringsArray, DocumentFragment>} */
+/** @type {WeakMap<TemplateStringsArray, DocumentFragment>} */
 const fragmentsCache = new WeakMap();
 
 export class TemplatePart extends Part {
+    /** @type {PartMarkers|undefined} */
+    markers;
+
     /** @type {Part[]} */
     parts = [];
 
@@ -23,7 +27,7 @@ export class TemplatePart extends Part {
     childNodes = [];
 
     /**
-     * @param {Node} startNode - the start comment marker node
+     * @param {Node|undefined} startNode - the start comment marker node
      * @param {TemplateResult} value
      */
     constructor(startNode, value) {
@@ -33,54 +37,37 @@ export class TemplatePart extends Part {
 
         super();
 
-        let endNode = undefined;
-        let serverSideRendered = false;
         if (startNode) {
             startNode.__part = this; // add Part to comment node for debugging in the browser
-
-            const placeholder = startNode.data;
-            const childNodes = [startNode];
-            let childNode = startNode.nextSibling;
-            while (childNode && childNode.data !== `/${placeholder}`) {
-                childNodes.push(childNode);
-                childNode = childNode.nextSibling;
-            }
-
-            endNode = childNode;
-            childNodes.push(endNode);
-
-            // if not SSRed, childNodes will only ever have two comment nodes, the start and the end marker
-            if (childNodes.length > 2) {
-                serverSideRendered = true;
-            }
-
-            this.childNodes = childNodes;
+            this.markers = PartMarkers.createFromStartNode(startNode);
+            this.childNodes = this.markers.childNodes;
         }
 
         this.parseValue(value);
 
-        if (!serverSideRendered) {
+        if (!this.markers?.serverSideRendered) {
             // TODO: this is causing double diffing because of the this.parseValue() before, ChildNode parts will be constructed + processed
+            // TODO: I think that maybe ChildNode Parts work, but Other Parts like Attributes are not set initially otherwise...
             this.updateParts(value.values);
         }
 
-        endNode = this.childNodes[this.childNodes.length - 1];
-
-        if (endNode) {
-            this.processor = processNodePart(endNode, this);
-        }
+        // TODO: this is somewhat strange that we are creating this twice...
+        this.markers = PartMarkers.createFromStartNode(this.childNodes[0]);
     }
 
     /**
-     * @param {TemplateResult} value
+     * @param {TemplateResult} templateResult
      */
-    update(value) {
-        const shouldUpdateDOM = this.parseValue(value);
-        // TODO: we must also check if values have different types and if so, we must update the DOM
+    update(templateResult) {
+        const shouldUpdateDOM = this.strings !== templateResult.strings;
         if (shouldUpdateDOM) {
-            this.processor?.(this);
+            this.parseValue(templateResult);
+            // TODO: this is a strange way of replacing the childnodes...
+            const endNode = this.childNodes[this.childNodes.length - 1];
+            // INFO: this is similar to TemplateResult#237
+            replaceNodesBetweenComments(this.markers?.endNode, getNodesBetweenComments(endNode));
         }
-        this.updateParts(value.values);
+        this.updateParts(templateResult.values);
     }
 
     /**
@@ -94,52 +81,45 @@ export class TemplatePart extends Part {
 
     /**
      * @param {TemplateResult} templateResult
-     * @return {boolean} whether the part needs to be updated in the DOM
      */
     parseValue(templateResult) {
-        // TODO: I think we also need new childNodes because otherwhise there will be nothing new to dom diff
-        // TODO: we probably need to check for value differences here as well as the strings
-        if (this.strings !== templateResult.strings) {
-            let fragment = fragmentsCache.get(templateResult.strings);
-            if (!fragment) {
-                fragment = this.parseFragment(templateResult);
-                fragmentsCache.set(templateResult.strings, fragment);
-            }
-            const importedFragment = globalThis.document?.importNode(fragment, true);
-            this.childNodes = importedFragment.childNodes;
-
-            let parts = partsCache.get(templateResult.strings);
-            if (!parts) {
-                parts = templateResult.parseParts(this.childNodes);
-                partsCache.set(templateResult.strings, parts);
-            }
-
-            this.parts = parts
-                .map((part) => {
-                    // We currently need the path because the fragment will be cloned via importNode and therefore the node will be a different one
-                    part.node = part.path.reduceRight(({ childNodes }, i) => childNodes[i], this);
-                    return part;
-                })
-                .map((part, index) => {
-                    if (part.type === 'node') {
-                        return new ChildNodePart(part.node, templateResult.values[index]);
-                    }
-                    if (part.type === 'attribute') {
-                        return new AttributePart(part.node, part.name, part.initialValue);
-                    }
-                    if (part.type === 'raw-text-node') {
-                        return new RawTextNodePart(part.node, part.initialValue);
-                    }
-                    if (part.type === 'directive') {
-                        return new NodePart(part.node, templateResult.values[index]);
-                    }
-                    throw `cannot map part: ${part}`;
-                });
-            this.strings = templateResult.strings;
-            this.childNodes = [...this.childNodes];
-            return true;
+        let fragment = fragmentsCache.get(templateResult.strings);
+        if (!fragment) {
+            fragment = this.parseFragment(templateResult);
+            fragmentsCache.set(templateResult.strings, fragment);
         }
-        return false;
+        const importedFragment = globalThis.document?.importNode(fragment, true);
+        this.childNodes = importedFragment.childNodes;
+
+        let parts = partsCache.get(templateResult.strings);
+        if (!parts) {
+            parts = templateResult.parseParts(this.childNodes);
+            partsCache.set(templateResult.strings, parts);
+        }
+
+        this.parts = parts
+            .map((part) => {
+                // We currently need the path because the fragment will be cloned via importNode and therefore the node will be a different one
+                part.node = part.path.reduceRight(({ childNodes }, i) => childNodes[i], this);
+                return part;
+            })
+            .map((part, index) => {
+                if (part.type === 'node') {
+                    return new ChildNodePart(part.node, templateResult.values[index]);
+                }
+                if (part.type === 'attribute') {
+                    return new AttributePart(part.node, part.name, part.initialValue);
+                }
+                if (part.type === 'raw-text-node') {
+                    return new RawTextNodePart(part.node, part.initialValue);
+                }
+                if (part.type === 'directive') {
+                    return new NodePart(part.node, templateResult.values[index]);
+                }
+                throw `cannot map part: ${part}`;
+            });
+        this.strings = templateResult.strings;
+        this.childNodes = [...this.childNodes];
     }
 
     /**
