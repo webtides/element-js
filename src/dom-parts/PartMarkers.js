@@ -1,3 +1,5 @@
+import { COMMENT_NODE } from '../util/DOMHelper.js';
+
 export class PartMarkers {
     /** @type {Comment} */
     startNode;
@@ -26,6 +28,14 @@ export class PartMarkers {
         if (childNodes.length > 2) {
             this.serverSideRendered = true;
         }
+    }
+
+    /**
+     * @param {string} partType The type of the node to search for. Defaults to 'template-part'.
+     * @return {Node|undefined} The first comment node matching the specified type, or undefined if no match is found.
+     */
+    findNestedStartNode(partType = 'template-part') {
+        return this.childNodes.filter((node) => node.nodeType === COMMENT_NODE).find((node) => node.data === partType);
     }
 
     /**

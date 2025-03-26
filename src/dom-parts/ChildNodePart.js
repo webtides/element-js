@@ -304,17 +304,14 @@ export const processNodePart = (comment, initialValue) => {
  * For updating a text node, a sequence of child nodes or an array of `any` values
  */
 export class ChildNodePart extends Part {
-    /** @type {PartMarkers} */
-    markers = undefined;
+    /** @type {PartMarkers|undefined} */
+    markers;
 
-    // TODO: this is only for array values
+    /** @type {TemplatePart|undefined} */
+    templatePart;
+
     /** @type {Part[]} */
-    parts = [];
-
-    // TODO: this is only for TemplatePart values
-    templatePart = undefined;
-
-    // TODO: maybe we can store a generic vale|parsedValue that can be either parts[] | templatePart | any
+    arrayParts = [];
 
     /**
      * @param {Node} startNode - the start comment marker node
@@ -371,7 +368,7 @@ export class ChildNodePart extends Part {
         }
         if (Array.isArray(value)) {
             for (let index = 0; index < value.length; index++) {
-                this.parts[index]?.update(value[index]);
+                this.arrayParts[index]?.update(value[index]);
             }
         }
     }
@@ -383,12 +380,8 @@ export class ChildNodePart extends Part {
     parseValue(value) {
         if (value instanceof TemplateResult) {
             if (!this.templatePart) {
-                const startNode = Array.from(this.markers?.childNodes)
-                    .filter((node) => node.nodeType === COMMENT_NODE)
-                    .find((node) => node.data === 'template-part');
-                this.templatePart = new TemplatePart(startNode, value);
-                const serverSideRendered = startNode !== undefined;
-                if (!serverSideRendered) {
+                this.templatePart = new TemplatePart(this.markers?.findNestedStartNode('template-part'), value);
+                if (!this.markers?.serverSideRendered) {
                     // INFO: this is similar to TemplateResult#237
                     replaceNodesBetweenComments(this.markers?.endNode, this.templatePart.childNodes);
                 }
@@ -418,18 +411,18 @@ export class ChildNodePart extends Part {
 
             if (value instanceof TemplateResult) {
                 // TODO this is probably wrong. Should only be taken from parts cache if it has the same type (eg. template vs string, mixed types arrays)
-                let templatePart = this.parts[index];
+                let templatePart = this.arrayParts[index];
                 if (!templatePart) {
                     const templatePartCommentNodes = this.markers?.childNodes?.filter(
                         (node) => node && node.nodeType === COMMENT_NODE && node.data === 'template-part',
                     );
                     const startNode = templatePartCommentNodes[index];
                     templatePart = new TemplatePart(startNode, value);
-                    this.parts[index] = templatePart;
+                    this.arrayParts[index] = templatePart;
                 }
                 parsedValues[index] = templatePart;
             } else if (Array.isArray(value)) {
-                let childNodePart = this.parts[index];
+                let childNodePart = this.arrayParts[index];
                 if (!childNodePart) {
                     // TODO: this seems not correct :( (maybe Template vs DOM Parts !?)
                     const templatePartCommentNodes = this.markers?.childNodes?.filter(
@@ -437,7 +430,7 @@ export class ChildNodePart extends Part {
                     );
                     const startNode = templatePartCommentNodes[index];
                     childNodePart = new ChildNodePart(startNode, value);
-                    this.parts[index] = childNodePart;
+                    this.arrayParts[index] = childNodePart;
                 }
                 parsedValues[index] = childNodePart;
             } else {
