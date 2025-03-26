@@ -8,7 +8,7 @@ import { PartMarkers } from './PartMarkers.js';
  * @param {Comment} commentNode
  * @param {Node[]} nodes
  */
-const insertNodesBetweenComments = (commentNode, nodes) => {
+export const insertNodesBetweenComments = (commentNode, nodes) => {
     for (const node of nodes) {
         commentNode.parentNode.insertBefore(node, commentNode);
     }
@@ -18,7 +18,7 @@ const insertNodesBetweenComments = (commentNode, nodes) => {
  * @param {Comment} commentNode
  * @param {Node[]} nodes
  */
-const replaceNodesBetweenComments = (commentNode, nodes) => {
+export const replaceNodesBetweenComments = (commentNode, nodes) => {
     removeNodesBetweenComments(commentNode);
     for (const node of nodes) {
         commentNode.parentNode.insertBefore(node, commentNode);
@@ -28,7 +28,7 @@ const replaceNodesBetweenComments = (commentNode, nodes) => {
 /**
  * @param {Comment} commentNode
  */
-const removeNodesBetweenComments = (commentNode) => {
+export const removeNodesBetweenComments = (commentNode) => {
     const nodes = getNodesBetweenComments(commentNode);
     for (const node of nodes) {
         commentNode.parentNode.removeChild(node);
@@ -40,7 +40,7 @@ const removeNodesBetweenComments = (commentNode) => {
  * @param {boolean} includeComments
  * @return {Node[]}
  */
-const getNodesBetweenComments = (commentNode, includeComments = false) => {
+export const getNodesBetweenComments = (commentNode, includeComments = false) => {
     const nodes = [];
     let currentNode = includeComments ? commentNode : commentNode.previousSibling;
     let nestingLevel = 0;
