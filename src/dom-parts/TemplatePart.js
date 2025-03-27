@@ -25,6 +25,7 @@ export class TemplatePart extends Part {
 
     /** @type {Node[]} */
     childNodes = [];
+    // TODO: there is childNodes here and also in this.markers now...
 
     /**
      * @param {Node|undefined} startNode - the start comment marker node
@@ -85,7 +86,7 @@ export class TemplatePart extends Part {
     parseValue(templateResult) {
         let fragment = fragmentsCache.get(templateResult.strings);
         if (!fragment) {
-            fragment = this.parseFragment(templateResult);
+            fragment = convertStringToTemplate(templateResult.templateString);
             fragmentsCache.set(templateResult.strings, fragment);
         }
         const importedFragment = globalThis.document?.importNode(fragment, true);
@@ -120,14 +121,5 @@ export class TemplatePart extends Part {
             });
         this.strings = templateResult.strings;
         this.childNodes = [...this.childNodes];
-    }
-
-    /**
-     * @param {TemplateResult} templateResult
-     * @return {DocumentFragment}
-     */
-    parseFragment(templateResult) {
-        const templateString = templateResult.templateString;
-        return convertStringToTemplate(templateString);
     }
 }
