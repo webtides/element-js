@@ -42,6 +42,12 @@ class ExampleTestElement extends TemplateElement {
             return html`<div>${unsafeHTML(`<strong>Unsafe HTML</strong>`)}</div>`;
         }
 
+        if (example === '000000') {
+            const paragraphElement = document.createElement('p');
+            paragraphElement.textContent = this.text;
+            return html`<div>${paragraphElement}</div>`;
+        }
+
         if (example === '1') {
             const p = document.createElement('p');
             p.textContent = 'DOM Element';
