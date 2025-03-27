@@ -66,41 +66,18 @@ export const getNodesBetweenComments = (commentNode, includeComments = false) =>
 };
 
 /**
- * @param {Node} parentNode
- * @param {Node[]} domChildNodes
- * @param {Node[]} templateChildNodes
+ * @param {Node[]} newChildNodes
  * @param {Comment} anchorNode
- * @return {Node[]}
  */
-const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, anchorNode) {
+const diffChildNodes = function (newChildNodes, anchorNode) {
+    const parentNode = anchorNode.parentNode;
     const nodesBetweenComments = getNodesBetweenComments(anchorNode, false);
-    // TODO: when diffing arrays there is sometimes two lists of TemplateParts instead of lists of childNodes
-    const offset = domChildNodes.includes(anchorNode) ? 1 : 0;
 
     // release first level references to prevent cache mutation
     const clonedDomChildNodes = [...nodesBetweenComments];
-    const clonedTemplateChildNodes = [...templateChildNodes];
+    const clonedTemplateChildNodes = [...newChildNodes];
 
-    // We always want to have the two arrays (domChildNodes and cloneTemplateChildNodes) to have the same length.
-    // We also don't ever want to replace/diff the last node of the domChildNodes as it will always be the
-    // closing comment marker (/template-part) aka the anchorNode. So we push it to the end by inserting undefined items.
-    if (clonedTemplateChildNodes.length > clonedDomChildNodes.length) {
-        const nodesToFill = clonedTemplateChildNodes.length - clonedDomChildNodes.length;
-        for (let i = 0; i < nodesToFill; i++) {
-            // clonedDomChildNodes.splice(clonedDomChildNodes.length - offset, 0, undefined);
-            clonedDomChildNodes.push(undefined);
-        }
-    }
-
-    if (clonedDomChildNodes.length > clonedTemplateChildNodes.length) {
-        const nodesToFill = clonedDomChildNodes.length - clonedTemplateChildNodes.length;
-        for (let i = 0; i < nodesToFill; i++) {
-            // clonedTemplateChildNodes.splice(clonedTemplateChildNodes.length - offset, 0, undefined);
-            clonedTemplateChildNodes.push(undefined);
-        }
-    }
-
-    const length = clonedDomChildNodes.length;
+    const length = Math.max(clonedDomChildNodes.length, clonedTemplateChildNodes.length);
     // Diff each node in the child node lists
     for (let index = 0; index < length; index++) {
         let domChildNode = clonedDomChildNodes[index];
@@ -142,8 +119,8 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
         ) {
             // but we need to assign the current DOM node into the templateChildNodes
             // as they will be returned here at the end and become the domNodes for the next diffing.
-            const childIndex = templateChildNodes.indexOf(templateChildNode);
-            templateChildNodes[childIndex] = domChildNode;
+            const childIndex = newChildNodes.indexOf(templateChildNode);
+            newChildNodes[childIndex] = domChildNode;
             continue;
         }
 
@@ -159,15 +136,15 @@ const diffChildNodes = function (parentNode, domChildNodes, templateChildNodes, 
             });
         }
     }
-    return templateChildNodes;
 };
 
 function getType(value) {
     if (typeof value === 'function') return getType(value());
     if (Array.isArray(value)) return 'array';
     if (value instanceof TemplatePart) return 'templatePart';
+    // if (value?.nodeType === ELEMENT_NODE) return 'element';
+    if (value instanceof Node) return 'node';
     // if (value === null) return 'null';
-    // return typeof value;
     return 'text';
 }
 
@@ -194,7 +171,6 @@ const unwrapArray = (nodes) => {
  * @return {(function(*): void)|*}
  */
 export const processNodePart = (comment, initialValue) => {
-    let nodes = initialValue instanceof TemplatePart ? initialValue.childNodes : [];
     let oldValue = initialValue instanceof TemplatePart ? initialValue.strings : initialValue;
     // this is for string values to be inserted into the DOM. A cached TextNode will be used so that we don't have to constantly create new DOM nodes.
     let cachedTextNode = undefined;
@@ -202,6 +178,7 @@ export const processNodePart = (comment, initialValue) => {
 
     const processNodeValue = (newValue) => {
         let newValueType = getType(newValue);
+
         if (typeof newValue === 'function') {
             newValue = newValue();
         }
@@ -224,6 +201,12 @@ export const processNodePart = (comment, initialValue) => {
             return;
         }
 
+        if (oldValueType !== newValueType && newValueType === 'node') {
+            replaceNodesBetweenComments(comment, [newValue]);
+            oldValueType = newValueType;
+            return;
+        }
+
         switch (typeof newValue) {
             // primitives are handled as text content
             case 'string':
@@ -233,7 +216,7 @@ export const processNodePart = (comment, initialValue) => {
                     oldValue = newValue;
                     if (!cachedTextNode) cachedTextNode = globalThis.document?.createTextNode('');
                     cachedTextNode.data = newValue;
-                    nodes = diffChildNodes(comment.parentNode, nodes, [cachedTextNode], comment);
+                    diffChildNodes([cachedTextNode], comment);
                 }
                 break;
             // null (= typeof "object") and undefined are used to clean up previous content
@@ -243,14 +226,12 @@ export const processNodePart = (comment, initialValue) => {
                     if (oldValue !== newValue) {
                         oldValue = newValue;
                         removeNodesBetweenComments(comment);
-                        nodes = [];
                     }
                     break;
                 }
                 if (Array.isArray(newValue)) {
                     if (newValue.length === 0) {
                         removeNodesBetweenComments(comment);
-                        nodes = [];
                     } else {
                         // TODO: this will always diff the arrays although they might not have changed...
                         const unwrapArray = (nodes) => {
@@ -272,23 +253,16 @@ export const processNodePart = (comment, initialValue) => {
                                 return value;
                             });
                         };
-                        nodes = diffChildNodes(comment.parentNode, nodes, unwrapArray(newValue), comment);
+                        diffChildNodes(unwrapArray(newValue), comment);
                     }
                     oldValue = newValue;
                     break;
                 }
 
-                // TODO: sometimes the strings are the same, but the value types have changed eg. from array to templatepart - then we must also diff!!
-                if (newValue instanceof TemplatePart && oldValue !== newValue.strings) {
-                    // if the new value is a node or a fragment, and it's different from the live node, then it's diffed.
-                    // static strings have changed in tpl part
-                    oldValue = newValue.strings;
-                    nodes = diffChildNodes(comment.parentNode, nodes, newValue.childNodes.slice(1, -1), comment);
-                    // nodes = diffChildNodes(comment.parentNode, nodes, newValue.childNodes, comment);
-                } else if (oldValue !== newValue && 'ELEMENT_NODE' in newValue) {
+                if (oldValue !== newValue && newValue instanceof Node) {
                     // DOM Node changed, needs diffing
                     oldValue = newValue;
-                    nodes = diffChildNodes(comment.parentNode, nodes, [newValue], comment);
+                    diffChildNodes([newValue], comment);
                 }
                 break;
             case 'function':
@@ -312,6 +286,8 @@ export class ChildNodePart extends Part {
 
     /** @type {Part[]} */
     arrayParts = [];
+
+    textPart = undefined;
 
     /**
      * @param {Node} startNode - the start comment marker node
