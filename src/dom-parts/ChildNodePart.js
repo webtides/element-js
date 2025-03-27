@@ -71,70 +71,41 @@ export const getNodesBetweenComments = (commentNode, includeComments = false) =>
  */
 const diffChildNodes = function (newChildNodes, anchorNode) {
     const parentNode = anchorNode.parentNode;
-    const nodesBetweenComments = getNodesBetweenComments(anchorNode, false);
+    const oldChildNodes = getNodesBetweenComments(anchorNode, false);
 
-    // release first level references to prevent cache mutation
-    const clonedDomChildNodes = [...nodesBetweenComments];
-    const clonedTemplateChildNodes = [...newChildNodes];
-
-    const length = Math.max(clonedDomChildNodes.length, clonedTemplateChildNodes.length);
+    const length = Math.max(oldChildNodes.length, newChildNodes.length);
     // Diff each node in the child node lists
     for (let index = 0; index < length; index++) {
-        let domChildNode = clonedDomChildNodes[index];
-        let templateChildNode = clonedTemplateChildNodes[index];
+        let oldChildNode = oldChildNodes[index];
+        let newChildNode = newChildNodes[index];
 
-        // If the DOM node doesn't exist, append/copy the template node
-        if (domChildNode === undefined) {
-            if (typeof templateChildNode === 'object' && 'ELEMENT_NODE' in templateChildNode) {
-                parentNode.insertBefore(templateChildNode, anchorNode);
-            } else {
-                // TODO: this might not be performant?! Can we maybe handle this in processDomNode?!
-                // TODO: I think that we need to make ChildNodeParts from all primitive values as well
-                parentNode.insertBefore(document.createTextNode(templateChildNode), anchorNode);
-            }
+        // TODO: can we to the check like this? Or will this crash in SSR (Node.js) environments?
+        if (newChildNode && !(newChildNode instanceof Node)) {
+            throw new Error('ChildNodePart: newChildNode is not a node');
+        }
+
+        // If the DOM node doesn't exist, append/copy the new node
+        if (oldChildNode === undefined) {
+            parentNode.insertBefore(newChildNode, anchorNode);
             continue;
         }
 
-        if (templateChildNode === undefined) {
-            // If the template node doesn't exist, remove the node in the DOM
-            if ('ELEMENT_NODE' in domChildNode) {
-                // remove dom node
-                parentNode.removeChild(domChildNode);
-            } else if (Array.isArray(domChildNode) || domChildNode instanceof TemplatePart) {
-                // remove childNodes
-                const childNodes = Array.isArray(domChildNode) ? domChildNode : domChildNode.childNodes;
-                for (const childNode of childNodes) {
-                    childNode.remove();
-                }
-            } else {
-                console.log('This should not happen... what do we do about this node?!', { domChildNode });
-            }
+        // If the new node doesn't exist, remove the node in the DOM
+        if (newChildNode === undefined) {
+            parentNode.removeChild(oldChildNode);
             continue;
         }
 
-        // If DOM node is equal to the template node, don't do anything in the DOM
+        // If DOM node is equal to the new node, don't do anything in the DOM
         if (
-            domChildNode === templateChildNode ||
-            (domChildNode.nodeType && templateChildNode.nodeType && domChildNode.isEqualNode(templateChildNode))
+            oldChildNode === newChildNode ||
+            (oldChildNode.nodeType && newChildNode.nodeType && oldChildNode.isEqualNode(newChildNode))
         ) {
-            // but we need to assign the current DOM node into the templateChildNodes
-            // as they will be returned here at the end and become the domNodes for the next diffing.
-            const childIndex = newChildNodes.indexOf(templateChildNode);
-            newChildNodes[childIndex] = domChildNode;
             continue;
         }
 
         // Everything else is somehow different and can be replaced
-        if (parentNode.contains(domChildNode)) {
-            parentNode.replaceChild(templateChildNode, domChildNode);
-        } else {
-            console.warn('This should not happen', {
-                parentNode,
-                'parentNode.contains(domChildNode)': parentNode.contains(domChildNode),
-                templateChildNode,
-                domChildNode,
-            });
-        }
+        parentNode.replaceChild(newChildNode, oldChildNode);
     }
 };
 
@@ -142,7 +113,7 @@ function getType(value) {
     if (typeof value === 'function') return getType(value());
     if (Array.isArray(value)) return 'array';
     if (value instanceof TemplatePart) return 'templatePart';
-    // if (value?.nodeType === ELEMENT_NODE) return 'element';
+    // TODO: can we to the check like this? Or will this crash in SSR (Node.js) environments?
     if (value instanceof Node) return 'node';
     // if (value === null) return 'null';
     return 'text';
@@ -259,9 +230,13 @@ export const processNodePart = (comment, initialValue) => {
                     break;
                 }
 
+                // TODO: can we to the check like this? Or will this crash in SSR (Node.js) environments?
+                // DOM Node changed, needs diffing
                 if (oldValue !== newValue && newValue instanceof Node) {
-                    // DOM Node changed, needs diffing
                     oldValue = newValue;
+                    // TODO: we probably do not need to go through the whole diffing?!
+                    // TODO: if the values are different we can just replace them in the DOM because that is what diffing will do in the end
+                    // TODO: unless we actually want to diff them deeply - then we need to extend the diffing function for deep/nested diffing
                     diffChildNodes([newValue], comment);
                 }
                 break;
