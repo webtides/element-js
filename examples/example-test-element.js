@@ -48,6 +48,11 @@ class ExampleTestElement extends TemplateElement {
             return html`<div>${paragraphElement}</div>`;
         }
 
+        if (example === '0000000') {
+            const fn = () => this.text;
+            return html`<div>${fn}</div>`;
+        }
+
         if (example === '1') {
             const p = document.createElement('p');
             p.textContent = 'DOM Element';
