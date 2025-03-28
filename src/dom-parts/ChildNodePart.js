@@ -133,13 +133,20 @@ const unwrapArray = (nodes) => {
 /**
  * @param {Comment} comment
  * @param {TemplatePart | any[] | any} initialValue
+ * @param {boolean} serverSideRendered
  * @return {(function(*): void)|*}
  */
-export const processNodePart = (comment, initialValue) => {
-    let oldValueType = getType(initialValue);
-    let oldValue = initialValue instanceof TemplatePart ? initialValue.strings : initialValue;
+export const processNodePart = (comment, initialValue, serverSideRendered = false) => {
+    let oldValueType = 'empty';
+    let oldValue = undefined;
     // this is for string values to be inserted into the DOM. A cached TextNode will be used so that we don't have to constantly create new DOM nodes.
+    // TODO: when server side rendered, we need to get the text node from the DOM no?!
     let cachedTextNode = globalThis.document?.createTextNode('');
+
+    if (serverSideRendered) {
+        oldValueType = getType(initialValue);
+        oldValue = initialValue instanceof TemplatePart ? initialValue.strings : initialValue;
+    }
 
     const processNodeValue = (newValue) => {
         let newValueType = getType(newValue);
@@ -188,6 +195,11 @@ export const processNodePart = (comment, initialValue) => {
         }
     };
 
+    if (!serverSideRendered) {
+        // initial rendering
+        processNodeValue(initialValue);
+    }
+
     return processNodeValue;
 };
 
@@ -203,8 +215,6 @@ export class ChildNodePart extends Part {
 
     /** @type {Part[]} */
     arrayParts = [];
-
-    textPart = undefined;
 
     /**
      * @param {Node} startNode - the start comment marker node
@@ -225,14 +235,7 @@ export class ChildNodePart extends Part {
         // value can become array | TemplatePart | any
         const initialValue = this.parseValue(value);
 
-        this.processor = processNodePart(
-            this.markers?.endNode,
-            this.markers?.serverSideRendered ? initialValue : undefined,
-        );
-
-        if (!this.markers?.serverSideRendered && !(value instanceof TemplateResult)) {
-            this.processor?.(initialValue);
-        }
+        this.processor = processNodePart(this.markers?.endNode, initialValue, this.markers?.serverSideRendered);
     }
 
     /**
@@ -246,10 +249,7 @@ export class ChildNodePart extends Part {
             this.updateParts(value);
         }
 
-        // TODO: but maybe this can be ommited again for templateresults and arrays?! since we are replacing nodes now instead of diffing...
-        if (!(value instanceof TemplateResult)) {
-            this.processor?.(parsedValue);
-        }
+        this.processor?.(parsedValue);
     }
 
     /**
