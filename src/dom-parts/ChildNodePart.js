@@ -106,10 +106,10 @@ const diffChildNodes = function (newChildNodes, anchorNode) {
 };
 
 function getType(value) {
-    if (Array.isArray(value)) return 'array';
     if (value instanceof TemplatePart) return 'templatePart';
+    // if (value === null) return 'empty';
+    if (Array.isArray(value)) return 'array';
     if (value?.nodeType) return 'node';
-    // if (value === null) return 'null';
     return 'text';
 }
 
@@ -143,10 +143,6 @@ export const processNodePart = (comment, initialValue) => {
 
     const processNodeValue = (newValue) => {
         let newValueType = getType(newValue);
-
-        if (typeof newValue === 'function') {
-            newValue = newValue();
-        }
 
         if (oldValueType !== newValueType && newValueType === 'templatePart') {
             replaceNodesBetweenComments(comment, newValue.childNodes);
