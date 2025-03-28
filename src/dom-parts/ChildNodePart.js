@@ -106,7 +106,6 @@ const diffChildNodes = function (newChildNodes, anchorNode) {
 };
 
 function getType(value) {
-    if (typeof value === 'function') return getType(value());
     if (Array.isArray(value)) return 'array';
     if (value instanceof TemplatePart) return 'templatePart';
     if (value?.nodeType) return 'node';
@@ -114,7 +113,7 @@ function getType(value) {
     return 'text';
 }
 
-// TODO: handle funcitons?!
+// TODO: handle funcitons?! Should be handled in parseArray!!!
 const unwrapArray = (nodes) => {
     // we have to unwrap any complex objects inside the array so that we can diff arrays of childNodes
     return nodes.flatMap((value) => {
@@ -137,10 +136,10 @@ const unwrapArray = (nodes) => {
  * @return {(function(*): void)|*}
  */
 export const processNodePart = (comment, initialValue) => {
+    let oldValueType = getType(initialValue);
     let oldValue = initialValue instanceof TemplatePart ? initialValue.strings : initialValue;
     // this is for string values to be inserted into the DOM. A cached TextNode will be used so that we don't have to constantly create new DOM nodes.
     let cachedTextNode = undefined;
-    let oldValueType = getType(initialValue);
 
     const processNodeValue = (newValue) => {
         let newValueType = getType(newValue);
@@ -214,9 +213,6 @@ export const processNodePart = (comment, initialValue) => {
                     // TODO: unless we actually want to diff them deeply - then we need to extend the diffing function for deep/nested diffing
                     diffChildNodes([newValue], comment);
                 }
-                break;
-            case 'function':
-                processNodeValue(newValue(comment));
                 break;
         }
     };
@@ -322,6 +318,13 @@ export class ChildNodePart extends Part {
         if (Array.isArray(value)) {
             return this.parseArray(value);
         }
+        if (value?.nodeType) {
+            return value;
+        }
+        if (typeof value === 'function') {
+            return this.parseValue(value());
+        }
+        // Everything else will be rendered as TextNode
         return value;
     }
 
@@ -334,6 +337,8 @@ export class ChildNodePart extends Part {
         const parsedValues = [];
         for (let index = 0; index < values.length; index++) {
             let value = values[index];
+
+            // TODO: it would be better to use this.parseValue() here!!!
 
             if (value instanceof TemplateResult) {
                 // TODO this is probably wrong. Should only be taken from parts cache if it has the same type (eg. template vs string, mixed types arrays)
