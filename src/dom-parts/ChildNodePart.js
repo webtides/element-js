@@ -268,7 +268,7 @@ export class ChildNodePart extends Part {
 
     /**
      * @param {TemplateResult | any[] | any} value
-     * @return {TemplatePart | any[] | any}
+     * @return {TemplatePart | Node | string | Array<TemplatePart | Node | string>}
      */
     parseValue(value) {
         if (value instanceof TemplateResult) {
@@ -296,7 +296,7 @@ export class ChildNodePart extends Part {
             return this.parseValue(value());
         }
         // Everything else will be rendered as TextNode
-        return value;
+        return value.toString();
     }
 
     /**
