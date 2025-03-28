@@ -107,8 +107,8 @@ const diffChildNodes = function (newChildNodes, anchorNode) {
 
 function getType(value) {
     if (value instanceof TemplatePart) return 'templatePart';
-    // if (value === null) return 'empty';
-    if (Array.isArray(value)) return 'array';
+    if (value === null || value === undefined) return 'empty';
+    if (Array.isArray(value)) return value.length === 0 ? 'empty' : 'array';
     if (value?.nodeType) return 'node';
     return 'text';
 }
@@ -139,77 +139,52 @@ export const processNodePart = (comment, initialValue) => {
     let oldValueType = getType(initialValue);
     let oldValue = initialValue instanceof TemplatePart ? initialValue.strings : initialValue;
     // this is for string values to be inserted into the DOM. A cached TextNode will be used so that we don't have to constantly create new DOM nodes.
-    let cachedTextNode = undefined;
+    let cachedTextNode = globalThis.document?.createTextNode('');
 
     const processNodeValue = (newValue) => {
         let newValueType = getType(newValue);
 
-        if (oldValueType !== newValueType && newValueType === 'templatePart') {
-            replaceNodesBetweenComments(comment, newValue.childNodes);
+        if (oldValueType === newValueType && oldValue === newValue) return;
+
+        if (oldValueType !== newValueType) {
+            if (newValueType === 'empty') {
+                removeNodesBetweenComments(comment);
+            } else {
+                const getNodesForType = (value, type) => {
+                    if (type === 'templatePart') return value.childNodes;
+                    if (type === 'array') return unwrapArray(value);
+                    if (type === 'node') return [value];
+
+                    // Every else falls back to rendering a text node
+                    cachedTextNode.data = value;
+                    return [cachedTextNode];
+                };
+                replaceNodesBetweenComments(comment, getNodesForType(newValue, newValueType));
+            }
+
             oldValueType = newValueType;
+            oldValue = newValue;
             return;
         }
 
-        if (oldValueType !== newValueType && newValueType === 'text') {
-            replaceNodesBetweenComments(comment, [document.createTextNode(newValue)]);
-            oldValueType = newValueType;
+        if (newValueType === 'text') {
+            cachedTextNode.data = newValue;
+
+            oldValue = newValue;
             return;
         }
 
-        if (oldValueType !== newValueType && newValueType === 'array') {
-            replaceNodesBetweenComments(comment, unwrapArray(newValue));
-            oldValueType = newValueType;
+        if (newValueType === 'array') {
+            diffChildNodes(unwrapArray(newValue), comment);
+
+            oldValue = newValue;
             return;
         }
 
-        if (oldValueType !== newValueType && newValueType === 'node') {
-            replaceNodesBetweenComments(comment, [newValue]);
-            oldValueType = newValueType;
-            return;
-        }
+        if (newValueType === 'node') {
+            diffChildNodes([newValue], comment);
 
-        switch (typeof newValue) {
-            // primitives are handled as text content
-            case 'string':
-            case 'number':
-            case 'boolean':
-                if (oldValue !== newValue) {
-                    oldValue = newValue;
-                    if (!cachedTextNode) cachedTextNode = globalThis.document?.createTextNode('');
-                    cachedTextNode.data = newValue;
-                    diffChildNodes([cachedTextNode], comment);
-                }
-                break;
-            // null (= typeof "object") and undefined are used to clean up previous content
-            case 'object':
-            case 'undefined':
-                if (newValue === null || newValue === undefined) {
-                    if (oldValue !== newValue) {
-                        oldValue = newValue;
-                        removeNodesBetweenComments(comment);
-                    }
-                    break;
-                }
-                if (Array.isArray(newValue)) {
-                    if (newValue.length === 0) {
-                        removeNodesBetweenComments(comment);
-                    } else {
-                        // TODO: this will always diff the arrays although they might not have changed...
-                        diffChildNodes(unwrapArray(newValue), comment);
-                    }
-                    oldValue = newValue;
-                    break;
-                }
-
-                // DOM Node changed, needs diffing
-                if (oldValue !== newValue && newValue?.nodeType) {
-                    oldValue = newValue;
-                    // TODO: we probably do not need to go through the whole diffing?!
-                    // TODO: if the values are different we can just replace them in the DOM because that is what diffing will do in the end
-                    // TODO: unless we actually want to diff them deeply - then we need to extend the diffing function for deep/nested diffing
-                    diffChildNodes([newValue], comment);
-                }
-                break;
+            oldValue = newValue;
         }
     };
 
