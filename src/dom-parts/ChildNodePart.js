@@ -79,8 +79,7 @@ const diffChildNodes = function (newChildNodes, anchorNode) {
         let oldChildNode = oldChildNodes[index];
         let newChildNode = newChildNodes[index];
 
-        // TODO: can we to the check like this? Or will this crash in SSR (Node.js) environments?
-        if (newChildNode && !(newChildNode instanceof Node)) {
+        if (newChildNode && !newChildNode.nodeType) {
             throw new Error('ChildNodePart: newChildNode is not a node');
         }
 
@@ -97,10 +96,7 @@ const diffChildNodes = function (newChildNodes, anchorNode) {
         }
 
         // If DOM node is equal to the new node, don't do anything in the DOM
-        if (
-            oldChildNode === newChildNode ||
-            (oldChildNode.nodeType && newChildNode.nodeType && oldChildNode.isEqualNode(newChildNode))
-        ) {
+        if (oldChildNode === newChildNode || oldChildNode.isEqualNode(newChildNode)) {
             continue;
         }
 
@@ -113,8 +109,7 @@ function getType(value) {
     if (typeof value === 'function') return getType(value());
     if (Array.isArray(value)) return 'array';
     if (value instanceof TemplatePart) return 'templatePart';
-    // TODO: can we to the check like this? Or will this crash in SSR (Node.js) environments?
-    if (value instanceof Node) return 'node';
+    if (value?.nodeType) return 'node';
     // if (value === null) return 'null';
     return 'text';
 }
@@ -205,34 +200,14 @@ export const processNodePart = (comment, initialValue) => {
                         removeNodesBetweenComments(comment);
                     } else {
                         // TODO: this will always diff the arrays although they might not have changed...
-                        const unwrapArray = (nodes) => {
-                            // we have to unwrap any complex objects inside the array so that we can diff arrays of childNodes
-                            return nodes.flatMap((value) => {
-                                if (value instanceof TemplatePart) {
-                                    return value.childNodes;
-                                }
-                                if (Array.isArray(value)) {
-                                    return unwrapArray(value);
-                                }
-                                if (
-                                    typeof value === 'boolean' ||
-                                    typeof value === 'number' ||
-                                    typeof value === 'string'
-                                ) {
-                                    return document.createTextNode(value);
-                                }
-                                return value;
-                            });
-                        };
                         diffChildNodes(unwrapArray(newValue), comment);
                     }
                     oldValue = newValue;
                     break;
                 }
 
-                // TODO: can we to the check like this? Or will this crash in SSR (Node.js) environments?
                 // DOM Node changed, needs diffing
-                if (oldValue !== newValue && newValue instanceof Node) {
+                if (oldValue !== newValue && newValue?.nodeType) {
                     oldValue = newValue;
                     // TODO: we probably do not need to go through the whole diffing?!
                     // TODO: if the values are different we can just replace them in the DOM because that is what diffing will do in the end
