@@ -71,7 +71,7 @@ export const getNodesBetweenComments = (commentNode, includeComments = false) =>
  */
 const diffChildNodes = function (newChildNodes, anchorNode) {
     const parentNode = anchorNode.parentNode;
-    const oldChildNodes = getNodesBetweenComments(anchorNode, false);
+    const oldChildNodes = getNodesBetweenComments(anchorNode);
 
     const length = Math.max(oldChildNodes.length, newChildNodes.length);
     // Diff each node in the child node lists
