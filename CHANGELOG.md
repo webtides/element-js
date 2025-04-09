@@ -16,6 +16,12 @@ to [Semantic Versioning](http://semver.org/).
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.1.7] - 2025-04-09
+
+### FIXED
+
+- Fixed conditional rendering of templates and arrays and any other types ([#149](https://github.com/webtides/element-js/pull/149))
+
 ## [1.1.7] - 2025-02-17
 
 ### FIXED
