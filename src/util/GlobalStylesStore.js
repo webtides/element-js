@@ -17,14 +17,58 @@ class GlobalStylesStore extends Store {
                 );
                 if (filteredNodes && filteredNodes[0] && filteredNodes[0].tagName === 'LINK') {
                     filteredNodes[0].onload = () => {
+                        // TODO maybe its possible to simply aff the node aka sytlesheet !?
+                        this.createGlobalStyleSheetsCache();
                         this.requestUpdate();
                     };
                 } else if (filteredNodes && filteredNodes[0] && filteredNodes[0].tagName === 'STYLE') {
+                    this.createGlobalStyleSheetsCache();
                     this.requestUpdate();
                 }
             });
             mutationObserver.observe(globalThis.document, { subtree: true, childList: true });
+        } else {
+            this.createGlobalStyleSheetsCache();
         }
+    }
+
+    createGlobalStyleSheetsCache() {
+        // TODO create early return in node is already in
+        console.time('createGlobalStyleSheetsCache');
+        console.timeLog('createGlobalStyleSheetsCache', 'BUILD OR REBUILD');
+        Array.from(globalThis.document?.styleSheets).map((styleSheet) => {
+            // TODO: this will always be null as we never set anything to the cache...
+            let cssStyleSheet = this.globalStyleSheetsCache.get(styleSheet.ownerNode);
+            if (!cssStyleSheet) {
+                // if it does not exist yet -> build it
+                if (styleSheet.ownerNode.tagName === 'STYLE') {
+                    const cssStyleSheet = new CSSStyleSheet({ media: styleSheet.media, disabled: styleSheet.disabled });
+                    cssStyleSheet.replaceSync(styleSheet.ownerNode.textContent);
+
+                    this.globalStyleSheetsCache.set(styleSheet.ownerNode, cssStyleSheet);
+                } else if (styleSheet.ownerNode.tagName === 'LINK') {
+                    const cssStyleSheet = new CSSStyleSheet({
+                        baseURL: styleSheet.href,
+                        media: styleSheet.media,
+                        disabled: styleSheet.disabled,
+                    });
+                    try {
+                        console.timeLog('createGlobalStyleSheetsCache', '## 1');
+                        // TODO this is like suuuuper expensive approx 22ms
+                        Array.from(styleSheet?.cssRules ?? []).map((rule, index) =>
+                            cssStyleSheet.insertRule(rule.cssText, index),
+                        );
+                        console.timeLog('createGlobalStyleSheetsCache', '## 2');
+                        this.globalStyleSheetsCache.set(styleSheet.ownerNode, cssStyleSheet);
+                    } catch (e) {
+                        console.error(
+                            'GlobalStylesStore: cannot read cssRules. Maybe add crossorigin="anonymous" to your style link?',
+                            e,
+                        );
+                    }
+                }
+            }
+        });
     }
 
     getGlobalStyleSheets(selector) {
@@ -46,31 +90,10 @@ class GlobalStylesStore extends Store {
                 return;
             }
 
-            // TODO: this will always be null as we never set anything to the cache...
             let cssStyleSheet = this.globalStyleSheetsCache.get(styleSheet.ownerNode);
-            if (!cssStyleSheet) {
-                if (styleSheet.ownerNode.tagName === 'STYLE') {
-                    cssStyleSheet = new CSSStyleSheet({ media: styleSheet.media, disabled: styleSheet.disabled });
-                    cssStyleSheet.replaceSync(styleSheet.ownerNode.textContent);
-                } else if (styleSheet.ownerNode.tagName === 'LINK') {
-                    cssStyleSheet = new CSSStyleSheet({
-                        baseURL: styleSheet.href,
-                        media: styleSheet.media,
-                        disabled: styleSheet.disabled,
-                    });
-                    try {
-                        Array.from(styleSheet?.cssRules ?? []).map((rule, index) =>
-                            cssStyleSheet.insertRule(rule.cssText, index),
-                        );
-                    } catch (e) {
-                        console.error(
-                            'GlobalStylesStore: cannot read cssRules. Maybe add crossorigin="anonymous" to your style link?',
-                            e,
-                        );
-                    }
-                }
+            if (cssStyleSheet) {
+                cssStyleSheets.push(cssStyleSheet);
             }
-            cssStyleSheets.push(cssStyleSheet);
         });
 
         return cssStyleSheets;
