@@ -295,6 +295,9 @@ export class ChildNodePart extends Part {
         if (typeof value === 'function') {
             return this.parseValue(value());
         }
+        if (value === null || value === undefined) {
+            return value;
+        }
         // Everything else will be rendered as TextNode
         return value.toString();
     }
