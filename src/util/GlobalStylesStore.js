@@ -4,7 +4,7 @@ import { Store } from './Store.js';
  * @property {CSSStyleSheet[]} cssStyleSheets
  */
 class GlobalStylesStore extends Store {
-    /** @type {Map<Node, CSSStyleSheet>} */
+    /** @type {WeakMap<Node, CSSStyleSheet>} */
     globalStyleSheetsCache = new WeakMap();
 
     constructor() {
@@ -37,7 +37,6 @@ class GlobalStylesStore extends Store {
         console.time('createGlobalStyleSheetsCache');
         console.timeLog('createGlobalStyleSheetsCache', 'BUILD OR REBUILD');
         Array.from(globalThis.document?.styleSheets).map((styleSheet) => {
-            // TODO: this will always be null as we never set anything to the cache...
             let cssStyleSheet = this.globalStyleSheetsCache.get(styleSheet.ownerNode);
             if (!cssStyleSheet) {
                 // if it does not exist yet -> build it
@@ -54,10 +53,31 @@ class GlobalStylesStore extends Store {
                     });
                     try {
                         console.timeLog('createGlobalStyleSheetsCache', '## 1');
-                        // TODO this is like suuuuper expensive approx 22ms
-                        Array.from(styleSheet?.cssRules ?? []).map((rule, index) =>
-                            cssStyleSheet.insertRule(rule.cssText, index),
-                        );
+                        // TODO this is like super expensive... - approx 22ms
+                        // original version
+                        // Array.from(styleSheet?.cssRules ?? []).map((rule, index) =>
+                        //     cssStyleSheet.insertRule(rule.cssText, index),
+                        // );
+
+                        // TODO: this is a bit faster... but still expensive - approx 20ms
+                        // Get all CSS text in one go
+                        // const allCssText = Array.from(styleSheet.cssRules)
+                        //     .map((rule) => rule.cssText)
+                        //     .join('\n');
+                        // // Apply all at once
+                        // cssStyleSheet.replaceSync(allCssText);
+
+                        // TODO im not sure i like this, but i would assume that the request is cached already?! - approx 1ms
+                        // Fetch the CSS content directly from the href
+                        fetch(styleSheet.href)
+                            .then((response) => response.text())
+                            .then((cssText) => {
+                                cssStyleSheet.replaceSync(cssText);
+                            })
+                            .catch((e) => {
+                                console.error('GlobalStylesStore: Cannot fetch stylesheet content', e);
+                            });
+
                         console.timeLog('createGlobalStyleSheetsCache', '## 2');
                         this.globalStyleSheetsCache.set(styleSheet.ownerNode, cssStyleSheet);
                     } catch (e) {
