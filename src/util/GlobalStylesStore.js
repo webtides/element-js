@@ -6,6 +6,7 @@ import { Store } from './Store.js';
 class GlobalStylesStore extends Store {
     /** @type {WeakMap<Node, CSSStyleSheet>} */
     globalStyleSheetsCache = new WeakMap();
+    counter = 0;
 
     constructor() {
         super();
@@ -43,16 +44,16 @@ class GlobalStylesStore extends Store {
     }
 
     async processStylesheet(styleSheet) {
-        console.time('createGlobalStyleSheetsCache');
-
         let cssStyleSheet = this.globalStyleSheetsCache.get(styleSheet.ownerNode);
         if (!cssStyleSheet) {
+            const timerName = `processStylesheet-${this.counter++}`;
+            console.time(timerName);
             // if it does not exist yet -> build it
             if (styleSheet.ownerNode.tagName === 'STYLE') {
                 const cssStyleSheet = new CSSStyleSheet({ media: styleSheet.media, disabled: styleSheet.disabled });
-                console.timeLog('createGlobalStyleSheetsCache', `## Style 1: ${styleSheet.href}`);
+                console.timeLog(timerName, `## Style 1: ${styleSheet.href}`);
                 cssStyleSheet.replaceSync(styleSheet.ownerNode.textContent);
-                console.timeLog('createGlobalStyleSheetsCache', `## Style 2: ${styleSheet.href}`);
+                console.timeLog(timerName, `## Style 2: ${styleSheet.href}`);
 
                 this.globalStyleSheetsCache.set(styleSheet.ownerNode, cssStyleSheet);
             } else if (styleSheet.ownerNode.tagName === 'LINK') {
@@ -62,7 +63,7 @@ class GlobalStylesStore extends Store {
                     disabled: styleSheet.disabled,
                 });
                 try {
-                    console.timeLog('createGlobalStyleSheetsCache', `## LINK 1: ${styleSheet.href}`);
+                    console.timeLog(timerName, `## LINK 1: ${styleSheet.href}`);
                     // TODO this is like super expensive... - approx 22ms
                     // original version
                     Array.from(styleSheet?.cssRules ?? []).map((rule, index) =>
@@ -84,9 +85,6 @@ class GlobalStylesStore extends Store {
                     // try {
                     //     const response = await fetch(styleSheet.href);
                     //     const cssText = await response.text();
-                    //
-                    //     // console.info('GlobalStylesStore:cssText', cssText);
-                    //
                     //     await cssStyleSheet.replace(cssText);
                     // } catch (e) {
                     //     console.error('GlobalStylesStore: Cannot fetch stylesheet content', e);
@@ -95,7 +93,7 @@ class GlobalStylesStore extends Store {
                     this.globalStyleSheetsCache.set(styleSheet.ownerNode, cssStyleSheet);
 
                     console.log('## added to the cache: ', cssStyleSheet);
-                    console.timeLog('createGlobalStyleSheetsCache', `## LINK AFTER: ${styleSheet.href}`);
+                    console.timeLog(timerName, `## LINK AFTER: ${styleSheet.href}`);
                     // update observer that there might be new styles to adopt
                     this.requestUpdate();
                 } catch (e) {
@@ -107,7 +105,7 @@ class GlobalStylesStore extends Store {
             }
 
             console.log('#######    ################');
-            console.timeEnd('createGlobalStyleSheetsCache');
+            console.timeEnd(timerName);
             console.log(`#######    ${styleSheet.ownerNode}`);
             console.log(`#######    rules      :: ${styleSheet.rules.length}`);
             console.log('#######    ################');
@@ -116,8 +114,10 @@ class GlobalStylesStore extends Store {
         }
     }
 
-    createGlobalStyleSheetsCache() {
-        Array.from(globalThis.document?.styleSheets).map((styleSheet) => this.processStylesheet(styleSheet));
+    async createGlobalStyleSheetsCache() {
+        return Promise.all(
+            Array.from(globalThis.document?.styleSheets).map((styleSheet) => this.processStylesheet(styleSheet)),
+        );
     }
 
     getGlobalStyleSheets(selector) {
