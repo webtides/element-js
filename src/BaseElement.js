@@ -79,7 +79,6 @@ class BaseElement extends HTMLElement {
             propertyOptions: {},
             ...options,
         };
-        // TOOD: add test for :state(connected)
         this._internals = this.attachInternals();
     }
 
