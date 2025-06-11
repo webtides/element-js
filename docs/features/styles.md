@@ -87,6 +87,35 @@ It is also possible to combine the `:host` selector with other matching selector
 }
 ```
 
+#### CSS :state pseudo-class
+
+All _element-js_ elements automatically have the "connected" state added when they are connected and rendered to the DOM. This uses the [ElementInternals.states](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/states) API, which is a standard web API.
+
+You can target elements with specific states using the `:state()` pseudo-class in CSS:
+
+```css
+/* Style the element when it's connected to the DOM */
+:state(connected) {
+    opacity: 1;
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* Style the element when it's not yet connected */
+:not(:state(connected)) {
+    opacity: 0;
+}
+```
+
+You can combine the `:state()` pseudo-class with the `:host` selector in Shadow DOM:
+
+```css
+:host(:state(connected)) {
+    border: 1px solid green;
+}
+```
+
+> Note: The `:state()` pseudo-class is part of the standard CSS Selectors Level 4 specification, but it might not be recognized by all CSS linters or editors yet.
+
 #### CSS custom properties
 
 Custom properties allow for reusing CSS values throughout a document. To read all about it, see [Using CSS custom properties (variables) - CSS: Cascading Style Sheets | MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties)
