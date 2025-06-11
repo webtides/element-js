@@ -52,6 +52,9 @@ export { toString } from './util/toString.js';
 class BaseElement extends HTMLElement {
     _serializationKey;
 
+    /** @type {ElementInternals} */
+    _internals;
+
     /**
      * @param {BaseElementOptions} options
      */
@@ -76,6 +79,9 @@ class BaseElement extends HTMLElement {
             propertyOptions: {},
             ...options,
         };
+        // TOOD: add to docs
+        // TOOD: add test for :state(connected)
+        this._internals = this.attachInternals();
     }
 
     /**
@@ -121,9 +127,11 @@ class BaseElement extends HTMLElement {
             this.registerEventsAndRefs();
 
             this.triggerHook('connected');
+            this._internals.states.add('connected');
         } else {
             this.requestUpdate({ notify: false }).then(() => {
                 this.triggerHook('connected');
+                this._internals.states.add('connected');
                 this.triggerHook('afterUpdate');
             });
         }
