@@ -16,7 +16,17 @@ to [Semantic Versioning](http://semver.org/).
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
-## [1.1.7] - 2025-04-09
+## [1.2.0] - 2025-06-13
+
+### ADDED
+
+- Added custom "connected" CSS :state() to all base elements once connected ([#151](https://github.com/webtides/element-js/issues/151))
+
+### FIXED
+
+- Fixed global style store not caching style sheet entries ([#152](https://github.com/webtides/element-js/pull/152))
+
+## [1.1.8] - 2025-04-09
 
 ### FIXED
 
