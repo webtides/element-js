@@ -6,7 +6,7 @@ const voidElements = /^(?:area|base|br|col|embed|hr|img|input|link|meta|source|t
 const rawTextElements = /<(script|style|textarea|title)([^>]*)>(.*?)<\/\1>/i;
 const elements = /<([a-z]+[a-z0-9:._-]*)([^>]*?)(\/?)>/g;
 // TODO: v this will not match any values with escaped quotes like onClick='console.log("\'test")'
-const attributes = /([^\s]*)=((?:")[^"]*(?:")|(?:')[^']*(?:')|[^\s\/>]*)|([^\s\/>]*)/g;
+const attributes = /([^\s=]*)=((?:")[^"]*(?:")|(?:')[^']*(?:')|[^\s\/>]*)|([^\s\/>]*)/g;
 const partPositions = /[\x01\x02]/g;
 const ssrPlaceholder = /{{dom-part\?(.*?)}}/g;
 // \x01 Node.ELEMENT_NODE
