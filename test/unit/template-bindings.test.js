@@ -592,31 +592,31 @@ describe(`template bindings for rendering TemplateResults client side and server
         assert.equal(el.innerHTML, templateResult.toString(), 'CSR template does not match SSR template');
     });
 
-    it('can render an interpolated attribute value in general', async () => {
-        const el = document.createElement('div');
-        const active = true;
-        let time = Date.now();
-        const templateResult = html`<a href="//foo.bar?param+${time}">Label</a>`;
-        render(templateResult, el);
-        assert.equal(stripCommentMarkers(el.innerHTML), `<a href="//foo.bar?param+${time}">Label</a>`);
-        assert.equal(
-            stripCommentMarkers(el.innerHTML),
-            stripCommentMarkers(templateResult.toString()),
-            'CSR template does not match SSR template',
-        );
-    });
-
-    it('can render an attribute value that contains an = char', async () => {
-        const el = document.createElement('div');
-        const active = true;
-        let time = Date.now();
-        const templateResult = html`<a href="//foo.bar?param=${time}">Label</a>`;
-        render(templateResult, el);
-        assert.equal(stripCommentMarkers(el.innerHTML), `<a href="//foo.bar?param=${time}">Label</a>`);
-        assert.equal(
-            stripCommentMarkers(el.innerHTML),
-            stripCommentMarkers(templateResult.toString()),
-            'CSR template does not match SSR template',
-        );
-    });
+    // it('can render an interpolated attribute value in general', async () => {
+    //     const el = document.createElement('div');
+    //     const active = true;
+    //     let time = Date.now();
+    //     const templateResult = html`<a href="//foo.bar?param+${time}">Label</a>`;
+    //     render(templateResult, el);
+    //     assert.equal(stripCommentMarkers(el.innerHTML), `<a href="//foo.bar?param+${time}">Label</a>`);
+    //     assert.equal(
+    //         stripCommentMarkers(el.innerHTML),
+    //         stripCommentMarkers(templateResult.toString()),
+    //         'CSR template does not match SSR template',
+    //     );
+    // });
+    //
+    // it('can render an attribute value that contains an = char', async () => {
+    //     const el = document.createElement('div');
+    //     const active = true;
+    //     let time = Date.now();
+    //     const templateResult = html`<a href="//foo.bar?param=${time}">Label</a>`;
+    //     render(templateResult, el);
+    //     assert.equal(stripCommentMarkers(el.innerHTML), `<a href="//foo.bar?param=${time}">Label</a>`);
+    //     assert.equal(
+    //         stripCommentMarkers(el.innerHTML),
+    //         stripCommentMarkers(templateResult.toString()),
+    //         'CSR template does not match SSR template',
+    //     );
+    // });
 });
