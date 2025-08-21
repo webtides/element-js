@@ -16,6 +16,13 @@ to [Semantic Versioning](http://semver.org/).
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.2.1] - 2025-08-21
+
+### FIXED
+
+- Fixes attribute interpolation Error where values contained "=" chars ([#154](https://github.com/webtides/element-js/issues/154))
+
+
 ## [1.2.0] - 2025-06-13
 
 ### ADDED
