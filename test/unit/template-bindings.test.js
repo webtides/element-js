@@ -198,7 +198,7 @@ describe(`template bindings for rendering TemplateResults client side and server
         render(templateResult, el);
         assert.equal(
             stripCommentMarkers(el.innerHTML),
-            '<div foo="&amp;"></div><div foo="<"></div><div foo=">"></div><div foo="\'"></div><div foo="&quot;"></div>',
+            '<div foo="&amp;"></div><div foo="&lt;"></div><div foo="&gt;"></div><div foo="\'"></div><div foo="&quot;"></div>',
         );
         assert.equal(
             stripCommentMarkers(el.innerHTML),
