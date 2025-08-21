@@ -125,16 +125,20 @@ export function camelToDash(string) {
 }
 
 /**
- * Decodes an attribute according to {@link https://html.spec.whatwg.org/multipage/syntax.html#attributes-2}
+ * Decodes an attribute according to {@link https://html.spec.whatwg.org/multipage/syntax.html#attributes-2} & {@link https://html.spec.whatwg.org/multipage/parsing.html#escapingString}
  * @param {string} attribute
  * @returns {string}
  */
 export function decodeAttribute(attribute) {
-    return `${attribute}`.replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+    return `${attribute}`
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&amp;/g, '&');
 }
 
 /**
- * Encodes an attribute according to {@link https://html.spec.whatwg.org/multipage/syntax.html#attributes-2}
+ * Encodes an attribute according to {@link https://html.spec.whatwg.org/multipage/syntax.html#attributes-2} & {@link https://html.spec.whatwg.org/multipage/parsing.html#escapingString}
  * @param {string} attribute
  * @returns {string}
  */
@@ -142,6 +146,8 @@ export function encodeAttribute(attribute) {
     return `${attribute}`
         .replace(/&/g, '&amp;')
         .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
         .replace(/\r\n/g, '\n')
         .replace(/[\r\n]/g, '\n');
 }
