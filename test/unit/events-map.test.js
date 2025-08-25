@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-expressions */
 import { fixture, defineCE, assert, nextFrame } from '@open-wc/testing';
 import { BaseElement } from '../../src/BaseElement';
+import { TemplateElement, html } from '../../src/TemplateElement.js';
 
 const tag = defineCE(
     class extends BaseElement {
@@ -60,6 +61,32 @@ const tag = defineCE(
         }
     },
 );
+
+class TemplateEventElement extends TemplateElement {
+    properties() {
+        return {
+            count: 0,
+        };
+    }
+
+    events() {
+        return {
+            ['[ref=btn]']: {
+                click: this.functionWithoutBind,
+            },
+        };
+    }
+
+    functionWithoutBind() {
+        this.count++;
+    }
+
+    template() {
+        return html`${this.count % 2 === 0 ? html`<button ref="btn">cick me</button>` : html`<button></button>`}`;
+    }
+}
+
+customElements.define('template-event-element', TemplateEventElement);
 
 describe('events-map', async () => {
     it('maintains instance context even tho context is not bound explicitly when added via events map', async () => {
@@ -127,5 +154,26 @@ describe('events-map', async () => {
         window.dispatchEvent(new Event('scroll'));
         await nextFrame();
         assert.equal(el.complexEventCount, 1);
+    });
+
+    it('will properly add and remove Events during update cycles for Template Elements', async () => {
+        const el = await fixture(`<template-event-element></template-event-element>`);
+        assert.equal(el.count, 0);
+        // btn will be there on even counts
+        el.$refs.btn?.click();
+        assert.equal(el.count, 1);
+        await nextFrame();
+
+        el.count = 0;
+        await nextFrame();
+        console.log('###2', el.count);
+        console.log('###ref', el.$refs);
+        assert.equal(el.count, 0);
+        await nextFrame();
+        el.$refs.btn?.click();
+        console.log('###3', el.count);
+        assert.equal(el.count, 1);
+        await nextFrame();
+        console.log('###ref', el.$refs);
     });
 });
