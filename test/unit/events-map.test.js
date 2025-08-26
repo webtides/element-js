@@ -66,6 +66,7 @@ class TemplateEventElement extends TemplateElement {
     properties() {
         return {
             count: 0,
+            renderButtonRef: true,
         };
     }
 
@@ -78,7 +79,7 @@ class TemplateEventElement extends TemplateElement {
     }
 
     template() {
-        return html`${this.count % 2 === 0 ? html`<button ref="btn">click me</button>` : html`<button></button>`}`;
+        return html`${this.renderButtonRef ? html`<button ref="btn">click me</button>` : null}`;
     }
 }
 
@@ -153,24 +154,23 @@ describe('events-map', async () => {
     });
 
     it('will properly add and remove Events during update cycles for Template Elements', async () => {
-        // TODO this test case might be to complicated. discuss
         const el = await fixture(`<template-event-element></template-event-element>`);
         assert.equal(el.count, 0);
-        // btn will be there on even counts
+        // click button and expect increment
         el.$refs.btn?.click();
         assert.equal(el.count, 1);
-        await nextFrame();
 
-        el.count = 0;
-        await nextFrame();
-        console.log('###2', el.count);
-        console.log('###ref', el.$refs);
-        assert.equal(el.count, 0);
-        await nextFrame();
+        //remove BTN with listener from DOM
+        el.renderButtonRef = false;
+        await el.requestUpdate();
+        assert.isUndefined(el.$refs.btn);
+
+        //add BTN with listener back to DOM
+        el.renderButtonRef = true;
+        await el.requestUpdate();
+        assert.isDefined(el.$refs.btn);
+        // click button and expect only one increment from one listener
         el.$refs.btn?.click();
-        console.log('###3', el.count);
-        assert.equal(el.count, 1);
-        await nextFrame();
-        console.log('###ref', el.$refs);
+        assert.equal(el.count, 2);
     });
 });
