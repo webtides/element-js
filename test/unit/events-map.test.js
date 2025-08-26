@@ -72,17 +72,13 @@ class TemplateEventElement extends TemplateElement {
     events() {
         return {
             ['[ref=btn]']: {
-                click: this.functionWithoutBind,
+                click: () => this.count++,
             },
         };
     }
 
-    functionWithoutBind() {
-        this.count++;
-    }
-
     template() {
-        return html`${this.count % 2 === 0 ? html`<button ref="btn">cick me</button>` : html`<button></button>`}`;
+        return html`${this.count % 2 === 0 ? html`<button ref="btn">click me</button>` : html`<button></button>`}`;
     }
 }
 
@@ -157,6 +153,7 @@ describe('events-map', async () => {
     });
 
     it('will properly add and remove Events during update cycles for Template Elements', async () => {
+        // TODO this test case might be to complicated. discuss
         const el = await fixture(`<template-event-element></template-event-element>`);
         assert.equal(el.count, 0);
         // btn will be there on even counts

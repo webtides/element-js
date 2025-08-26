@@ -587,8 +587,10 @@ class BaseElement extends HTMLElement {
      */
     removeEvents() {
         this._registeredEvents.forEach(({ eventTarget, eventName, callback }) => {
-            if (eventTarget === window || eventTarget === document || this.getRoot().contains(eventTarget)) {
+            try {
                 eventTarget.removeEventListener(eventName, callback);
+            } catch (e) {
+                console.error('Unable to remove event listener', e);
             }
         });
         this._registeredEvents = [];
