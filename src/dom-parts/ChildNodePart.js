@@ -21,6 +21,9 @@ export const insertNodesBetweenComments = (commentNode, nodes) => {
 export const replaceNodesBetweenComments = (commentNode, nodes) => {
     removeNodesBetweenComments(commentNode);
     for (const node of nodes) {
+        if (!commentNode.parentNode) {
+            console.error(`--- no parent comment ---`);
+        }
         commentNode.parentNode.insertBefore(node, commentNode);
     }
 };

@@ -16,6 +16,12 @@ to [Semantic Versioning](http://semver.org/).
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.2.2] - 2025-08-26
+
+### FIXED
+
+- Fixes a bug where event listeners were not unregistered from detached (conditionally rendered) dom elements. The Bug led to event listeners being registered with every update.
+
 ## [1.2.1] - 2025-08-21
 
 ### FIXED
