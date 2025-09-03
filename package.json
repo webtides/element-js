@@ -1,6 +1,6 @@
 {
     "name": "@webtides/element-js",
-    "version": "1.2.3",
+    "version": "1.2.4",
     "module": "index.js",
     "main": "index.js",
     "type": "module",

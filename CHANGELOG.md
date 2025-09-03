@@ -16,6 +16,18 @@ to [Semantic Versioning](http://semver.org/).
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.2.4] - 2025-09-03
+
+### FIXED
+
+- #159 fixes element cleanup on disconnect. 
+
+### CHANGED
+
+- remove refs, state and pending update on disconnectedCallback
+
+
+
 ## [1.2.3] - 2025-08-26
 
 ### FIXED
