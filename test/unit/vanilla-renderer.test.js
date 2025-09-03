@@ -178,6 +178,37 @@ class OnePropTag extends TemplateElement {
     }
 }
 customElements.define('one-prop-tag', OnePropTag);
+
+class NestedElementTag extends TemplateElement {
+    properties() {
+        return {
+            label: 'empty',
+        };
+    }
+
+    template() {
+        return html`<button>${this.label}</button>`;
+    }
+}
+
+customElements.define('nested-element-tag', NestedElementTag);
+
+class ArrayRenderingNestedElementsTag extends TemplateElement {
+    properties() {
+        return {
+            list: [1],
+        };
+    }
+
+    template() {
+        return html` <div>
+            ${this.list.map((index) => html`<nested-element-tag label="${'label' + index}"></nested-element-tag>`)}
+        </div>`;
+    }
+}
+
+customElements.define('array-rendering-nested-elements-tag', ArrayRenderingNestedElementsTag);
+
 describe(`template rendering`, () => {
     it('renders template in light dom by default', async () => {
         const el = await fixture(`<${lightTag}></${lightTag}>`);
@@ -368,5 +399,28 @@ describe(`vanilla-renderer`, () => {
         arrayElement.renderArray = true;
         await nextFrame();
         assert.equal(stripCommentMarkers(arrayElement.innerHTML), '<div>1</div><div>2</div><div>3</div>');
+    });
+
+    it('Renders a list of nested template elements', async () => {
+        const arrayElement = await fixture(
+            `<array-rendering-nested-elements-tag></array-rendering-nested-elements-tag>`,
+        );
+        await nextFrame();
+
+        assert.equal(arrayElement.innerText, 'label1');
+        arrayElement.list = [2, 3, 4];
+
+        await nextFrame();
+        await nextFrame();
+        assert.equal(arrayElement.innerText, 'label2 label3 label4');
+        arrayElement.list = [69];
+        await nextFrame();
+        await nextFrame();
+        assert.equal(arrayElement.innerText, 'label69');
+
+        await nextFrame();
+        await nextFrame();
+
+        console.log('####ffoooo');
     });
 });
