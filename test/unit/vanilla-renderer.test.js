@@ -182,7 +182,7 @@ customElements.define('one-prop-tag', OnePropTag);
 class NestedElementTag extends TemplateElement {
     properties() {
         return {
-            label: 'empty',
+            label: 'initial',
         };
     }
 
@@ -413,14 +413,36 @@ describe(`vanilla-renderer`, () => {
         await nextFrame();
         await nextFrame();
         assert.equal(arrayElement.innerText, 'label2 label3 label4');
-        arrayElement.list = [69];
-        await nextFrame();
-        await nextFrame();
-        assert.equal(arrayElement.innerText, 'label69');
+        arrayElement.list = [5];
 
         await nextFrame();
         await nextFrame();
+        assert.equal(arrayElement.innerText, 'label5');
+    });
 
-        console.log('####ffoooo');
+    it.only('Renders attribute values even after being reconnected to the DOM', async () => {
+        const el = await fixture(`<nested-element-tag label="test"></nested-element-tag>`);
+        await nextFrame();
+
+        assert.equal(el.innerText, 'test');
+        el.label = 'test2';
+
+        await nextFrame();
+        assert.equal(el.innerText, 'test2');
+
+        const parentNode = el.parentNode;
+        parentNode.removeChild(el);
+        await nextFrame();
+        el.setAttribute('label', 'test3');
+        // Reattach the element to its parent node
+        await nextFrame();
+        parentNode.appendChild(el);
+        await nextFrame();
+
+        assert.equal(
+            stripCommentMarkers(el.outerHTML),
+            '<nested-element-tag label="test3"><button>test3</button></nested-element-tag>',
+        );
+        assert.equal(el.innerText, 'test3');
     });
 });
