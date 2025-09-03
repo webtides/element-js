@@ -420,7 +420,7 @@ describe(`vanilla-renderer`, () => {
         assert.equal(arrayElement.innerText, 'label5');
     });
 
-    it.only('Renders attribute values even after being reconnected to the DOM', async () => {
+    it('Renders attribute values even after being reconnected to the DOM', async () => {
         const el = await fixture(`<nested-element-tag label="test"></nested-element-tag>`);
         await nextFrame();
 
