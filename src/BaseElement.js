@@ -191,6 +191,18 @@ class BaseElement extends HTMLElement {
             }
         });
 
+        // release dom references
+        this.$refs = {};
+
+        // clear state
+        this._state = {};
+
+        // cancel pending updates
+        if (this._batchUpdate) {
+            cancelAnimationFrame(this._batchUpdate);
+            this._requestedUpdates = [];
+        }
+
         this.triggerHook('disconnected');
     }
 
@@ -297,16 +309,16 @@ class BaseElement extends HTMLElement {
      * Will trigger update() when a property was changed
      * @param {string} property
      * @param {any} value
-     * @param {boolean} reflectAttribute
+     * @param {boolean} isAttribute
      */
-    defineProperty(property, value, reflectAttribute = false) {
+    defineProperty(property, value, isAttribute = false) {
         if (this._state.hasOwnProperty(property)) {
             // property has already been defined as an attribute nothing to do here
             return;
         }
 
         // if property did not come from an attribute but has the option to reflect // enabled or custom fn
-        if (!reflectAttribute && this._options.propertyOptions[property]?.reflect) {
+        if (!isAttribute && this._options.propertyOptions[property]?.reflect) {
             this.reflectProperty({ property: property, newValue: value });
         }
 
@@ -325,6 +337,10 @@ class BaseElement extends HTMLElement {
             this._state[property].subscribe(this);
         }
 
+        if (Object.getOwnPropertyDescriptor(this, property)) {
+            // instance already has a defined property
+            return;
+        }
         Object.defineProperty(this, property, {
             get: () => {
                 return this._state[property];
@@ -341,7 +357,7 @@ class BaseElement extends HTMLElement {
                         newValue.subscribe(this);
                     }
 
-                    if (reflectAttribute || this._options.propertyOptions[property]?.reflect) {
+                    if (isAttribute || this._options.propertyOptions[property]?.reflect) {
                         this.reflectProperty({ property, newValue, newValueString });
                     }
 
