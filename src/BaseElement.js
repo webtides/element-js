@@ -337,8 +337,9 @@ class BaseElement extends HTMLElement {
             this._state[property].subscribe(this);
         }
 
-        if (Object.getOwnPropertyDescriptor(this, property)) {
-            // instance already has a defined property
+        const descriptor = Object.getOwnPropertyDescriptor(this, property);
+        if (descriptor && descriptor.set && descriptor.get) {
+            // instance already has a defined, reactive  ejs property
             return;
         }
         Object.defineProperty(this, property, {
