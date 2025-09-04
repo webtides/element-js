@@ -16,6 +16,13 @@ to [Semantic Versioning](http://semver.org/).
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.2.5] - 2025-09-03
+
+### FIXED
+
+- #159 changes from 1.2.4 were checked too loose and were not recreating reactivee properties in some cases / races 
+
+
 ## [1.2.4] - 2025-09-03
 
 ### FIXED
