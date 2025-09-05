@@ -39,17 +39,6 @@ class StyledElement extends BaseElement {
                 return cssStyleSheet;
             });
         }
-
-        if (supportsAdoptingStyleSheets() && this._options.shadowRender) {
-            // adopting does only make sense in shadow dom. Fall back to append for light elements
-            this.adoptStyleSheets();
-
-            if (this._options.adoptGlobalStyles !== false) {
-                globalStylesStore.subscribe(() => {
-                    this.adoptStyleSheets();
-                });
-            }
-        }
     }
 
     /**
@@ -71,6 +60,26 @@ class StyledElement extends BaseElement {
             this.appendStyleSheets();
         }
         super.update(options);
+    }
+
+    /**
+     * Start the adoption of external stylesheets
+     * adopt global styles from document
+     * subscribe to globalStylesStore for updates
+     * @returns { void }
+     */
+
+    initStyleAdoption() {
+        if (this._options.shadowRender && supportsAdoptingStyleSheets()) {
+            // adopting does only make sense in shadow dom. Fall back to append for light elements
+            this.adoptStyleSheets();
+
+            if (this._options.adoptGlobalStyles !== false) {
+                globalStylesStore.subscribe(() => {
+                    this.adoptStyleSheets();
+                });
+            }
+        }
     }
 
     /**
