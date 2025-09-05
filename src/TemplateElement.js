@@ -28,7 +28,6 @@ class TemplateElement extends StyledElement {
 
     /**
      * Overrides the native `connectedCallback` of the HTMLElement to set up and initialize our element.
-     * This will attach a shadow DOM if the element is supposed to render in shadow DOM.
      */
     connectedCallback() {
         super.connectedCallback();
@@ -47,20 +46,22 @@ class TemplateElement extends StyledElement {
      * @param {PropertyUpdateOptions} options
      */
     update(options) {
-        let firstRender = this._options.shadowRender && !this.shadowRoot;
-        if (firstRender) {
-            this.attachShadow({ mode: 'open' });
-            // adopt stylesheets
-            this.adoptStyleSheets();
-        }
         this.renderTemplate();
         super.update(options);
     }
 
     /**
      * Render the template to the root
+     * This will attach a shadow DOM if the element is supposed to render in shadow DOM.
      */
     renderTemplate() {
+        let firstRender = this._options.shadowRender && !this.shadowRoot;
+        if (firstRender) {
+            this.attachShadow({ mode: 'open' });
+            // adopt stylesheets
+            this.adoptStyleSheets();
+        }
+
         const template = this._template || this.template();
         render(template, this.getRoot());
     }
