@@ -1,0 +1,106 @@
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script type="module">
+        import {
+            TemplateElement,
+            html,
+            defineElement,
+        } from '../../index.js';
+
+        class MyElement extends TemplateElement {
+            properties() {
+                return {
+                    items: null,
+                };
+            }
+
+            templateInner() {
+                if (!this.items) {
+                    return null;
+                }
+                // WORKS
+                return html`
+                    <inner-element id="regular" items="${this.items}"></inner-element>
+                `;
+            }
+
+            templateInnerBroken() {
+                if (!this.items) {
+                    // return  html`<strong>fooobarrrrr</strong>`;
+                    return null;
+                }
+                // DOES NOT WORK
+                return html`
+                    <inner-element id="dot" .items="${this.items}"></inner-element>
+                `;
+            }
+
+            template() {
+                return html`
+                    <div>
+                        <div>outer items: ${this.items?.toString()}</div>
+                        <div class="border border-red-500 p-4 mt-4">
+                            ${this.templateInnerBroken()}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        defineElement('my-element', MyElement);
+
+        class InnerElement extends TemplateElement {
+            properties() {
+                return {
+                    items: null,
+                };
+            }
+
+            connectedCallback() {
+                super.connectedCallback();
+                console.log('inner:connectedCallback', this.getAttribute('id'), this.items);
+            }
+
+            connected() {
+                console.log('inner:connected', this.getAttribute('id'), this.items);
+            }
+
+            disconnectedCallback() {
+                super.disconnectedCallback();
+                console.log('inner:disconnectedCallback', this.getAttribute('id'), this.items);
+            }
+
+            disconnected() {
+                console.log('inner:disconnected', this.getAttribute('id'), this.items);
+            }
+
+
+            template() {
+                return html`
+                    <div class="border p-4">${this.items?.toString()}</div>
+                `;
+            }
+        }
+
+        defineElement('inner-element', InnerElement);
+
+        setTimeout(() => {
+            //outer.items = [1, 2, 3, 4, 5];
+            outer.items = 'fooobar';
+        }, 1000);
+        // TODO this would also work ...
+        //outer.data = { items: [1, 2, 3, 4, 5] };
+        // outer.items = "fooobar";
+
+
+    </script>
+</head>
+
+<body>
+<my-element id="outer"></my-element>
+</body>
+
+
+</html>
+
