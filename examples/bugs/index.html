@@ -21,7 +21,7 @@
                 }
                 // WORKS
                 return html`
-                    <inner-element id="regular" items="${this.items}"></inner-element>
+                    <inner-element id="regular" class="border border-green-500" items="${this.items}"></inner-element>
                 `;
             }
 
@@ -32,7 +32,7 @@
                 }
                 // DOES NOT WORK
                 return html`
-                    <inner-element id="dot" .items="${this.items}"></inner-element>
+                    <inner-element id="dot" .items="${this.items}" attr="${this.items}"></inner-element>
                 `;
             }
 
@@ -54,31 +54,35 @@
             properties() {
                 return {
                     items: null,
+                    attr: null,
                 };
             }
 
             connectedCallback() {
                 super.connectedCallback();
-                console.log('inner:connectedCallback', this.getAttribute('id'), this.items);
+                console.log('inner:connectedCallback', this.getAttribute('id'), this.items, this.ownerDocument);
             }
 
             connected() {
-                console.log('inner:connected', this.getAttribute('id'), this.items);
+                console.log('inner:connected', this.getAttribute('id'), this.items, this.ownerDocument);
             }
 
             disconnectedCallback() {
                 super.disconnectedCallback();
-                console.log('inner:disconnectedCallback', this.getAttribute('id'), this.items);
+                console.log('inner:disconnectedCallback', this.getAttribute('id'), this.items, this.ownerDocument);
             }
 
             disconnected() {
-                console.log('inner:disconnected', this.getAttribute('id'), this.items);
+                console.log('inner:disconnected', this.getAttribute('id'), this.items, this.ownerDocument);
             }
 
 
             template() {
                 return html`
-                    <div class="border p-4">${this.items?.toString()}</div>
+                    <div class="border p-4">
+                        ${this.items?.toString()} <br>
+                        ${this.attr?.toString()}
+                    </div>
                 `;
             }
         }

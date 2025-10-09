@@ -62,6 +62,7 @@ class BaseElement extends HTMLElement {
         super();
         this.$refs = {};
         this._state = {};
+        this._propertyAttributes = this._propertyAttributes ?? {};
         this._mutationObserver = null;
         this._registeredEvents = [];
         this._batchUpdate = null;
@@ -298,7 +299,7 @@ class BaseElement extends HTMLElement {
             // registered or connected. To avoid such timing issues we check
             // if a value was set for that specific property on the
             // prototype before assigning a default value
-            const value = this[prop] || this.properties()[prop];
+            const value = this[prop] || this._propertyAttributes[prop] || this.properties()[prop];
             this.defineProperty(prop, value);
         });
     }

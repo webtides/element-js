@@ -23,6 +23,11 @@ const processBooleanAttribute = (node, name, oldValue) => {
 const processPropertyAttribute = (node, name) => {
     return (value) => {
         node[name] = value;
+        if (!node._propertyAttributes) {
+            // means processing starts before node was constructed
+            node._propertyAttributes = {};
+        }
+        node._propertyAttributes[name] = value;
     };
 };
 
