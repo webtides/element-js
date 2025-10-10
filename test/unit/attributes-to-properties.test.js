@@ -2,7 +2,15 @@
 import { fixture, defineCE, assert } from '@open-wc/testing';
 import { BaseElement } from '../../src/BaseElement';
 
-const tag = defineCE(class extends BaseElement {});
+const tag = defineCE(
+    class extends BaseElement {
+        properties() {
+            return {
+                firstname: 'John',
+            };
+        }
+    },
+);
 
 describe('attributes-to-properties', () => {
     it('reflects lowercase attributes as lowercase properties', async () => {
@@ -23,5 +31,10 @@ describe('attributes-to-properties', () => {
         assert.isNotTrue(el.hasOwnProperty('dash-case'));
         assert.isTrue(el.hasOwnProperty('dashCase'));
         assert.equal(el.dashCase, 'Hello');
+    });
+
+    it('prefers attribute values over the default values from the properties map for default/initial state', async () => {
+        const el = await fixture(`<${tag} firstname="Jane"></${tag}>`);
+        assert.equal(el.firstname, 'Jane');
     });
 });
