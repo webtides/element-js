@@ -196,7 +196,8 @@ class BaseElement extends HTMLElement {
         this.$refs = {};
 
         // clear state
-        this._state = {};
+        // TODO decide on how to deal with zombie state. either overwrite on "reconnect" OR delete on dsiconnect (what we did with 1.2.4)
+        // this._state = {};
 
         // cancel pending updates
         if (this._batchUpdate) {
@@ -299,7 +300,9 @@ class BaseElement extends HTMLElement {
             // registered or connected. To avoid such timing issues we check
             // if a value was set for that specific property on the
             // prototype before assigning a default value
-            const value = this[prop] || this._propertyAttributes[prop] || this.properties()[prop];
+            // TODO decide on how to deal with zombie state. either overwrite on "reconnect" OR delete on dsiconnect (what we did with 1.2.4)
+            // const value = this[prop] || this._propertyAttributes[prop] || this.properties()[prop];
+            // const value = this[prop]  || this.properties()[prop];
             this.defineProperty(prop, value);
         });
     }
@@ -315,7 +318,7 @@ class BaseElement extends HTMLElement {
     defineProperty(property, value, isAttribute = false) {
         if (this._state.hasOwnProperty(property)) {
             // property has already been defined as an attribute nothing to do here
-            return;
+            // return;
         }
 
         // if property did not come from an attribute but has the option to reflect // enabled or custom fn
