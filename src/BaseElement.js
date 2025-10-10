@@ -302,7 +302,7 @@ class BaseElement extends HTMLElement {
             // prototype before assigning a default value
             // TODO decide on how to deal with zombie state. either overwrite on "reconnect" OR delete on dsiconnect (what we did with 1.2.4)
             // const value = this[prop] || this._propertyAttributes[prop] || this.properties()[prop];
-            // const value = this[prop]  || this.properties()[prop];
+            const value = this[prop] || this.properties()[prop];
             this.defineProperty(prop, value);
         });
     }
