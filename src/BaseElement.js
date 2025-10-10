@@ -62,7 +62,7 @@ class BaseElement extends HTMLElement {
         super();
         this.$refs = {};
         this._state = {};
-        this._propertyAttributes = this._propertyAttributes ?? {};
+        // this._propertyAttributes = this._propertyAttributes ?? {};
         this._mutationObserver = null;
         this._registeredEvents = [];
         this._batchUpdate = null;
