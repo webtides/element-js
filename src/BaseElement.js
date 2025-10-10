@@ -109,6 +109,7 @@ class BaseElement extends HTMLElement {
             }
         }
 
+        // TODO check order of overwrites. ideally these lists shoukd be merged anyways attribute values > state >  property defaults
         // define all attributes to "this" as properties
         this.defineAttributesAsProperties();
 
