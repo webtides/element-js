@@ -1,0 +1,101 @@
+<html>
+
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<script type="module">
+    import {
+        TemplateElement,
+        defineElement,
+        html
+    } from "../../index.js";
+    /*this works > 1.2.3*/
+
+    class OuterElement extends TemplateElement {
+        properties() {
+            return { selection: new Set([]) };
+        }
+
+        events() {
+            return {
+                button: {
+                    click: (e) => {
+                        if (this.selection.has(e.target.dataset.index)) {
+                            this.selection.delete(e.target.dataset.index);
+                        } else {
+                            this.selection.add(e.target.dataset.index);
+                        }
+                        this.requestUpdate();
+                    }
+                }
+            };
+        }
+
+        template() {
+            return html`
+      <div>
+        <nav class="border p-2 flex gap-2">
+          <button class="p-2 border border-red-500" data-index="d1">d1</button>
+          <button class="p-2 border border-red-500" data-index="d2">d2</button>
+          <button class="p-2 border border-red-500" data-index="d3">d3</button>
+          <button class="p-2 border border-red-500" data-index="d4">d4</button>
+        </nav>
+
+        <h2>set values:</h2>
+
+        <div class="border border-green p-2 flex gap-2">
+          ${[...this.selection]?.join(",")}
+        </div>
+
+        <h2>zombies:</h2>
+        <div class="border border-green p-2 flex gap-2">
+          ${[...this.selection].map(
+                (itemIndex) =>
+                    html`
+                <zombie-element label="${itemIndex}"></zombie-element>
+              `
+            )}
+        </div>
+
+        <h2>dotted zombies:</h2>
+        <div class="border border-green p-2 flex gap-2">
+          ${[...this.selection].map(
+                (itemIndex) =>
+                    html`
+                <zombie-element
+                  .label="${itemIndex}"
+                ></zombie-element>
+              `
+            )}
+        </div>
+      </div>
+    `;
+        }
+    }
+
+    defineElement("outer-element", OuterElement);
+
+    class ZombieElement extends TemplateElement {
+        properties() {
+            return { label: "default", other: "other" };
+        }
+
+        template() {
+            return html`
+      <div class="text-blue-500 text-2xl">${this.label}</div>
+    `;
+        }
+    }
+
+    defineElement("zombie-element", ZombieElement);
+
+
+
+
+</script>
+
+<body>
+    <outer-element></outer-element>
+</body>
+
+</html>
