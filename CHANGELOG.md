@@ -15,6 +15,11 @@ to [Semantic Versioning](http://semver.org/).
 <!-- ### Changed -->
 <!-- ### Removed -->
 <!-- ### Fixed -->
+## [1.2.6] - 2025-10-27
+
+### FIXED
+- #158 keep state when elements get removed from dom (by the renderer) but take care that state gets properly setup after reconnect
+- #161 attach shadow roots and render in the very same tick to prevent race conditions when adopting styles
 
 ## [1.2.5] - 2025-09-03
 
