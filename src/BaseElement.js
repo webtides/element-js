@@ -645,6 +645,9 @@ class BaseElement extends HTMLElement {
      * @param {CustomEventInit} [options]
      * @param {boolean} [cancelable] - DEPRECATED
      * @param {boolean} [composed] - DEPRECATED
+     *
+     * @returns {boolean} `true` if the event was not canceled; `false` if a cancelable event was canceled via
+     *          * `event.preventDefault()` (return value of `dispatchEvent`).
      */
     dispatch(name, data, options, cancelable = false, composed = false) {
         let eventInit = {};
@@ -668,7 +671,7 @@ class BaseElement extends HTMLElement {
         }
 
         const event = new CustomEvent(name, eventInit);
-        this.dispatchEvent(event);
+        return this.dispatchEvent(event);
     }
 
     /**
