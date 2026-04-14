@@ -60,7 +60,7 @@ export function getShadowParentOrBody(element) {
     return document.body;
 }
 
-// TODO: add function for getClosestParentOfNodeType('custom-element')
+// TODO: add function for getClosestParentOfNo  deType('custom-element')
 
 /**
  * Get the closest/first parent node that is a custom element
@@ -76,7 +76,7 @@ export function getClosestParentCustomElementNode(domNode) {
 }
 
 /**
- * Get all
+ * Get all custom element children of a DOM node
  * @param {Node} domNode
  * @param {{prototype: HTMLElement, new()}} instanceOfFilter
  * @return {Node[]}

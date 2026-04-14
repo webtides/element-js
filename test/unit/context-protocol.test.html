@@ -29,9 +29,11 @@
 
         <ancestor-context-element>
             <parent-context-element>
-                <late-provider>
-                    <request-context-element id="primary"></request-context-element>
-                </late-provider>
+                <late-connected-provider>
+                    <late-provider>
+                        <request-context-element id="primary"></request-context-element>
+                    </late-provider>
+                </late-connected-provider>
                 <request-context-element id="secondary"></request-context-element>
             </parent-context-element>
         </ancestor-context-element>
@@ -51,6 +53,7 @@
                 LateProvider,
                 primitiveStore,
             } from './context-protocol.definitions';
+            import { LateConnectedProvider } from './context-protocol.definitions.js';
 
             defineElement('ancestor-context-element', AncestorContextElement);
             defineElement('parent-context-element', ParentContextElement);
@@ -177,6 +180,21 @@
                     // value is expected to be injected anyways
                     expect(el.lateContext).to.equal(LateProvider.LATE_CONTEXT);
                 });
+
+
+                it('It does receive requested Values even if the provider assigns properties in connected and makes use of the verify function', async () => {
+                    const receiver = document.getElementById('primary');
+                    // value needs to be undefined initally
+                    console.log('el.connectedContext', receiver.properties())
+                    console.log('el.connectedContext', receiver.simpleContext)
+                    expect(receiver.connectedContext).to.be.undefined;
+                    defineElement('late-connected-provider', LateConnectedProvider);
+                    await nextFrame();
+                    expect(receiver.connectedContext).to.equal(LateConnectedProvider.CONNECTED);
+
+                });
+
+
             });
         </script>
     </body>

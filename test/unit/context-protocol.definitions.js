@@ -17,6 +17,26 @@ export class LateProvider extends BaseElement {
     }
 }
 
+export class LateConnectedProvider extends BaseElement {
+    static CONNECTED = 'CONNECTED_CONNECTED';
+
+    properties() {
+        return {
+            connectedContext: 'noInitContext',
+        };
+    }
+
+    provideProperties() {
+        return {
+            connectedContext: this.connectedContext,
+        };
+    }
+
+    connected() {
+        this.connectedContext = LateConnectedProvider.CONNECTED;
+    }
+}
+
 export class AncestorContextElement extends BaseElement {
     static CONTEXT = 'ancestorContext';
     static MULTI = 'ancestorMultiContext';
@@ -86,6 +106,7 @@ export class RequestContextElement extends BaseElement {
             noContext: 'noContext',
             staticContext: 'noContext',
             shadowContext: 'noContext',
+            connectedContext: 'noContext',
             booleanContext: true,
             lateContext: null,
             inlineCallback: (value) => {
