@@ -1,4 +1,4 @@
-import { defineElement, html, TemplateElement } from '../../src/renderer/vanilla/index.js';
+import { defineElement, html, TemplateElement } from '../../index.js';
 
 class RequestContext extends TemplateElement {
     properties() {

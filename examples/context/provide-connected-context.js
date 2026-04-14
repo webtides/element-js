@@ -14,24 +14,29 @@ class CounterStore extends Store {
     }
 }
 
-class ProvideContext extends TemplateElement {
+class ProvideConnectedContext extends TemplateElement {
     // reactive attributes/properties
     constructor() {
         super({ shadowRender: true });
     }
+
     properties() {
         return {
-            counterStore: new CounterStore({ count: 1 }),
+            counterStore: null,
         };
     }
+    connected() {
+        this.counterStore = new CounterStore({ count: 8 });
+    }
+
     provideProperties() {
         return { counterStore: this.counterStore };
     }
     template() {
         return html`
-            <div>Provider: ${this.counterStore.count}</div>
+            <div>Provider: ${this.counterStore?.count ?? 'null'}</div>
             <slot></slot>
         `;
     }
 }
-defineElement('provide-context', ProvideContext);
+defineElement('provide-connected-context', ProvideConnectedContext);

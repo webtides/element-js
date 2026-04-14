@@ -87,7 +87,7 @@ class BaseElement extends HTMLElement {
      * This will define the attributes and properties as reactive getters and setter,
      * register observers, refs and events.
      */
-    connectedCallback() {
+    async connectedCallback() {
         if (this.hasAttribute('defer-update')) {
             this._options.deferUpdate = true;
         }
@@ -127,12 +127,13 @@ class BaseElement extends HTMLElement {
             this.triggerHook('connected');
             this._internals.states.add('connected');
         } else {
-            this.requestUpdate({ notify: false }).then(() => {
-                this.triggerHook('connected');
-                this._internals.states.add('connected');
-                this.triggerHook('afterUpdate');
-            });
+            await this.requestUpdate({ notify: false });
+            this.triggerHook('connected');
+            this._internals.states.add('connected');
+            this.triggerHook('afterUpdate');
         }
+        // verification must happen after connection
+        this.verifyProvidedProperties();
     }
 
     /**
@@ -452,14 +453,36 @@ class BaseElement extends HTMLElement {
         const providedKeys = Object.keys(this.provideProperties());
         if (providedKeys.length > 0) {
             this.addEventListener('request-context', this.onRequestContext);
+        }
+    }
+
+    /**
+     * Verifies provided context after the element has finished connecting.
+     *
+     * This is used as a failover step for late providers and lifecycle race conditions,
+     * especially when a provided value is assigned inside `connected()` and the initial
+     * context request was resolved before that mutation happened.
+     *
+     * By replaying matching requests here we ensure children receive the final provider
+     * value instead of being stuck with an early placeholder like `null`.
+     */
+
+    verifyProvidedProperties() {
+        // define context provider
+        const providedProperties = this.provideProperties();
+        const providedKeys = Object.keys(providedProperties);
+        if (providedKeys.length > 0) {
+            // take both light and shadow dom into account.
+            // const composedChildren = getAllComposedElementChildren(this, BaseElement);
+            const elementChildren = getAllElementChildren(this.getRoot(), BaseElement);
             // check if there are already connected elements in child dom and restart requests
-            getAllElementChildren(this.getRoot(), BaseElement).forEach((customChild) => {
+            elementChildren.forEach((customChild) => {
                 // if injectProperties?.() is defined it means that the child got connected BEFORE the parent (Runtime Issue)
                 const requestedProperties = customChild.injectProperties?.() ?? {};
                 Object.entries(requestedProperties).forEach(([key, value]) => {
                     // iterate over requested properties to find missed context requests
-                    if (providedKeys.includes(key)) {
-                        // owns the provided  key -> replay request
+                    if (providedKeys.includes(key) && customChild[key] !== providedProperties[key]) {
+                        // owns the provided key -> replay request
                         customChild.requestContext(key, value);
                     }
                 });
@@ -497,6 +520,7 @@ class BaseElement extends HTMLElement {
                     // assign to prop
                     const eventPath = event.composedPath();
                     const target = eventPath[0] || event.target;
+                    // TODO do not assign when null
                     target[key] = providedValue;
                 }
             }

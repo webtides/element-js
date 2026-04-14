@@ -1,4 +1,4 @@
-import { TemplateElement, defineElement, html } from '../../src/renderer/vanilla';
+import { TemplateElement, defineElement, html } from '../../index.js';
 
 class OtherProvideContext extends TemplateElement {
     // reactive attributes/properties
