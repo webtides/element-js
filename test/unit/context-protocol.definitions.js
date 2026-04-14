@@ -134,14 +134,22 @@ export class RequestContextElement extends BaseElement {
 
 export class ShadowProvider extends TemplateElement {
     static SHADOW_CONTEXT = 'shadowContext';
+    static SHADOW_CONNECTED_CONTEXT = 'shadowContextConnected';
 
     constructor() {
         super({ shadowRender: true });
     }
 
+    properties() {
+        return {
+            connectedContext: ShadowProvider.SHADOW_CONNECTED_CONTEXT,
+        };
+    }
+
     provideProperties() {
         return {
             shadowContext: ShadowProvider.SHADOW_CONTEXT,
+            connectedContext: this.connectedContext,
         };
     }
     injectProperties() {
@@ -152,7 +160,7 @@ export class ShadowProvider extends TemplateElement {
     }
     connected() {
         // console.log('shadow connected');
-        super.connected();
+        this.connectedContext = ShadowProvider.SHADOW_CONNECTED_CONTEXT;
     }
 
     onRequestContext(event) {

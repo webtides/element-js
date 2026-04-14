@@ -46,6 +46,15 @@
                     expect(secondary.shadowContext).to.equal(ShadowProvider.SHADOW_CONTEXT);
                 });
 
+                it('Light & Slotted DOM Receiver receive values from a provider even if value is set on connected', async () => {
+                    expect(secondary.connectedContext).to.equal(ShadowProvider.SHADOW_CONNECTED_CONTEXT);
+
+                    const shadowRoot = shadowProvider.shadowRoot;
+                    const shadow = shadowRoot.getElementById('shadow');
+
+                    expect(shadow.connectedContext).to.equal(ShadowProvider.SHADOW_CONNECTED_CONTEXT);
+                });
+
                 it('Even Shadow DOM Receiver do receive updated values from outside of the Shadow Root', async () => {
                     const shadowRoot = shadowProvider.shadowRoot;
                     const shadow = shadowRoot.getElementById('shadow');
