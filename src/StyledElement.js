@@ -90,7 +90,7 @@ class StyledElement extends BaseElement {
 
         this.getRoot().adoptedStyleSheets = [
             ...(adoptGlobalStyleSheets ? globalStylesStore.getGlobalStyleSheets(this._options.adoptGlobalStyles) : []),
-            ...this.constructor['elementStyleSheets'],
+            ...(this.constructor?.['elementStyleSheets'] ?? []),
         ];
     }
 
@@ -107,7 +107,7 @@ class StyledElement extends BaseElement {
 
         const appendableStyles = [
             ...(adoptGlobalStyleSheets ? globalStylesStore.getGlobalStyleSheets(this._options.adoptGlobalStyles) : []),
-            ...this.constructor['elementStyleSheets'],
+            ...(this.constructor?.['elementStyleSheets'] ?? []),
         ];
 
         appendableStyles.forEach((styleSheet, index) => {
