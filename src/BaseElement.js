@@ -1,5 +1,10 @@
 import { parseAttribute, isNaN, dashToCamel, camelToDash, isObjectLike } from './util/AttributeParser.js';
-import { getAllElementChildren, getClosestParentCustomElementNode, isOfSameNodeType } from './util/DOMHelper.js';
+import {
+    getAllComposedElementChildren,
+    getAllElementChildren,
+    getClosestParentCustomElementNode,
+    isOfSameNodeType,
+} from './util/DOMHelper.js';
 import { Store } from './util/Store.js';
 import { serializeState, deserializeState, hasSerializedState } from './util/SerializeStateHelper.js';
 import { randomUUID } from './util/crypto.js';
@@ -473,10 +478,9 @@ class BaseElement extends HTMLElement {
         const providedKeys = Object.keys(providedProperties);
         if (providedKeys.length > 0) {
             // take both light and shadow dom into account.
-            // const composedChildren = getAllComposedElementChildren(this, BaseElement);
-            const elementChildren = getAllElementChildren(this.getRoot(), BaseElement);
+            const composedChildren = getAllComposedElementChildren(this, BaseElement);
             // check if there are already connected elements in child dom and restart requests
-            elementChildren.forEach((customChild) => {
+            composedChildren.forEach((customChild) => {
                 // if injectProperties?.() is defined it means that the child got connected BEFORE the parent (Runtime Issue)
                 const requestedProperties = customChild.injectProperties?.() ?? {};
                 Object.entries(requestedProperties).forEach(([key, value]) => {
