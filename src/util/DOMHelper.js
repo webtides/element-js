@@ -96,6 +96,20 @@ export function getAllElementChildren(domNode, instanceOfFilter = HTMLElement) {
 }
 
 /**
+ * Get all custom element children of a DOM node, including children inside the node's shadow root.
+ *
+ * @param {Node} domNode - The root node to start the traversal from.
+ * @param {{prototype: HTMLElement, new(): HTMLElement}} [instanceOfFilter=HTMLElement] - Constructor used to filter matching custom elements.
+ * @return {Set<HTMLElement>} A set of matching custom element descendants.
+ */
+export function getAllComposedElementChildren(domNode, instanceOfFilter = HTMLElement) {
+    return new Set([
+        ...getAllElementChildren(domNode, instanceOfFilter),
+        ...(domNode.shadowRoot ? getAllElementChildren(domNode.shadowRoot, instanceOfFilter) : []),
+    ]);
+}
+
+/**
  * Checks whether two nodes are of the same node type
  * @param {Node} nodeA
  * @param {Node} nodeB
