@@ -295,13 +295,14 @@ class BaseElement extends HTMLElement {
      * Will trigger update() when a property was changed
      */
     defineProperties() {
-        Object.keys({ ...this.injectProperties(), ...this.properties() }).forEach((prop) => {
+        const properties = this.properties();
+        Object.keys({ ...this.injectProperties(), ...properties }).forEach((prop) => {
             // when mixing shadow dom elements with light dom elements and nesting custom elements
             // it might occur that properties where set on an element before it was
             // registered or connected. To avoid such timing issues we check
             // if a value was set for that specific property on the
             // prototype before assigning a default value
-            const value = this[prop] ?? this.properties()[prop];
+            const value = this[prop] ?? properties[prop];
             this.defineProperty(prop, value);
         });
     }
