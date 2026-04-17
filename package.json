@@ -1,6 +1,6 @@
 {
     "name": "@webtides/element-js",
-    "version": "1.2.7",
+    "version": "1.2.8",
     "module": "index.js",
     "main": "index.js",
     "type": "module",
@@ -19,7 +19,10 @@
         "./src/util/*": "./src/util/*.js",
         "./src/dom-parts/*": "./src/dom-parts/*.js"
     },
-    "repository": "https://github.com/webtides/element-js.git",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/webtides/element-js.git"
+    },
     "author": "@webtides",
     "license": "MIT",
     "keywords": [
