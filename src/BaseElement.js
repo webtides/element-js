@@ -92,7 +92,7 @@ class BaseElement extends HTMLElement {
      * This will define the attributes and properties as reactive getters and setter,
      * register observers, refs and events.
      */
-    async connectedCallback() {
+    connectedCallback() {
         if (this.hasAttribute('defer-update')) {
             this._options.deferUpdate = true;
         }
@@ -131,14 +131,17 @@ class BaseElement extends HTMLElement {
 
             this.triggerHook('connected');
             this._internals.states.add('connected');
+            // verification must happen after connection
+            this.verifyProvidedProperties();
         } else {
-            await this.requestUpdate({ notify: false });
-            this.triggerHook('connected');
-            this._internals.states.add('connected');
-            this.triggerHook('afterUpdate');
+            this.requestUpdate({ notify: false }).then(() => {
+                this.triggerHook('connected');
+                this._internals.states.add('connected');
+                this.triggerHook('afterUpdate');
+                // verification must happen after connection
+                this.verifyProvidedProperties();
+            });
         }
-        // verification must happen after connection
-        this.verifyProvidedProperties();
     }
 
     /**
