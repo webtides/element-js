@@ -15,6 +15,17 @@ to [Semantic Versioning](http://semver.org/).
 <!-- ### Changed -->
 <!-- ### Removed -->
 <!-- ### Fixed -->
+
+## [1.2.7] - 2026-04-17
+
+### ADDED
+- Added a new connected-context example to demonstrate late context provisioning.
+- Added composed DOM child traversal so both light DOM and shadow DOM children are considered.
+
+### FIXED
+- Improved context verification to handle late-connected providers more reliably.
+- Updated shadow-context handling and related tests.
+
 ## [1.2.6] - 2025-10-27
 
 ### FIXED
