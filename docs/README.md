@@ -94,7 +94,7 @@ class ExampleElement extends BaseElement {
     // lifecycle hook
     connected() {
         this.greet();
-    }
+    }                                                                
 
     // reactive attributes/properties
     properties() {

@@ -525,7 +525,6 @@ class BaseElement extends HTMLElement {
                     // assign to prop
                     const eventPath = event.composedPath();
                     const target = eventPath[0] || event.target;
-                    // TODO do not assign when null
                     target[key] = providedValue;
                 }
             }
