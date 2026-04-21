@@ -1,9 +1,12 @@
-name: NPM publish
+name: NPM publish Test
 
 on:
-  push:
-    tags:
-      - v*
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch, Tag oder SHA, das getestet werden soll"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -14,20 +17,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm ci
       - run: npm test
 
-  publish:
+  publish-dry-run:
     needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm ci
-      - run: npm publish
+      - run: npm publish --dry-run
 
