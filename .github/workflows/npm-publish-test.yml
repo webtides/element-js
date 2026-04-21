@@ -21,7 +21,8 @@ jobs:
           ref: ${{ inputs.ref || github.ref }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
+      - run: node -v && npm -v
       - run: npm ci
       - run: npm test
 
@@ -34,10 +35,8 @@ jobs:
           ref: ${{ inputs.ref || github.ref }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-      - run: |
-          node -v
-          npm -v
+          node-version: 24
+      - run: node -v && npm -v
       - run: npm ci
       - run: npm publish --dry-run
 
