@@ -3,7 +3,7 @@ name: NPM publish
 on:
   push:
     tags:
-      - v*
+      - vt*
 
 permissions:
   contents: read
@@ -33,7 +33,6 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const core = require('@actions/core')
             const token = await core.getIDToken()
             console.log(`OIDC token received, length: ${token.length}`)
       - run: npm publish
