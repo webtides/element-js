@@ -19,8 +19,11 @@ to [Semantic Versioning](http://semver.org/).
 ## [1.2.10] - 2026-04-21
 
 ### FIXED
-- github / npm publich action
+- github / npm publish action
 - npm pkg fix
+
+### CHANGED
+- bump node versions in pipelines to lts
 
 ## [1.2.7] - 2026-04-17
 

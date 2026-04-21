@@ -29,5 +29,11 @@ jobs:
         with:
           node-version: 24
       - run: npm ci
+      - name: Test OIDC token
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const core = require('@actions/core')
+            const token = await core.getIDToken()
+            console.log(`OIDC token received, length: ${token.length}`)
       - run: npm publish
-
