@@ -16,7 +16,7 @@ to [Semantic Versioning](http://semver.org/).
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
-## [1.2.10] - 2026-04-21
+## [1.2.11] - 2026-04-21
 
 ### FIXED
 - github / npm publish action
