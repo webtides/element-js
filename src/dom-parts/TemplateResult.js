@@ -297,7 +297,9 @@ export class TemplateResult {
                         ];
                     }
 
-                    if (name.startsWith('@') || name.startsWith('on')) {
+                    // Note: require at least one character after "on" so that a plain `on`
+                    // attribute is treated as a regular string attribute (see #163).
+                    if (name.startsWith('@') || (name.startsWith('on') && name.length > 2)) {
                         return [
                             {
                                 type: 'attribute',

@@ -303,6 +303,37 @@ describe(`template bindings for rendering TemplateResults client side and server
         assert.equal(el.bar, 'baz');
     });
 
+    // Regression for #163: an attribute literally named `on` must not be routed
+    // through the event-binding code path (which would call addEventListener with
+    // an empty event type and a non-function listener).
+    it('treats a plain `on` attribute as a string attribute, not an event', async () => {
+        const el = document.createElement('div');
+        const value = 'default';
+        const templateResult = html`<button on="${value}">Label</button>`;
+        render(templateResult, el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<button on="default">Label</button>');
+        assert.equal(
+            stripCommentMarkers(el.innerHTML),
+            stripCommentMarkers(templateResult.toString()),
+            'CSR template does not match SSR template',
+        );
+
+        const button = el.querySelector('button');
+        assert.equal(button.getAttribute('on'), 'default');
+    });
+
+    it('updates a plain `on` attribute on rerender', async () => {
+        const el = document.createElement('div');
+        render(html`<button on="${'default'}">Label</button>`, el);
+        assert.equal(el.querySelector('button').getAttribute('on'), 'default');
+
+        render(html`<button on="${''}">Label</button>`, el);
+        assert.equal(el.querySelector('button').getAttribute('on'), '');
+
+        render(html`<button on="${'other'}">Label</button>`, el);
+        assert.equal(el.querySelector('button').getAttribute('on'), 'other');
+    });
+
     it('can render conditional nested html templates', async () => {
         const el = document.createElement('div');
         const nested = true;
