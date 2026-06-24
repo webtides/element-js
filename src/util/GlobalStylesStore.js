@@ -54,13 +54,13 @@ class GlobalStylesStore extends Store {
         }
 
         // if it does not exist yet -> build it
-        if (styleSheet.ownerNode.tagName === 'STYLE') {
+        if (styleSheet.ownerNode?.tagName === 'STYLE') {
             const cssStyleSheet = new CSSStyleSheet({ media: styleSheet.media, disabled: styleSheet.disabled });
             cssStyleSheet.replaceSync(styleSheet.ownerNode.textContent);
 
             this.globalStyleSheetsCache.set(styleSheet.ownerNode, cssStyleSheet);
             this.requestUpdate();
-        } else if (styleSheet.ownerNode.tagName === 'LINK') {
+        } else if (styleSheet.ownerNode?.tagName === 'LINK') {
             const cssStyleSheet = new CSSStyleSheet({
                 baseURL: styleSheet.href,
                 media: styleSheet.media,
