@@ -16,6 +16,11 @@ to [Semantic Versioning](http://semver.org/).
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## [1.2.12] - 2026-04-21
+
+### FIXED
+- nullpointer in GlobalStyleStore due to undefined ownerNodes (in safari)
+
 ## [1.2.11] - 2026-04-21
 
 ### FIXED
