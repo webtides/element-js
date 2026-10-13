@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>element-js Benchmark</title>
+        <style>
+            body {
+                font:
+                    14px/1.45 system-ui,
+                    sans-serif;
+                margin: 2rem;
+                max-width: 76rem;
+                color: #222;
+            }
+            h1 {
+                font-size: 2rem;
+                margin-bottom: 0.25rem;
+            }
+            h2 {
+                font-size: 1.5rem;
+                margin-top: 2rem;
+            }
+            h3 {
+                font-size: 1.125rem;
+            }
+            h3 small {
+                font-weight: normal;
+                color: #666;
+            }
+            table {
+                border-collapse: collapse;
+                margin: 0.5rem 0 1.5rem;
+            }
+            th,
+            td {
+                border: 1px solid #ccc;
+                padding: 0.3rem 0.6rem;
+                text-align: right;
+                font-variant-numeric: tabular-nums;
+            }
+            th:first-child,
+            td:first-child {
+                text-align: left;
+            }
+            .ok {
+                color: #080;
+                font-weight: 600;
+            }
+            .fail {
+                color: #c00;
+                font-weight: 600;
+            }
+            label {
+                margin-right: 1rem;
+            }
+            input {
+                width: 5rem;
+            }
+            button {
+                padding: 0.4rem 0.8rem;
+                margin-right: 0.5rem;
+            }
+            #status {
+                margin-left: 1rem;
+                color: #666;
+            }
+            pre {
+                background: #f5f5f5;
+                padding: 1rem;
+                overflow: auto;
+                max-height: 24rem;
+            }
+            #table-host {
+                position: absolute;
+                left: -100000px;
+                top: 0;
+            }
+        </style>
+        <script type="module" src="./page.js"></script>
+    </head>
+    <body>
+        <h1>element-js Benchmark</h1>
+        <p>
+            <strong>Micro</strong>: binding parts to a freshly cloned template, path lookup (current) versus TreeWalker
+            variants. <strong>Macro</strong>: end-to-end <code>render()</code> of a js-framework-benchmark table. Append
+            <code>?autorun</code> to run everything on load. Results also land on <code>window.__benchResults</code> and
+            in the console as <code>BENCH_RESULTS</code>. Keep the tab visible while it runs.
+        </p>
+
+        <p>
+            <label>micro iterations/sample <input id="iterations" type="number" min="50" step="50" /></label>
+            <label>micro samples <input id="samples" type="number" min="5" step="5" /></label>
+            <label>macro rounds <input id="rounds" type="number" min="3" step="1" /></label>
+            <label>macro rows <input id="rows" type="number" min="10" step="10" /></label>
+        </p>
+        <p>
+            <button id="run-micro" type="button">Run micro</button>
+            <button id="run-macro" type="button">Run macro</button>
+            <button id="run-all" type="button">Run all</button>
+            <span id="status"></span>
+        </p>
+        <p id="warning" class="fail"></p>
+
+        <h2>Micro: part binding</h2>
+        <div id="micro-results"></div>
+
+        <h2>Macro: render()</h2>
+        <div id="macro-results"></div>
+
+        <h2>JSON</h2>
+        <pre id="json"></pre>
+
+        <div id="table-host"></div>
+    </body>
+</html>
