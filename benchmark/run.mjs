@@ -15,7 +15,7 @@
  */
 import { execSync, spawnSync } from 'node:child_process';
 import { copyFileSync, cpSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { arch, cpus, platform, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { formatMarkdown } from './report.mjs';
@@ -32,6 +32,13 @@ const base = option('--base');
 const micro = args.includes('--micro');
 const threshold = Number(option('--threshold') ?? 30);
 const rounds = option('--rounds') ?? '';
+
+// where the numbers come from, so that a report can never be mistaken for one from another machine
+const machine = process.env.GITHUB_ACTIONS
+    ? ['GitHub Actions', `${process.env.RUNNER_OS ?? '?'} ${process.env.RUNNER_ARCH ?? ''}`.trim(), process.env.ImageOS]
+          .filter(Boolean)
+          .join(', ')
+    : `local, ${platform()} ${arch()}, ${cpus()[0]?.model ?? 'unknown cpu'}`;
 
 const git = (command, cwd = root) => {
     try {
@@ -61,6 +68,7 @@ const headRef = process.env.BENCH_GIT_REF || git('rev-parse --abbrev-ref HEAD');
 const head = runBenchmark(root, {
     BENCH_MICRO: micro ? '1' : '',
     BENCH_ROUNDS: rounds,
+    BENCH_MACHINE: machine,
     BENCH_GIT_SHA: (process.env.BENCH_GIT_SHA || git('rev-parse --short HEAD') || '').slice(0, 7),
     BENCH_GIT_REF: headRef === 'HEAD' ? '' : headRef ?? '',
     BENCH_GIT_DIRTY: git('status --porcelain -- src index.js') ? '1' : '',
@@ -89,6 +97,7 @@ if (base) {
         baseResults = runBenchmark(workspace, {
             BENCH_MICRO: '',
             BENCH_ROUNDS: rounds,
+            BENCH_MACHINE: machine,
             BENCH_GIT_SHA: sha,
             BENCH_GIT_REF: process.env.BENCH_BASE_REF || (/^[0-9a-f]{40}$/.test(base) ? '' : base),
             BENCH_GIT_DIRTY: '',
