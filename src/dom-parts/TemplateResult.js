@@ -1,6 +1,7 @@
-import { COMMENT_NODE, getNodePath, encodeHTML } from '../util/DOMHelper.js';
+import { COMMENT_NODE, encodeHTML } from '../util/DOMHelper.js';
 import { encodeAttribute, isObjectLike } from '../util/AttributeParser.js';
 import { TemplatePart } from './TemplatePart.js';
+import { walkPartMarkers } from './PartMarkers.js';
 
 const voidElements = /^(?:area|base|br|col|embed|hr|img|input|link|meta|source|track|wbr)$/i;
 const rawTextElements = /<(script|style|textarea|title)([^>]*)>(.*?)<\/\1>/i;
@@ -203,6 +204,39 @@ const ssrUpdatesCache = new WeakMap();
 /** @type {Map<Element, TemplatePart>} */
 const templatePartsCache = new WeakMap();
 
+/**
+ * @param {Node[] | NodeList} childNodes
+ * @return {Comment|undefined} the first `<!--template-part-->` comment among the nodes
+ */
+const findTemplatePartStartNode = (childNodes) =>
+    Array.from(childNodes).find((node) => node.nodeType === COMMENT_NODE && node.data === 'template-part');
+
+/**
+ * Parses the descriptor of a part from the data of its comment marker.
+ * For html`<div id="${'foo'}" class="${'bar'}">${'baz'}</div>` the markers are:
+ * <!--dom-part-0?type=attribute&name=id&initialValue=\x03--><!--dom-part-1?type=attribute&name=class&initialValue=\x03--><div><!--dom-part-2-->
+ * @param {string} data
+ * @return {{type: string, name?: string, initialValue?: string}}
+ */
+const parsePartDescriptor = (data) => {
+    const query = data.indexOf('?');
+    if (query === -1) {
+        return { type: 'node' };
+    }
+    const searchParams = new URLSearchParams(data.slice(query + 1));
+    const type = searchParams.get('type');
+    if (type === 'attribute') {
+        return { type, name: searchParams.get('name'), initialValue: searchParams.get('initialValue') };
+    }
+    if (type === 'raw-text-node') {
+        return { type, initialValue: searchParams.get('initialValue') };
+    }
+    if (type === 'directive') {
+        return { type };
+    }
+    throw new Error(`TemplateResult: unknown part type "${type}" in marker "${data}"`);
+};
+
 export class TemplateResult {
     /**
      * @param {TemplateStringsArray} strings
@@ -214,30 +248,27 @@ export class TemplateResult {
     }
 
     /**
+     * Renders into a DOM node. A node that already holds a rendered instance of this template is updated, a node with
+     * server rendered markup (a `<!--template-part-->` marker) is hydrated, anything else is replaced by a fresh render.
      * @param {Element} domNode
      */
     renderInto(domNode) {
-        const startNode = Array.from(domNode.childNodes)
-            .filter((node) => node.nodeType === COMMENT_NODE)
-            .find((node) => node.data === 'template-part');
-
-        let serverSideRendered = startNode !== undefined;
+        const startNode = findTemplatePartStartNode(domNode.childNodes);
 
         let templatePart = templatePartsCache.get(domNode);
+        if (templatePart && startNode) {
+            templatePart.update(this);
+            return;
+        }
 
-        if (!templatePart || !startNode) {
-            if (!startNode) {
-                domNode.replaceChildren();
-            }
+        templatePart = new TemplatePart(startNode, this);
+        templatePartsCache.set(domNode, templatePart);
 
-            templatePart = new TemplatePart(startNode, this);
-            templatePartsCache.set(domNode, templatePart);
-
-            if (!serverSideRendered) {
-                domNode.replaceChildren(...templatePart.childNodes);
-            }
+        if (templatePart.hydrated) {
+            templatePart.hydrate(this);
         } else {
             templatePart.update(this);
+            domNode.replaceChildren(...templatePart.childNodes);
         }
     }
 
@@ -369,72 +400,22 @@ export class TemplateResult {
     }
 
     /**
-     * @param {Node[]} childNodes
-     * @return {object[]}
+     * Parses the part descriptors of this template from the comment markers of its rendered or cloned nodes.
+     * The descriptors are indexed like the values of the template.
+     * @param {Node[] | NodeList} childNodes - the top level nodes of a template instance, including the template-part markers
+     * @return {{type: string, name?: string, initialValue?: string}[]}
      */
     parseParts(childNodes) {
-        // we always create a template fragment so that we can start at the root for traversing the node path
-        const range = globalThis.document?.createRange();
-        range.setStartBefore(childNodes[0]);
-        range.setEndAfter(childNodes[childNodes.length - 1]);
-        const template = range.cloneContents();
-
-        const treeWalker = globalThis.document?.createTreeWalker(template, 128);
-        let node = treeWalker.nextNode(); //to skip the root template-part
+        const startNode = findTemplatePartStartNode(childNodes);
         const parts = [];
-
-        let nestedLevel = 0;
-        // search for parts through numbered comment nodes with placeholders
-        while ((node = treeWalker.nextNode())) {
-            if (/^template-part$/.test(node.data)) {
-                nestedLevel++;
-                continue;
-            }
-            if (/^\/template-part$/.test(node.data)) {
-                if (nestedLevel > 0) {
-                    nestedLevel--;
-                }
-                continue;
-            }
-            if (nestedLevel > 0) {
-                continue;
-            }
-            if (/^dom-part-\d+$/.test(node.data)) {
-                parts.push({ type: 'node', path: getNodePath(node) });
-                continue;
-            }
-            if (/^dom-part-\d+\?type=attribute&(.*?)$/.test(node.data)) {
-                // For html`<div id="${'foo'}" class="${'bar'}"></div>` we will get:
-                // <!--dom-part-0?type=attribute&name=id&initialValue=\x03--><!--dom-part-1?type=attribute&name=class&initialValue=\x03-->
-                const [_, paramsString] = node.data.split('?');
-                const searchParams = new URLSearchParams(paramsString);
-                parts.push({
-                    type: 'attribute',
-                    path: getNodePath(node),
-                    name: searchParams.get('name'),
-                    initialValue: searchParams.get('initialValue'),
-                });
-                continue;
-            }
-            if (/^dom-part-\d+\?type=raw-text-node&(.*?)$/.test(node.data)) {
-                // For html`<textarea>${'foo'} bar</textarea>` we will get:
-                // <!--dom-part-0?type=raw-text-node&initialValue=\x03 bar-->
-                const [_, paramsString] = node.data.split('?');
-                const searchParams = new URLSearchParams(paramsString);
-                parts.push({
-                    type: 'raw-text-node',
-                    path: getNodePath(node),
-                    initialValue: searchParams.get('initialValue'),
-                });
-                continue;
-            }
-            if (/^dom-part-\d+\?type=directive$/.test(node.data)) {
-                parts.push({ type: 'directive', path: getNodePath(node) });
-            }
+        if (startNode) {
+            walkPartMarkers(startNode, (node, index) => {
+                parts[index] = parsePartDescriptor(node.data);
+            });
         }
 
         // We couldn't correctly parse parts from the template
-        if (parts.length !== this.strings.length - 1) {
+        if (parts.length !== this.strings.length - 1 || parts.includes(undefined)) {
             throw {
                 name: 'ParseTemplateError',
                 message:
@@ -443,7 +424,6 @@ export class TemplateResult {
                         strings: this.strings,
                         templateString: this.templateString,
                         childNodes,
-                        template,
                         parts,
                     }),
             };

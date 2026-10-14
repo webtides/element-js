@@ -16,6 +16,20 @@ to [Semantic Versioning](http://semver.org/).
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## Unreleased
+
+### FIXED
+
+- #168 hydrated templates bind their parts to the server rendered DOM. Updates after hydration reach attributes, text, child nodes and lists. Event listeners, properties and directives are applied on hydration, everything the server rendered keeps its state until the next update.
+- #115 hydration does not depend on the whitespace around the markers anymore.
+- a nested template at the root of a template no longer confuses the marker lookup (`PartMarkers.createFromStartNode` is nesting aware)
+
+### CHANGED
+
+- parts are bound by walking the comment markers with a TreeWalker instead of precomputed node paths, for client renders and hydration alike. Part construction no longer renders, values only flow through `update()` and `hydrate()`, which removes the double diffing on first render.
+- `TemplateResult.parseParts()` returns the part descriptors without `path`
+- server rendered markers that do not match the template are reported with `console.warn` and the template is rendered client side instead
+
 ## [1.2.12] - 2026-04-21
 
 ### FIXED

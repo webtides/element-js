@@ -53,7 +53,7 @@ describe(`RawTextNodePart part creation`, () => {
         const documentFragment = convertStringToTemplate(templateResult.templateString);
         const childNodes = [...documentFragment.childNodes];
         const parts = templateResult.parseParts(childNodes);
-        assert.deepEqual(parts, [{ type: 'raw-text-node', path: [2], initialValue: '\x03' }]);
+        assert.deepEqual(parts, [{ type: 'raw-text-node', initialValue: '\x03' }]);
     });
 
     it('creates multiple raw-text-node parts for multiple interpolations inside a text only element', async () => {
@@ -62,8 +62,8 @@ describe(`RawTextNodePart part creation`, () => {
         const childNodes = [...documentFragment.childNodes];
         const parts = templateResult.parseParts(childNodes);
         assert.deepEqual(parts, [
-            { type: 'raw-text-node', path: [2], initialValue: '\x03 bar \x03' },
-            { type: 'raw-text-node', path: [3], initialValue: '\x03 bar \x03' },
+            { type: 'raw-text-node', initialValue: '\x03 bar \x03' },
+            { type: 'raw-text-node', initialValue: '\x03 bar \x03' },
         ]);
     });
 });
