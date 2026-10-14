@@ -3,6 +3,20 @@ import { chromeLauncher } from '@web/test-runner';
 
 const RESULTS_DIR = 'benchmark/results';
 
+/**
+ * Configuration and git information come from `benchmark/run.mjs` through the environment, so that the same
+ * harness can run against a scratch workspace of another commit.
+ */
+const config = {
+    micro: process.env.BENCH_MICRO === '1',
+};
+
+const git = {
+    sha: process.env.BENCH_GIT_SHA || undefined,
+    ref: process.env.BENCH_GIT_REF || undefined,
+    dirty: process.env.BENCH_GIT_DIRTY === '1',
+};
+
 export default {
     files: ['benchmark/run.bench.js'],
     nodeResolve: true,
@@ -15,12 +29,18 @@ export default {
     },
     plugins: [
         {
-            name: 'benchmark-results',
+            name: 'benchmark',
             async executeCommand({ command, payload }) {
-                if (command !== 'benchmark-results') return undefined;
-                await mkdir(RESULTS_DIR, { recursive: true });
-                await writeFile(`${RESULTS_DIR}/latest.json`, JSON.stringify(payload, null, 2) + '\n');
-                return true;
+                if (command === 'benchmark-config') {
+                    return config;
+                }
+                if (command === 'benchmark-results') {
+                    await mkdir(RESULTS_DIR, { recursive: true });
+                    const results = { git, ...payload };
+                    await writeFile(`${RESULTS_DIR}/latest.json`, JSON.stringify(results, null, 2) + '\n');
+                    return true;
+                }
+                return undefined;
             },
         },
     ],

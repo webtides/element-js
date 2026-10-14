@@ -60,7 +60,8 @@
     "scripts": {
         "lint": "eslint index.js 'src/**/*.js'",
         "test": "web-test-runner test/**/*.test.{html,js} --node-resolve",
-        "bench": "web-test-runner --config benchmark/web-test-runner.config.js && node benchmark/report.mjs",
+        "bench": "node benchmark/run.mjs",
+        "bench:compare": "node benchmark/run.mjs --base main",
         "bench:ui": "web-dev-server --root-dir . --open /benchmark/",
         "test:coverage": "web-test-runner test/**/*.test.{html,js} --node-resolve --coverage",
         "test:watch": "web-test-runner test/**/*.test.{html,js} --node-resolve --watch",
