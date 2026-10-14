@@ -4,8 +4,9 @@
  * Browser only, no UI. Used by `index.html` (manual, via `npm run bench:ui`) and by `run.bench.js`
  * (headless via web-test-runner, `npm run bench`).
  *
- * Micro: cost of binding parts to a freshly cloned template fragment. Compares the current path based lookup
- * (`part.path.reduceRight(...)` in TemplatePart.parseValue) against TreeWalker based lookups. Every variant includes
+ * Micro: cost of binding parts to a freshly cloned template fragment. Compares a path based lookup
+ * (`part.path.reduceRight(...)`, what TemplatePart did up to 1.2.12) against TreeWalker based lookups. These are
+ * implementations inside the benchmark, not calls into the library, so they measure the strategies, not a release. Every variant includes
  * the `importNode` clone, `clone-only` is the floor. All variants must resolve the same nodes, this is verified
  * before measuring and reported per variant.
  *
@@ -171,7 +172,7 @@ export const variants = {
         return clone.childNodes.length;
     },
 
-    'path reduceRight (current)': ({ fragment, parts }, out) => {
+    'path reduceRight': ({ fragment, parts }, out) => {
         const clone = document.importNode(fragment, true);
         // TemplatePart passes `this` with `this.childNodes = importedFragment.childNodes`
         const root = { childNodes: clone.childNodes };
@@ -184,7 +185,7 @@ export const variants = {
         return sink;
     },
 
-    'walker comments, N from data': ({ fragment, parts }, out) => {
+    'walker comments (N from data)': ({ fragment, parts }, out) => {
         const clone = document.importNode(fragment, true);
         const walker = document.createTreeWalker(clone, SHOW_COMMENT);
         const total = parts.length;
@@ -203,7 +204,7 @@ export const variants = {
         return sink;
     },
 
-    'walker comments, ordinal': ({ fragment, parts }, out) => {
+    'walker comments (ordinal)': ({ fragment, parts }, out) => {
         const clone = document.importNode(fragment, true);
         const walker = document.createTreeWalker(clone, SHOW_COMMENT);
         const total = parts.length;
@@ -220,7 +221,7 @@ export const variants = {
         return sink;
     },
 
-    'walker nodeIndex (lit)': ({ fragment, partNodeIndex }, out) => {
+    'walker nodeIndex (lit style)': ({ fragment, partNodeIndex }, out) => {
         const clone = document.importNode(fragment, true);
         const walker = document.createTreeWalker(clone, SHOW_ELEMENT_AND_COMMENT);
         const total = partNodeIndex.length;
@@ -253,9 +254,9 @@ export const runMicro = async ({ iterations, samples: sampleCount }, onProgress)
     for (const shape of shapes) {
         const prepared = prepare(shape.template);
 
-        // verification: every binding variant must resolve the same nodes as the current implementation
+        // verification: every binding variant must resolve the same nodes as the path lookup
         const reference = [];
-        variants['path reduceRight (current)'](prepared, reference);
+        variants['path reduceRight'](prepared, reference);
         const referenceSignature = signature(reference);
         const verified = {};
         for (const [name, fn] of entries) {
@@ -289,7 +290,7 @@ export const runMicro = async ({ iterations, samples: sampleCount }, onProgress)
         }
 
         const floor = median(samples['clone-only']);
-        const current = median(samples['path reduceRight (current)']) - floor;
+        const pathOverhead = median(samples['path reduceRight']) - floor;
         results.push({
             name: shape.name,
             description: shape.description,
@@ -307,7 +308,8 @@ export const runMicro = async ({ iterations, samples: sampleCount }, onProgress)
                     medianUs: round(med, 2),
                     minUs: round(min(samples[name]), 2),
                     bindingOverheadUs: name === 'clone-only' ? 0 : round(overhead, 2),
-                    relativeToCurrent: name === 'clone-only' || current <= 0 ? null : round(overhead / current, 2),
+                    relativeToPath:
+                        name === 'clone-only' || pathOverhead <= 0 ? null : round(overhead / pathOverhead, 2),
                     verified: name === 'clone-only' ? null : verified[name],
                 };
             }),

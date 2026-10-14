@@ -17,17 +17,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # the base commit of a pull request is measured in the same job
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
       - run: npm ci
-      - run: npm run bench
+      - name: Benchmark
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -n "$BASE_SHA" ]; then
+            node benchmark/run.mjs --base "$BASE_SHA"
+          else
+            node benchmark/run.mjs
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
-          path: benchmark/results/
-      # Numbers from shared runners are not comparable across runs. The comment is for the probes and for
-      # eyeballing order-of-magnitude changes, not for gating.
+          path: |
+            benchmark/results/latest.json
+            benchmark/results/latest.md
+            benchmark/results/base.json
+          if-no-files-found: ignore
+      # Base and head are measured right after each other on the same runner, so the deltas are meaningful.
+      # Still a shared runner: the comment flags deviations, it does not gate.
       - name: Comment on pull request
         if: github.event_name == 'pull_request'
         continue-on-error: true

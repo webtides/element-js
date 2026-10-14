@@ -25,7 +25,7 @@ const renderMicroTable = (results) => {
     let out = '';
     for (const shape of results) {
         out += `<h3>${shape.name} <small>${shape.description}, ${shape.nodeCount} nodes, ${shape.partCount} parts, max path length ${shape.depth}</small></h3>`;
-        out += `<table><thead><tr><th>variant</th><th>median µs/op</th><th>min µs/op</th><th>binding overhead µs</th><th>× current</th><th>verified</th></tr></thead><tbody>`;
+        out += `<table><thead><tr><th>variant</th><th>median µs/op</th><th>min µs/op</th><th>binding overhead µs</th><th>× path</th><th>verified</th></tr></thead><tbody>`;
         for (const v of shape.variants) {
             const verified =
                 v.verified === null
@@ -33,7 +33,7 @@ const renderMicroTable = (results) => {
                     : v.verified
                       ? '<span class="ok">ok</span>'
                       : '<span class="fail">MISMATCH</span>';
-            const relative = v.relativeToCurrent === null ? '' : `${v.relativeToCurrent}×`;
+            const relative = v.relativeToPath === null ? '' : `${v.relativeToPath}×`;
             out += `<tr><td>${v.name}</td><td>${v.medianUs}</td><td>${v.minUs}</td><td>${v.bindingOverheadUs}</td><td>${relative}</td><td>${verified}</td></tr>`;
         }
         out += `</tbody></table>`;
