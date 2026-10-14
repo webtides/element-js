@@ -378,6 +378,23 @@ const measure = (fn) => {
     return performance.now() - start;
 };
 
+/**
+ * Correctness checks that run with the macro benchmark. A failing check means the renderer is broken on that path,
+ * whatever the numbers say. The descriptions live next to the code that runs the checks, see runMacro().
+ */
+export const macroChecks = {
+    clientRender: {
+        name: 'client render',
+        description: (rows) =>
+            `render ${rows} rows, change every 10th label, render again. Is the new label in the DOM?`,
+    },
+    hydration: {
+        name: 'hydration',
+        description: (rows) =>
+            `write the server markup (\`toString()\`) of ${rows} rows into the container, hydrate it, change every 10th label, render again. Is the new label in the DOM?`,
+    },
+};
+
 /** Same operation set as js-framework-benchmark, the interactive version lives in examples/index.html. */
 export const macroOperations = [
     'create rows',
@@ -471,11 +488,17 @@ export const runMacro = async ({ rows, rounds, host }, onProgress) => {
         await tick(10);
     }
 
+    const check = (key, passed) => ({
+        key,
+        name: macroChecks[key].name,
+        description: macroChecks[key].description(rows),
+        passed,
+    });
+
     return {
         rows,
         rounds,
-        clientUpdatesReachDom,
-        hydratedUpdatesReachDom,
+        checks: [check('clientRender', clientUpdatesReachDom), check('hydration', hydratedUpdatesReachDom)],
         operations: macroOperations.map((name) => ({
             name,
             medianMs: round(median(samples[name]), 2),
