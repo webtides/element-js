@@ -9,6 +9,7 @@ const RESULTS_DIR = 'benchmark/results';
  */
 const config = {
     micro: process.env.BENCH_MICRO === '1',
+    rounds: Number(process.env.BENCH_ROUNDS) || undefined,
 };
 
 const git = {

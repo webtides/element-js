@@ -5,6 +5,7 @@
  *   node benchmark/run.mjs --base main          also measures `main` and reports the deltas
  *   node benchmark/run.mjs --micro              includes the micro benchmark (part binding strategies)
  *   node benchmark/run.mjs --threshold 30       flags deltas from this percentage on (default 30)
+ *   node benchmark/run.mjs --rounds 15          macro rounds (default 9), more rounds for noisier machines
  *
  * The base is measured in a scratch workspace in the temp directory: `src/` and `index.js` of the base commit,
  * `benchmark/` and node_modules of the working tree. Same harness, same machine, same minute, so the deltas mean
@@ -30,6 +31,7 @@ const option = (name) => {
 const base = option('--base');
 const micro = args.includes('--micro');
 const threshold = Number(option('--threshold') ?? 30);
+const rounds = option('--rounds') ?? '';
 
 const git = (command, cwd = root) => {
     try {
@@ -58,6 +60,7 @@ console.log(`\n▶ benchmark: working tree${micro ? ' (with micro)' : ''}`);
 const headRef = process.env.BENCH_GIT_REF || git('rev-parse --abbrev-ref HEAD');
 const head = runBenchmark(root, {
     BENCH_MICRO: micro ? '1' : '',
+    BENCH_ROUNDS: rounds,
     BENCH_GIT_SHA: (process.env.BENCH_GIT_SHA || git('rev-parse --short HEAD') || '').slice(0, 7),
     BENCH_GIT_REF: headRef === 'HEAD' ? '' : headRef ?? '',
     BENCH_GIT_DIRTY: git('status --porcelain -- src index.js') ? '1' : '',
@@ -85,6 +88,7 @@ if (base) {
     try {
         baseResults = runBenchmark(workspace, {
             BENCH_MICRO: '',
+            BENCH_ROUNDS: rounds,
             BENCH_GIT_SHA: sha,
             BENCH_GIT_REF: process.env.BENCH_BASE_REF || (/^[0-9a-f]{40}$/.test(base) ? '' : base),
             BENCH_GIT_DIRTY: '',

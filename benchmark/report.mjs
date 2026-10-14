@@ -68,6 +68,8 @@ export const formatMarkdown = (head, { base, threshold = 30, title = 'Renderer b
         const baseOperations = new Map((base?.macro?.operations ?? []).map((v) => [v.name, v]));
         const rows = [];
         const deviations = [];
+        const percent = (value, reference) => ((value - reference) / reference) * 100;
+        const format = (delta) => `${delta > 0 ? '+' : ''}${delta.toFixed(0)}%`;
         for (const v of macro.operations) {
             if (!base) {
                 rows.push([v.name, v.medianMs, v.minMs]);
@@ -75,15 +77,25 @@ export const formatMarkdown = (head, { base, threshold = 30, title = 'Renderer b
             }
             const baseValue = baseOperations.get(v.name);
             if (!baseValue) {
-                rows.push([v.name, 'n/a', v.medianMs, '']);
+                rows.push([v.name, 'n/a', v.medianMs, '', '']);
                 continue;
             }
-            const delta = ((v.medianMs - baseValue.medianMs) / baseValue.medianMs) * 100;
-            const flagged = Math.abs(delta) >= threshold;
-            const text = `${delta > 0 ? '+' : ''}${delta.toFixed(0)}%`;
-            const flag = delta > 0 ? '⚠️' : '✅';
-            if (flagged) deviations.push(`${v.name} ${text} ${flag}`);
-            rows.push([v.name, baseValue.medianMs, v.medianMs, flagged ? `**${text}** ${flag}` : text]);
+            const deltaMedian = percent(v.medianMs, baseValue.medianMs);
+            const deltaMin = percent(v.minMs, baseValue.minMs);
+            // a single slow round moves the median, not the min. Only a change that shows in both is reported.
+            const flagged =
+                Math.abs(deltaMedian) >= threshold &&
+                Math.abs(deltaMin) >= threshold &&
+                Math.sign(deltaMedian) === Math.sign(deltaMin);
+            const flag = deltaMedian > 0 ? '⚠️' : '✅';
+            if (flagged) deviations.push(`${v.name} ${format(deltaMedian)} ${flag}`);
+            rows.push([
+                v.name,
+                baseValue.medianMs,
+                v.medianMs,
+                flagged ? `**${format(deltaMedian)}** ${flag}` : format(deltaMedian),
+                flagged ? `**${format(deltaMin)}**` : format(deltaMin),
+            ]);
         }
 
         out.push('');
@@ -108,7 +120,9 @@ export const formatMarkdown = (head, { base, threshold = 30, title = 'Renderer b
 
         const subject = `operation, \`render()\` with ${macro.rows} rows, median of ${macro.rounds}`;
         out.push(
-            base ? table([subject, 'base ms', 'head ms', 'Δ'], rows) : table([subject, 'median ms', 'min ms'], rows),
+            base
+                ? table([subject, 'base ms', 'head ms', 'Δ median', 'Δ min'], rows)
+                : table([subject, 'median ms', 'min ms'], rows),
         );
     }
 
@@ -143,7 +157,7 @@ export const formatMarkdown = (head, { base, threshold = 30, title = 'Renderer b
     out.push('');
     out.push(
         base
-            ? `_Base and head ran on the same machine right after each other. Deltas under ${threshold}% are within what a shared runner produces on its own._`
+            ? `_Base and head ran on the same machine right after each other. An operation is flagged when median and min both move ${threshold}% or more in the same direction, a single slow round only moves the median._`
             : '_Absolute numbers depend on the machine. Compare runs from the same machine only, `--base <ref>` does that for you._',
     );
     out.push('');
