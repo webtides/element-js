@@ -11,8 +11,8 @@
  * before measuring and reported per variant.
  *
  * Macro: end-to-end `render()` of a js-framework-benchmark style table with the operation set of that benchmark,
- * plus `hydrate rows` (render into server markup produced by `toString()`). Two probes report whether updates after
- * a client render and after a hydration reach the DOM.
+ * plus `hydrate rows` (render into server markup produced by `toString()`). Every operation has a post-condition on
+ * the DOM, a measurement whose post-condition fails is reported as invalid instead of as a number.
  *
  * Timing method (micro): each variant is warmed up for a fixed wall-clock time so the engine has finished tiering,
  * then sampled many times. Samples are a few milliseconds long: long enough for the coarsened `performance.now()`
@@ -378,23 +378,6 @@ const measure = (fn) => {
     return performance.now() - start;
 };
 
-/**
- * Correctness checks that run with the macro benchmark. A failing check means the renderer is broken on that path,
- * whatever the numbers say. The descriptions live next to the code that runs the checks, see runMacro().
- */
-export const macroChecks = {
-    clientRender: {
-        name: 'client render',
-        description: (rows) =>
-            `render ${rows} rows, change every 10th label, render again. Is the new label in the DOM?`,
-    },
-    hydration: {
-        name: 'hydration',
-        description: (rows) =>
-            `write the server markup (\`toString()\`) of ${rows} rows into the container, hydrate it, change every 10th label, render again. Is the new label in the DOM?`,
-    },
-};
-
 /** Same operation set as js-framework-benchmark, the interactive version lives in examples/index.html. */
 export const macroOperations = [
     'create rows',
@@ -410,15 +393,21 @@ export const macroOperations = [
 ];
 
 /**
+ * Renders the table and times it. Every operation has a post-condition on the DOM, like js-framework-benchmark
+ * checks the page after each step. A measurement whose post-condition fails is reported as invalid: the number
+ * would describe something the renderer did not actually do.
+ *
  * @param {{rows: number, rounds: number, host: Element}} config - `host` receives the containers while rendering
  * @param {(text: string) => void} [onProgress]
  */
 export const runMacro = async ({ rows, rounds, host }, onProgress) => {
     const samples = Object.fromEntries(macroOperations.map((name) => [name, []]));
-    let clientUpdatesReachDom = null;
-    let hydratedUpdatesReachDom = null;
+    /** @type {Object<string, string>} operation name → why its measurement is invalid */
+    const invalid = {};
     const touchEvery10th = (data) =>
         data.map((item, index) => (index % 10 === 0 ? { ...item, label: `${item.label} !!!` } : item));
+    const rowCount = (container) => container.querySelectorAll('tr').length;
+    const rowIds = (container) => [...container.querySelectorAll('tr')].map((tr) => tr.id);
 
     for (let roundIndex = 0; roundIndex < rounds; roundIndex++) {
         const random = createRandom(42);
@@ -427,59 +416,135 @@ export const runMacro = async ({ rows, rounds, host }, onProgress) => {
         // fresh container per round, the renderer caches its TemplatePart per container
         const container = document.createElement('div');
         host.append(container);
-        const draw = (data, selected) => measure(() => render(tableTemplate(data, selected), container));
+
+        /**
+         * @param {string} name
+         * @param {Element} target
+         * @param {TemplateResult} template
+         * @param {() => boolean} verify - post-condition on the DOM
+         * @param {string} reason - recorded when the post-condition fails
+         */
+        const timed = (name, target, template, verify, reason) => {
+            samples[name].push(measure(() => render(template, target)));
+            if (!verify()) invalid[name] = reason;
+        };
 
         let data = buildData(rows, random);
         let selected = undefined;
 
-        samples['create rows'].push(draw(data, selected));
+        timed(
+            'create rows',
+            container,
+            tableTemplate(data, selected),
+            () => rowCount(container) === rows,
+            `expected ${rows} rows in the DOM`,
+        );
         await tick();
 
         data = buildData(rows, random);
-        samples['replace all rows'].push(draw(data, selected));
+        timed(
+            'replace all rows',
+            container,
+            tableTemplate(data, selected),
+            () => rowCount(container) === rows && rowIds(container)[0] === String(data[0].id),
+            'rows were not replaced in the DOM',
+        );
         await tick();
 
         data = touchEvery10th(data);
-        samples['partial update'].push(draw(data, selected));
-        clientUpdatesReachDom = container.querySelector('a.lbl').textContent.endsWith('!!!');
+        timed(
+            'partial update',
+            container,
+            tableTemplate(data, selected),
+            () => container.querySelector('a.lbl').textContent.endsWith('!!!'),
+            'changed labels did not reach the DOM',
+        );
         await tick();
 
         selected = data[Math.floor(rows / 2)].id;
-        samples['select row'].push(draw(data, selected));
+        timed(
+            'select row',
+            container,
+            tableTemplate(data, selected),
+            () => container.querySelector('tr.danger')?.id === String(selected),
+            'selected row did not get its class in the DOM',
+        );
         await tick();
 
         data = [...data];
         [data[1], data[data.length - 2]] = [data[data.length - 2], data[1]];
-        samples['swap rows'].push(draw(data, selected));
+        timed(
+            'swap rows',
+            container,
+            tableTemplate(data, selected),
+            () => {
+                const ids = rowIds(container);
+                return ids[1] === String(data[1].id) && ids[data.length - 2] === String(data[data.length - 2].id);
+            },
+            'swapped rows did not change places in the DOM',
+        );
         await tick();
 
         data = data.filter((_, index) => index !== Math.floor(rows / 2));
-        samples['remove row'].push(draw(data, selected));
+        timed(
+            'remove row',
+            container,
+            tableTemplate(data, selected),
+            () => rowCount(container) === data.length,
+            'row was not removed from the DOM',
+        );
         await tick();
 
         data = data.concat(buildData(rows, random));
-        samples['append rows'].push(draw(data, selected));
+        timed(
+            'append rows',
+            container,
+            tableTemplate(data, selected),
+            () => rowCount(container) === data.length,
+            'appended rows did not reach the DOM',
+        );
         await tick();
 
         data = [];
-        samples['clear rows'].push(draw(data, selected));
+        timed(
+            'clear rows',
+            container,
+            tableTemplate(data, selected),
+            () => rowCount(container) === 0,
+            'rows were not removed from the DOM',
+        );
         await tick();
 
         data = buildData(rows * 10, random);
-        samples['create many rows'].push(draw(data, undefined));
+        timed(
+            'create many rows',
+            container,
+            tableTemplate(data, undefined),
+            () => rowCount(container) === data.length,
+            `expected ${rows * 10} rows in the DOM`,
+        );
         await tick();
         render(tableTemplate([], undefined), container);
         await tick();
 
-        // hydration: server markup first, then the same template rendered into it
+        // hydration: server markup first, then the same template rendered into it. Hydrating leaves the DOM as it
+        // is, so the measurement is only valid if the hydrated instance is alive afterwards: a change must reach
+        // the DOM on the next render.
         const hydrated = document.createElement('div');
         host.append(hydrated);
         data = buildData(rows, random);
         hydrated.innerHTML = tableTemplate(data, undefined).toString();
-        samples['hydrate rows'].push(measure(() => render(tableTemplate(data, undefined), hydrated)));
-        // probe: does an update after hydration reach the DOM? Flips to true once #168 is fixed.
-        render(tableTemplate(touchEvery10th(data), undefined), hydrated);
-        hydratedUpdatesReachDom = hydrated.querySelector('a.lbl').textContent.endsWith('!!!');
+        timed(
+            'hydrate rows',
+            hydrated,
+            tableTemplate(data, undefined),
+            () => {
+                if (rowCount(hydrated) !== rows) return false;
+                render(tableTemplate(touchEvery10th(data), undefined), hydrated);
+                return hydrated.querySelector('a.lbl').textContent.endsWith('!!!');
+            },
+            'DOM did not update after hydration',
+        );
         await tick();
 
         container.remove();
@@ -488,21 +553,15 @@ export const runMacro = async ({ rows, rounds, host }, onProgress) => {
         await tick(10);
     }
 
-    const check = (key, passed) => ({
-        key,
-        name: macroChecks[key].name,
-        description: macroChecks[key].description(rows),
-        passed,
-    });
-
     return {
         rows,
         rounds,
-        checks: [check('clientRender', clientUpdatesReachDom), check('hydration', hydratedUpdatesReachDom)],
         operations: macroOperations.map((name) => ({
             name,
             medianMs: round(median(samples[name]), 2),
             minMs: round(min(samples[name]), 2),
+            valid: !invalid[name],
+            invalidReason: invalid[name],
         })),
     };
 };
