@@ -12,21 +12,55 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const table = (header, rows) => {
+const table = (header, rows, alignments) => {
     const lines = [
         `| ${header.join(' | ')} |`,
-        `| ${header.map((_, index) => (index === 0 ? '---' : '---:')).join(' | ')} |`,
+        `| ${header.map((_, index) => alignments?.[index] ?? (index === 0 ? '---' : '---:')).join(' | ')} |`,
         ...rows.map((row) => `| ${row.join(' | ')} |`),
     ];
     return lines.join('\n');
 };
 
-const probeLabels = {
-    clientUpdatesReachDom: 'client updates reach DOM',
-    hydratedUpdatesReachDom: 'hydrated updates reach DOM',
-};
+const mark = (passed) => (passed === null || passed === undefined ? 'n/a' : passed ? '✅' : '❌');
 
-const yesNo = (value) => (value === null || value === undefined ? 'n/a' : value ? 'yes' : '**no**');
+const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
+
+/**
+ * The correctness checks as a block: heading, one line per check that fails or changed, then the table.
+ * @param {object[]} checks - head checks
+ * @param {object|undefined} base - base results, when comparing
+ * @return {string[]} markdown lines
+ */
+const formatChecks = (checks, base) => {
+    const baseChecks = new Map((base?.macro?.checks ?? []).map((check) => [check.key, check]));
+    const lines = [
+        '**Correctness checks** · a failing check means the renderer is broken on that path, whatever the numbers say',
+        '',
+    ];
+    for (const check of checks) {
+        const baseCheck = baseChecks.get(check.key);
+        const label = `${capitalize(check.name)} check`;
+        if (base && baseCheck && baseCheck.passed !== check.passed) {
+            lines.push(
+                check.passed
+                    ? `**${label}: fails on base, passes on head.** ✅`
+                    : `**${label}: passes on base, fails on head.** ⚠️`,
+                '',
+            );
+        } else if (!check.passed) {
+            lines.push(base && baseCheck ? `**${label} fails on base and head.** ❌` : `**${label} fails.** ❌`, '');
+        }
+    }
+    const header = base ? ['check', 'what it does', 'base', 'head'] : ['check', 'what it does', 'result'];
+    const alignments = base ? ['---', '---', ':---:', ':---:'] : ['---', '---', ':---:'];
+    const rows = checks.map((check) =>
+        base
+            ? [check.name, check.description, mark(baseChecks.get(check.key)?.passed), mark(check.passed)]
+            : [check.name, check.description, mark(check.passed)],
+    );
+    lines.push(table(header, rows, alignments), '');
+    return lines;
+};
 
 const describeCommit = (results) => {
     const git = results.git ?? {};
@@ -122,13 +156,7 @@ export const formatMarkdown = (head, { base, threshold = 30, title = 'Renderer b
             out.push('');
         }
 
-        const probes = Object.entries(probeLabels).map(([key, label]) => {
-            const baseProbe = base?.macro?.[key];
-            const changed = base && baseProbe !== macro[key];
-            return `${label}: ${yesNo(macro[key])}${changed ? ` (base: ${yesNo(baseProbe)})` : ''}`;
-        });
-        out.push(`Probes: ${probes.join(' · ')}`);
-        out.push('');
+        out.push(...formatChecks(macro.checks ?? [], base));
 
         const subject = `operation, \`render()\` with ${macro.rows} rows, median of ${macro.rounds}`;
         out.push(

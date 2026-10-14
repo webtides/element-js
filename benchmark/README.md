@@ -23,7 +23,14 @@ An example:
 
 **2 of 10 operations deviate 30% or more from base:** create rows -36% ✅, hydrate rows -35% ✅
 
-Probes: client updates reach DOM: yes · hydrated updates reach DOM: yes (base: **no**)
+**Correctness checks** · a failing check means the renderer is broken on that path, whatever the numbers say
+
+**Hydration check: fails on base, passes on head.** ✅
+
+| check | what it does | base | head |
+| --- | --- | :---: | :---: |
+| client render | render 1000 rows, change every 10th label, render again. Is the new label in the DOM? | ✅ | ✅ |
+| hydration | write the server markup (`toString()`) of 1000 rows into the container, hydrate it, change every 10th label, render again. Is the new label in the DOM? | ❌ | ✅ |
 
 | operation, `render()` with 1000 rows, median of 9 | base ms | head ms | Δ median | Δ min |
 | --- | ---: | ---: | ---: | ---: |
@@ -34,7 +41,7 @@ Probes: client updates reach DOM: yes · hydrated updates reach DOM: yes (base: 
 
 -   **Base** is the commit you compare against, measured right after the working tree in a scratch workspace: `src/` and `index.js` of that commit, `benchmark/` and `node_modules` of the working tree. Same harness, same machine, same minute. That is the only comparison the report makes. The header names the machine (`GitHub Actions, …` or `local, …`), and a base measured elsewhere is called out and never flagged.
 -   **Δ median / Δ min** are the changes of the median and of the fastest round. An operation is flagged (bold, ✅ faster, ⚠️ slower) when both move at least the threshold (default 30%, `--threshold`) in the same direction. A single slow round moves the median but not the min, which is what shared runners mostly produce. The summary line lists the flagged operations, so a comment can be judged from its first line.
--   **Probes** are correctness checks that come with the macro run: do updates after a client render and after a hydration reach the DOM. A probe that differs from base is called out.
+-   **Correctness checks** run with the macro benchmark and say whether the renderer works at all on a path: render, change data, render again, is the change in the DOM? Once after a client render, once after hydrating server markup. The descriptions in the table come from `core.js`, next to the code that runs them. A check that fails or that differs from base gets its own bold line under the heading.
 -   **Micro** (`--micro`) is a collapsed extra: the cost of binding parts to a freshly cloned template for several strategies, implemented inside the harness. It does not call the library, so it is identical on every commit and never compared. It exists to decide how binding should work, see below.
 
 ## CI

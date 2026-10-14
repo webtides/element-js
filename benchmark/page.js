@@ -42,10 +42,12 @@ const renderMicroTable = (results) => {
 };
 
 const renderMacroTable = (results) => {
-    const flag = (value) => (value ? '<span class="ok">yes</span>' : '<span class="fail">no</span>');
-    let out = `<p>${results.rows} rows, ${results.rounds} rounds. Client updates reach DOM: ${flag(
-        results.clientUpdatesReachDom,
-    )}. Hydrated updates reach DOM: ${flag(results.hydratedUpdatesReachDom)}.</p>`;
+    const mark = (passed) => (passed ? '<span class="ok">passes</span>' : '<span class="fail">FAILS</span>');
+    let out = `<p>${results.rows} rows, ${results.rounds} rounds. Correctness checks, a failing check means the renderer is broken on that path:</p><ul>`;
+    for (const check of results.checks) {
+        out += `<li><strong>${check.name}</strong> ${mark(check.passed)}: ${check.description}</li>`;
+    }
+    out += `</ul>`;
     out += `<table><thead><tr><th>operation</th><th>median ms</th><th>min ms</th></tr></thead><tbody>`;
     for (const v of results.operations) {
         out += `<tr><td>${v.name}</td><td>${v.medianMs}</td><td>${v.minMs}</td></tr>`;
