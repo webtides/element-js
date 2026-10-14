@@ -4,9 +4,8 @@ on:
   push:
     branches:
       - main
+  # every pull request, whatever it targets: a stacked PR is compared against the tip of the branch below it
   pull_request:
-    branches:
-      - main
 
 permissions:
   contents: read
