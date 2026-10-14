@@ -3,10 +3,11 @@ import { Part } from './Part.js';
 /**
  * @param {Element} node
  * @param {String} name
- * @param {Boolean} oldValue
  * @return {(function(*): void)|*}
  */
-const processBooleanAttribute = (node, name, oldValue) => {
+const processBooleanAttribute = (node, name) => {
+    // seeded from the DOM so that a hydrated element keeps its server rendered state until a value differs
+    let oldValue = node.hasAttribute(name);
     return (newValue) => {
         const value = !!newValue?.valueOf() && newValue !== 'false';
         if (oldValue !== value) {
@@ -49,7 +50,8 @@ const processEventAttribute = (node, name) => {
  * @return {(function(*): void)|*}
  */
 const processAttribute = (node, name) => {
-    let oldValue;
+    // seeded from the DOM so that a hydrated element keeps its server rendered state until a value differs
+    let oldValue = node.getAttribute(name) ?? undefined;
     return (newValue) => {
         const value = newValue?.valueOf();
         if (oldValue !== value) {
@@ -67,6 +69,12 @@ const processAttribute = (node, name) => {
 const attributePartsCache = new WeakMap();
 
 /**
+ * @param {String} name
+ * @return {boolean} true for event (@event, onevent) and property (.property) bindings
+ */
+const isEventOrProperty = (name) => name.startsWith('@') || name.startsWith('.') || name.startsWith('on');
+
+/**
  * @param {Element} node
  * @param {String} name
  * @return {(function(*): void)|*}
@@ -74,7 +82,7 @@ const attributePartsCache = new WeakMap();
 export const processAttributePart = (node, name) => {
     // boolean attribute: ?boolean=${...}
     if (name.startsWith('?')) {
-        return processBooleanAttribute(node, name.slice(1), false);
+        return processBooleanAttribute(node, name.slice(1));
     }
 
     // property attribute: .property=${...}
@@ -147,6 +155,17 @@ export class AttributePart extends Part {
             // Note: this will coarse the values into strings, but it's probably ok since there can only be multiple values in string attributes?!
             const parsedValue = this.initialValue.replace(/\x03/g, () => this.values[replaceIndex++]);
             this.processor(parsedValue);
+        }
+    }
+
+    /**
+     * Server markup cannot carry event listeners or properties, those are applied. Every other attribute keeps the
+     * server rendered value, the processor was seeded from the DOM and the next update diffs against it.
+     * @param {string | number | bigint | boolean | undefined | symbol | null} value
+     */
+    hydrate(value) {
+        if (isEventOrProperty(this.name)) {
+            this.update(value);
         }
     }
 }
