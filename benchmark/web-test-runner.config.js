@@ -37,7 +37,7 @@ export default {
                 }
                 if (command === 'benchmark-results') {
                     await mkdir(RESULTS_DIR, { recursive: true });
-                    const results = { git, ...payload };
+                    const results = { git, machine: process.env.BENCH_MACHINE || undefined, ...payload };
                     await writeFile(`${RESULTS_DIR}/latest.json`, JSON.stringify(results, null, 2) + '\n');
                     return true;
                 }

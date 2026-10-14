@@ -14,10 +14,12 @@ Results land in `benchmark/results/` (gitignored): `latest.json`, `latest.md` an
 
 ## What the report shows
 
+An example:
+
 ```
 ### Renderer benchmark
 
-`fix/168` 3f2a1c9 vs base `main` c29a37f · Chrome/155 headless, 4 cores, 2026-10-14
+`fix/168` 3f2a1c9 vs base `main` c29a37f · GitHub Actions, Linux X64, ubuntu24 · Chrome/154 headless, 4 cores, 2026-10-14
 
 **2 of 10 operations deviate 30% or more from base:** create rows -36% ✅, hydrate rows -35% ✅
 
@@ -30,7 +32,7 @@ Probes: client updates reach DOM: yes · hydrated updates reach DOM: yes (base: 
 …
 ```
 
--   **Base** is the commit you compare against, measured right after the working tree in a scratch workspace: `src/` and `index.js` of that commit, `benchmark/` and `node_modules` of the working tree. Same harness, same machine, same minute. That is what makes the deltas usable on a shared CI runner, where absolute numbers drift from run to run.
+-   **Base** is the commit you compare against, measured right after the working tree in a scratch workspace: `src/` and `index.js` of that commit, `benchmark/` and `node_modules` of the working tree. Same harness, same machine, same minute. That is the only comparison the report makes. The header names the machine (`GitHub Actions, …` or `local, …`), and a base measured elsewhere is called out and never flagged.
 -   **Δ median / Δ min** are the changes of the median and of the fastest round. An operation is flagged (bold, ✅ faster, ⚠️ slower) when both move at least the threshold (default 30%, `--threshold`) in the same direction. A single slow round moves the median but not the min, which is what shared runners mostly produce. The summary line lists the flagged operations, so a comment can be judged from its first line.
 -   **Probes** are correctness checks that come with the macro run: do updates after a client render and after a hydration reach the DOM. A probe that differs from base is called out.
 -   **Micro** (`--micro`) is a collapsed extra: the cost of binding parts to a freshly cloned template for several strategies, implemented inside the harness. It does not call the library, so it is identical on every commit and never compared. It exists to decide how binding should work, see below.
@@ -56,35 +58,22 @@ Method: each strategy is warmed up for 200 ms wall-clock before sampling. Sample
 
 Files: `run.mjs` (CLI, runs head and base, prints), `core.js` (measurement, browser only), `run.bench.js` (headless entry for web-test-runner), `web-test-runner.config.js` (hands config in, writes the JSON), `report.mjs` (Markdown), `index.html` + `page.js` (manual page).
 
-## Baseline and the binding decision
+## The binding decision
 
-`main` @ `c29a37f` (v1.2.12), headless Chrome 155, Apple M1 Max, defaults. Macro, ms (median / min):
+Numbers live in the pull request comments, measured on the CI runner, base against head. Nothing here quotes a machine.
 
-| operation        |          ms |
-| ---------------- | ----------: |
-| create rows      | 14.5 / 12.7 |
-| replace all rows |   5.0 / 4.5 |
-| partial update   |   3.8 / 3.6 |
-| select row       |   3.8 / 3.3 |
-| swap rows        |   3.6 / 3.5 |
-| remove row       |   4.3 / 4.1 |
-| append rows      | 13.5 / 12.7 |
-| clear rows       | 20.8 / 19.5 |
-| create many rows | 95.3 / 85.4 |
-| hydrate rows     |  10.4 / 9.1 |
+The micro benchmark settled how parts get bound to a template clone. Relative to the former path lookup (`reduceRight` over precomputed `childNodes` indices), measured on one machine with the strategies rotating per sample:
 
-Probes: client updates reach the DOM: yes. Hydrated updates reach the DOM: **no** (#168).
-
-Micro, binding overhead in µs per clone (median):
-
-| shape                             | clone only | path | walker N | walker ordinal | walker lit |
-| --------------------------------- | ---------: | ---: | -------: | -------------: | ---------: |
-| row: 27 nodes, 4 parts, depth 4   |       2.15 | 1.10 |     0.62 |           0.55 |       0.60 |
-| deep: 39 nodes, 2 parts, depth 12 |       2.80 | 2.35 |     0.30 |           0.30 |       0.80 |
-| wide: 312 nodes, 3 parts, depth 3 |      31.55 | 1.35 |     1.00 |           1.67 |       9.15 |
+| shape                             | walker N | walker ordinal | walker lit |
+| --------------------------------- | -------: | -------------: | ---------: |
+| row: 27 nodes, 4 parts, depth 4   |    ~0.5× |          ~0.5× |      ~0.6× |
+| deep: 39 nodes, 2 parts, depth 12 |   ~0.15× |         ~0.15× |     ~0.35× |
+| wide: 312 nodes, 3 parts, depth 3 |      ~1× |            ~1× |        ~7× |
 
 -   The comment-only walker is cheaper than the path lookup in `row` and `deep`, and its cost does not grow with nesting depth. The path lookup doubles from `row` to `deep`.
--   In `wide` the differences between path and comment walkers are within noise (1–2 µs on a 31 µs clone, sign flips between runs). The walker skips the 150 static elements natively.
--   lit's element+comment walker pays for every element it visits, 7–9 µs extra in `wide`. A walker here has to be `SHOW_COMMENT` only.
+-   In `wide` the differences between path and comment walkers are within noise, the walker skips the 150 static elements natively.
+-   lit's element+comment walker pays for every element it visits. A walker here has to be `SHOW_COMMENT` only.
 
-Side note from the baseline: `clear rows` is slower than `create rows`. `removeNodesBetweenComments` walks `previousSibling` across all row nodes and removes them one by one. Not part of #168, worth a look on its own.
+`walker N` is what `TemplatePart` does since #168. The strategies stay in the harness (`--micro`) so the comparison can be rerun on any machine.
+
+Side note from the first runs: `clear rows` is slower than `create rows`. `removeNodesBetweenComments` walks `previousSibling` across all row nodes and removes them one by one. Not part of #168, worth a look on its own.

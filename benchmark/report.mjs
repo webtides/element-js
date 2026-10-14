@@ -51,13 +51,24 @@ export const formatMarkdown = (head, { base, threshold = 30, title = 'Renderer b
     const out = [];
     const env = head.environment ?? {};
     const browser = /(Chrome|Firefox|Safari)\/[\d.]+/.exec(env.userAgent ?? '')?.[0] ?? 'unknown browser';
-    const machine = `${browser}${env.headless ? ' headless' : ''}, ${env.hardwareConcurrency ?? '?'} cores, ${(
+    const where = head.machine ?? 'unknown machine';
+    const setup = `${browser}${env.headless ? ' headless' : ''}, ${env.hardwareConcurrency ?? '?'} cores, ${(
         env.date ?? ''
     ).slice(0, 10)}`;
+    // deltas only mean something when both sides ran on the same machine right after each other
+    const sameMachine = !base || (base.machine !== undefined && base.machine === head.machine);
 
     out.push(`### ${title}`);
     out.push('');
-    out.push(`${describeCommit(head)}${base ? ` vs base ${describeCommit(base)}` : ''} · ${machine}`);
+    out.push(`${describeCommit(head)}${base ? ` vs base ${describeCommit(base)}` : ''} · ${where} · ${setup}`);
+    if (!sameMachine) {
+        out.push('');
+        out.push(
+            `> **Base was measured on a different machine** (${
+                base.machine ?? 'unknown machine'
+            }). The deltas below are not comparable and nothing is flagged.`,
+        );
+    }
     if (head.hiddenDuringRun) {
         out.push('');
         out.push('> Tab was hidden during the run, medians may be inflated. Compare median against min.');
@@ -84,6 +95,7 @@ export const formatMarkdown = (head, { base, threshold = 30, title = 'Renderer b
             const deltaMin = percent(v.minMs, baseValue.minMs);
             // a single slow round moves the median, not the min. Only a change that shows in both is reported.
             const flagged =
+                sameMachine &&
                 Math.abs(deltaMedian) >= threshold &&
                 Math.abs(deltaMin) >= threshold &&
                 Math.sign(deltaMedian) === Math.sign(deltaMin);
@@ -99,7 +111,7 @@ export const formatMarkdown = (head, { base, threshold = 30, title = 'Renderer b
         }
 
         out.push('');
-        if (base) {
+        if (base && sameMachine) {
             out.push(
                 deviations.length === 0
                     ? `**No operation deviates ${threshold}% or more from base.**`
