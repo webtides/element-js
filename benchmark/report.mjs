@@ -31,7 +31,7 @@ const yesNo = (value) => (value === null || value === undefined ? 'n/a' : value 
 const describeCommit = (results) => {
     const git = results.git ?? {};
     if (!git.sha) return 'unknown commit';
-    return `\`${git.ref ?? '?'}\` ${git.sha}${git.dirty ? ' (uncommitted changes)' : ''}`;
+    return `${git.ref ? `\`${git.ref}\` ` : ''}${git.sha}${git.dirty ? ' (uncommitted changes)' : ''}`;
 };
 
 const shortStrategy = {

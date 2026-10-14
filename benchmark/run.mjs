@@ -54,10 +54,12 @@ const runBenchmark = (cwd, env) => {
 };
 
 console.log(`\n▶ benchmark: working tree${micro ? ' (with micro)' : ''}`);
+// CI passes the pull request's head and base names in, a checkout there is detached and HEAD is a merge commit
+const headRef = process.env.BENCH_GIT_REF || git('rev-parse --abbrev-ref HEAD');
 const head = runBenchmark(root, {
     BENCH_MICRO: micro ? '1' : '',
-    BENCH_GIT_SHA: git('rev-parse --short HEAD') ?? '',
-    BENCH_GIT_REF: git('rev-parse --abbrev-ref HEAD') ?? '',
+    BENCH_GIT_SHA: (process.env.BENCH_GIT_SHA || git('rev-parse --short HEAD') || '').slice(0, 7),
+    BENCH_GIT_REF: headRef === 'HEAD' ? '' : headRef ?? '',
     BENCH_GIT_DIRTY: git('status --porcelain -- src index.js') ? '1' : '',
 });
 
@@ -84,7 +86,7 @@ if (base) {
         baseResults = runBenchmark(workspace, {
             BENCH_MICRO: '',
             BENCH_GIT_SHA: sha,
-            BENCH_GIT_REF: base,
+            BENCH_GIT_REF: process.env.BENCH_BASE_REF || (/^[0-9a-f]{40}$/.test(base) ? '' : base),
             BENCH_GIT_DIRTY: '',
         });
     } finally {
