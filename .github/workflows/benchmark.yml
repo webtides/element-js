@@ -27,6 +27,9 @@ jobs:
       - name: Benchmark
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BENCH_BASE_REF: ${{ github.base_ref }}
+          BENCH_GIT_REF: ${{ github.head_ref || github.ref_name }}
+          BENCH_GIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           if [ -n "$BASE_SHA" ]; then
             node benchmark/run.mjs --base "$BASE_SHA"

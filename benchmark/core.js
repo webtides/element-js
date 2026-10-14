@@ -136,7 +136,16 @@ export const shapes = [
  */
 export const prepare = (templateResult) => {
     const fragment = convertStringToTemplate(templateResult.templateString);
-    const parts = templateResult.parseParts(fragment.childNodes);
+    // Node paths for the path strategy, computed here like TemplateResult.parseParts() did up to 1.2.12. The harness
+    // only uses library API that exists on every commit it may be pointed at, so no marker walker from src/.
+    const parts = templateResult.parseParts(fragment.childNodes).map((descriptor) => ({ ...descriptor }));
+    const markerWalker = document.createTreeWalker(fragment, SHOW_COMMENT);
+    let marker;
+    while ((marker = markerWalker.nextNode())) {
+        const data = marker.data;
+        if (data.charCodeAt(0) === SLASH || !data.startsWith('dom-part-')) continue;
+        parts[parseInt(data.slice(9), 10)].path = getNodePath(marker);
+    }
 
     // lit style: index of each part marker in element+comment document order, in part order
     const partNodeIndex = [];
