@@ -23,21 +23,21 @@ Results land in `benchmark/results/` (gitignored): `latest.json`, `latest.md` an
 
 Probes: client updates reach DOM: yes · hydrated updates reach DOM: yes (base: **no**)
 
-| operation, `render()` with 1000 rows, median of 9 | base ms | head ms | Δ |
-| --- | ---: | ---: | ---: |
-| create rows | 14.5 | 9.3 | **-36%** ✅ |
-| partial update | 3.8 | 3.8 | 0% |
+| operation, `render()` with 1000 rows, median of 9 | base ms | head ms | Δ median | Δ min |
+| --- | ---: | ---: | ---: | ---: |
+| create rows | 14.5 | 9.3 | **-36%** ✅ | **-34%** |
+| partial update | 3.8 | 3.8 | 0% | -3% |
 …
 ```
 
 -   **Base** is the commit you compare against, measured right after the working tree in a scratch workspace: `src/` and `index.js` of that commit, `benchmark/` and `node_modules` of the working tree. Same harness, same machine, same minute. That is what makes the deltas usable on a shared CI runner, where absolute numbers drift from run to run.
--   **Δ** is the change of the median. From the threshold on (default 30%, `--threshold`) it is bold and flagged: ✅ faster, ⚠️ slower. The summary line lists the flagged operations, so a comment can be judged from its first line.
+-   **Δ median / Δ min** are the changes of the median and of the fastest round. An operation is flagged (bold, ✅ faster, ⚠️ slower) when both move at least the threshold (default 30%, `--threshold`) in the same direction. A single slow round moves the median but not the min, which is what shared runners mostly produce. The summary line lists the flagged operations, so a comment can be judged from its first line.
 -   **Probes** are correctness checks that come with the macro run: do updates after a client render and after a hydration reach the DOM. A probe that differs from base is called out.
 -   **Micro** (`--micro`) is a collapsed extra: the cost of binding parts to a freshly cloned template for several strategies, implemented inside the harness. It does not call the library, so it is identical on every commit and never compared. It exists to decide how binding should work, see below.
 
 ## CI
 
-`.github/workflows/benchmark.yml` runs on every pull request, measures the PR's base commit in the same job, uploads the results as artifact and posts the report as a sticky comment on the PR. Pushes to `main` run without a base.
+`.github/workflows/benchmark.yml` runs on every pull request, measures the PR's base commit in the same job with 15 rounds (`--rounds`), uploads the results as artifact and posts the report as a sticky comment on the PR. Pushes to `main` run without a base.
 
 ## What it measures
 

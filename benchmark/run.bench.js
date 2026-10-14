@@ -13,7 +13,7 @@ describe('renderer benchmark', () => {
         const host = document.createElement('div');
         document.body.append(host);
 
-        const macro = await runMacro({ ...defaults, host });
+        const macro = await runMacro({ ...defaults, rounds: config.rounds ?? defaults.rounds, host });
         const micro = config.micro ? await runMicro(defaults) : null;
 
         host.remove();
