@@ -21,47 +21,6 @@ const table = (header, rows, alignments) => {
     return lines.join('\n');
 };
 
-const mark = (passed) => (passed === null || passed === undefined ? 'n/a' : passed ? '✅' : '❌');
-
-const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
-
-/**
- * The correctness checks as a block: heading, one line per check that fails or changed, then the table.
- * @param {object[]} checks - head checks
- * @param {object|undefined} base - base results, when comparing
- * @return {string[]} markdown lines
- */
-const formatChecks = (checks, base) => {
-    const baseChecks = new Map((base?.macro?.checks ?? []).map((check) => [check.key, check]));
-    const lines = [
-        '**Correctness checks** · a failing check means the renderer is broken on that path, whatever the numbers say',
-        '',
-    ];
-    for (const check of checks) {
-        const baseCheck = baseChecks.get(check.key);
-        const label = `${capitalize(check.name)} check`;
-        if (base && baseCheck && baseCheck.passed !== check.passed) {
-            lines.push(
-                check.passed
-                    ? `**${label}: fails on base, passes on head.** ✅`
-                    : `**${label}: passes on base, fails on head.** ⚠️`,
-                '',
-            );
-        } else if (!check.passed) {
-            lines.push(base && baseCheck ? `**${label} fails on base and head.** ❌` : `**${label} fails.** ❌`, '');
-        }
-    }
-    const header = base ? ['check', 'what it does', 'base', 'head'] : ['check', 'what it does', 'result'];
-    const alignments = base ? ['---', '---', ':---:', ':---:'] : ['---', '---', ':---:'];
-    const rows = checks.map((check) =>
-        base
-            ? [check.name, check.description, mark(baseChecks.get(check.key)?.passed), mark(check.passed)]
-            : [check.name, check.description, mark(check.passed)],
-    );
-    lines.push(table(header, rows, alignments), '');
-    return lines;
-};
-
 const describeCommit = (results) => {
     const git = results.git ?? {};
     if (!git.sha) return 'unknown commit';
@@ -115,14 +74,20 @@ export const formatMarkdown = (head, { base, threshold = 30, title = 'Renderer b
         const deviations = [];
         const percent = (value, reference) => ((value - reference) / reference) * 100;
         const format = (delta) => `${delta > 0 ? '+' : ''}${delta.toFixed(0)}%`;
+        const invalidOn = { base: [], head: [] };
         for (const v of macro.operations) {
+            const baseValue = baseOperations.get(v.name);
+            if (v.valid === false) invalidOn.head.push(`${v.name} (${v.invalidReason})`);
+            if (base && baseValue && baseValue.valid === false)
+                invalidOn.base.push(`${v.name} (${baseValue.invalidReason})`);
+            const headCell = v.valid === false ? 'invalid' : v.medianMs;
             if (!base) {
-                rows.push([v.name, v.medianMs, v.minMs]);
+                rows.push([v.name, headCell, v.valid === false ? '' : v.minMs]);
                 continue;
             }
-            const baseValue = baseOperations.get(v.name);
-            if (!baseValue) {
-                rows.push([v.name, 'n/a', v.medianMs, '', '']);
+            const baseCell = !baseValue ? 'n/a' : baseValue.valid === false ? 'invalid' : baseValue.medianMs;
+            if (!baseValue || baseValue.valid === false || v.valid === false) {
+                rows.push([v.name, baseCell, headCell, '', '']);
                 continue;
             }
             const deltaMedian = percent(v.medianMs, baseValue.medianMs);
@@ -155,8 +120,16 @@ export const formatMarkdown = (head, { base, threshold = 30, title = 'Renderer b
             );
             out.push('');
         }
-
-        out.push(...formatChecks(macro.checks ?? [], base));
+        // an invalid measurement is a number for something the renderer did not do, it is named instead of shown
+        for (const [side, names] of Object.entries(invalidOn)) {
+            if (names.length === 0 || (side === 'base' && !base)) continue;
+            out.push(
+                `**${names.length} ${
+                    names.length === 1 ? 'operation' : 'operations'
+                } could not be measured on ${side}:** ${names.join(', ')}`,
+            );
+            out.push('');
+        }
 
         const subject = `operation, \`render()\` with ${macro.rows} rows, median of ${macro.rounds}`;
         out.push(

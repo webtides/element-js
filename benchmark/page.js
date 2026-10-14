@@ -42,15 +42,14 @@ const renderMicroTable = (results) => {
 };
 
 const renderMacroTable = (results) => {
-    const mark = (passed) => (passed ? '<span class="ok">passes</span>' : '<span class="fail">FAILS</span>');
-    let out = `<p>${results.rows} rows, ${results.rounds} rounds. Correctness checks, a failing check means the renderer is broken on that path:</p><ul>`;
-    for (const check of results.checks) {
-        out += `<li><strong>${check.name}</strong> ${mark(check.passed)}: ${check.description}</li>`;
-    }
-    out += `</ul>`;
+    let out = `<p>${results.rows} rows, ${results.rounds} rounds. An operation whose post-condition on the DOM failed is reported as invalid instead of a number.</p>`;
     out += `<table><thead><tr><th>operation</th><th>median ms</th><th>min ms</th></tr></thead><tbody>`;
     for (const v of results.operations) {
-        out += `<tr><td>${v.name}</td><td>${v.medianMs}</td><td>${v.minMs}</td></tr>`;
+        const cells =
+            v.valid === false
+                ? `<td colspan="2"><span class="fail">invalid</span>: ${v.invalidReason}</td>`
+                : `<td>${v.medianMs}</td><td>${v.minMs}</td>`;
+        out += `<tr><td>${v.name}</td>${cells}</tr>`;
     }
     out += `</tbody></table>`;
     return out;
