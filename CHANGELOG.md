@@ -28,6 +28,7 @@ to [Semantic Versioning](http://semver.org/).
 
 - parts are bound by walking the comment markers with a TreeWalker instead of precomputed node paths, for client renders and hydration alike. Part construction no longer renders, values only flow through `update()` and `hydrate()`, which removes the double diffing on first render.
 - `TemplateResult.parseParts()` returns the part descriptors without `path`
+- `?attribute` bindings follow the element-js reading of boolean attributes: a present `name="false"` counts as false, and `true` always writes `name=""`, also when the attribute is present with another value (relevant for hydrated markup with reflected properties)
 - server rendered markers that do not match the template are reported with `console.warn` and the template is rendered client side instead
 
 ## [1.2.12] - 2026-04-21
