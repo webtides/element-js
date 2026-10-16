@@ -1,4 +1,4 @@
-import { COMMENT_NODE, TEXT_NODE } from '../util/DOMHelper.js';
+import { COMMENT_NODE } from '../util/DOMHelper.js';
 import { Part } from './Part.js';
 import { TemplateResult } from './TemplateResult.js';
 import { TemplatePart } from './TemplatePart.js';
@@ -134,98 +134,44 @@ const unwrapArray = (nodes) => {
 };
 
 /**
- * @param {TemplatePart | any[] | any} parsedValue
- * @return {boolean} true if every template part in the value is bound to server rendered DOM
- */
-const isBoundToLiveNodes = (parsedValue) => {
-    if (parsedValue instanceof TemplatePart) return parsedValue.hydrated;
-    if (Array.isArray(parsedValue)) {
-        return parsedValue.every((item) => !(item instanceof TemplatePart) || item.hydrated);
-    }
-    return true;
-};
-
-/**
- * Creates the processor that writes values between the markers of a child node part.
+ * Creates the processor that writes a parsed value between the markers of a child node part.
  * @param {Comment} comment - the end marker
- * @return {{update: (function(*): void), hydrate: (function(*): void)}}
+ * @return {(function(TemplatePart | any[] | any): void)}
  */
 export const processNodePart = (comment) => {
     let oldValueType = 'empty';
     let oldValue = undefined;
     // string values are rendered into one text node that is reused across updates
-    let cachedTextNode = globalThis.document?.createTextNode('');
+    const cachedTextNode = globalThis.document?.createTextNode('');
 
-    const getNodesForType = (value, type) => {
-        if (type === 'templatePart') return value.childNodes;
-        if (type === 'array') return unwrapArray(value);
-        if (type === 'node') return [value];
-
-        // Every else falls back to rendering a text node
-        cachedTextNode.data = value;
-        return [cachedTextNode];
-    };
-
-    /**
-     * @param {TemplatePart | any[] | any} newValue
-     */
-    const update = (newValue) => {
+    return (newValue) => {
         const newValueType = getType(newValue);
 
         if (oldValueType === newValueType && oldValue === newValue) return;
 
-        if (oldValueType !== newValueType) {
-            if (newValueType === 'empty') {
-                removeNodesBetweenComments(comment);
-            } else {
-                replaceNodesBetweenComments(comment, getNodesForType(newValue, newValueType));
-            }
+        if (newValueType === 'empty') {
+            removeNodesBetweenComments(comment);
         } else if (newValueType === 'text') {
             cachedTextNode.data = newValue;
+            if (oldValueType !== 'text') replaceNodesBetweenComments(comment, [cachedTextNode]);
         } else if (newValueType === 'templatePart') {
-            // a different template, its nodes replace the previous ones
-            replaceNodesBetweenComments(comment, newValue.childNodes);
-        } else if (newValueType === 'array') {
-            diffChildNodes(unwrapArray(newValue), comment);
-        } else if (newValueType === 'node') {
-            diffChildNodes([newValue], comment);
+            // a template part bound to server rendered DOM (hydration) is in place already and is left alone
+            if (newValue.childNodes[0].parentNode !== comment.parentNode) {
+                replaceNodesBetweenComments(comment, newValue.childNodes);
+            }
+        } else {
+            const nodes = newValueType === 'array' ? unwrapArray(newValue) : [newValue];
+            // a type change replaces what is there, unless the nodes are server rendered and in place already
+            if (oldValueType !== newValueType && nodes[0]?.parentNode !== comment.parentNode) {
+                replaceNodesBetweenComments(comment, nodes);
+            } else {
+                diffChildNodes(nodes, comment);
+            }
         }
 
         oldValueType = newValueType;
         oldValue = newValue;
     };
-
-    /**
-     * Seeds the processor with what the server rendered between the markers, without touching it. Text is adopted
-     * from the DOM so that the next update diffs against the real content. Template parts, arrays and nodes were
-     * bound to the server rendered markers by parseValue() already.
-     * @param {TemplatePart | any[] | any} parsedValue
-     */
-    const hydrate = (parsedValue) => {
-        const type = getType(parsedValue);
-        if (type !== 'text' && type !== 'empty') {
-            oldValueType = type;
-            oldValue = parsedValue;
-            return;
-        }
-
-        const nodes = getNodesBetweenComments(comment);
-        if (nodes.length === 0) {
-            oldValueType = 'empty';
-            oldValue = undefined;
-            return;
-        }
-        if (nodes.length === 1 && nodes[0].nodeType === TEXT_NODE) {
-            cachedTextNode = nodes[0];
-        } else {
-            cachedTextNode.data = nodes.map((node) => node.textContent).join('');
-            replaceNodesBetweenComments(comment, [cachedTextNode]);
-        }
-        oldValueType = 'text';
-        oldValue = cachedTextNode.data;
-    };
-
-    return { update, hydrate };
 };
 
 /**
@@ -260,53 +206,26 @@ export class ChildNodePart extends Part {
 
     /**
      * @param {TemplateResult | any[] | any} value
+     * @param {boolean} [hydrate] - bind nested template parts to the server rendered markers instead of cloning
      */
-    update(value) {
+    update(value, hydrate = false) {
         const resolvedValue = typeof value === 'function' ? value() : value;
-        const parsedValue = this.parseValue(resolvedValue, false);
-        this.updateParts(resolvedValue);
-        this.processor.update(parsedValue);
+        const parsedValue = this.parseValue(resolvedValue, hydrate);
+        this.updateParts(resolvedValue, hydrate);
+        this.processor(parsedValue);
     }
 
     /**
      * @param {TemplateResult | any[] | any} value
+     * @param {boolean} [hydrate]
      */
-    hydrate(value) {
-        const resolvedValue = typeof value === 'function' ? value() : value;
-        const parsedValue = this.parseValue(resolvedValue, true);
-        this.hydrateParts(resolvedValue);
-        if (isBoundToLiveNodes(parsedValue)) {
-            this.processor.hydrate(parsedValue);
-        } else {
-            // the server rendered a different structure than the client expects, apply the client value
-            this.processor.update(parsedValue);
-        }
-    }
-
-    /**
-     * @param {TemplateResult | any[] | any} value
-     */
-    updateParts(value) {
+    updateParts(value, hydrate = false) {
         if (value instanceof TemplateResult) {
-            this.templatePart.update(value);
+            this.templatePart.update(value, hydrate);
         }
         if (Array.isArray(value)) {
             for (let index = 0; index < value.length; index++) {
-                this.arrayParts[index]?.update(value[index]);
-            }
-        }
-    }
-
-    /**
-     * @param {TemplateResult | any[] | any} value
-     */
-    hydrateParts(value) {
-        if (value instanceof TemplateResult) {
-            this.templatePart.hydrate(value);
-        }
-        if (Array.isArray(value)) {
-            for (let index = 0; index < value.length; index++) {
-                this.arrayParts[index]?.hydrate(value[index]);
+                this.arrayParts[index]?.update(value[index], hydrate);
             }
         }
     }
