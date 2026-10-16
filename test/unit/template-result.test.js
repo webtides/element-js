@@ -402,10 +402,13 @@ describe('TemplateResult SSR', () => {
         const el = await fixture(
             `<div><!--template-part--><div><!--dom-part-0-->Foo<!--/dom-part-0--></div><!--/template-part--></div>`,
         );
+        const serverRenderedDiv = el.querySelector('div');
         let text = 'Bar';
         const templateResult = html`<div>${text}</div>`;
         render(templateResult, el);
-        assert.equal(stripCommentMarkers(el.innerHTML), '<div>Foo</div>');
+        // the server rendered element is taken over, not rendered again, and the client value is applied
+        assert.strictEqual(el.querySelector('div'), serverRenderedDiv);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div>Bar</div>');
         const parts = templateResult.parseParts(el.childNodes);
         assert.equal(parts.length, 1);
         assert.equal(parts[0].type, 'node');
