@@ -88,6 +88,20 @@ describe(`template bindings for rendering TemplateResults client side and server
         );
     });
 
+    it('resolves nested functions and updates the template they return', async () => {
+        const el = document.createElement('div');
+        const template = (text) => html`<div>${() => () => html`<b>${text}</b>`}</div>`;
+        render(template('ready'), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div><b>ready</b></div>');
+        assert.equal(
+            stripCommentMarkers(el.innerHTML),
+            stripCommentMarkers(template('ready').toString()),
+            'CSR template does not match SSR template',
+        );
+        render(template('done'), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div><b>done</b></div>');
+    });
+
     it('can render bindings with html literals', async () => {
         const el = document.createElement('div');
         let nested = html`<div class="nested"></div>`;
