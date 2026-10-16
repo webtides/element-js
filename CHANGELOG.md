@@ -26,7 +26,7 @@ to [Semantic Versioning](http://semver.org/).
 
 ### CHANGED
 
-- parts are bound by walking the comment markers with a TreeWalker instead of precomputed node paths, for client renders and hydration alike. Part construction no longer renders, values only flow through `update()` and `hydrate()`, which removes the double diffing on first render.
+- parts are bound by walking the comment markers with a TreeWalker instead of precomputed node paths, for client renders and hydration alike. Part construction no longer renders, values only flow through `update()`, hydration is the first update with a `hydrate` flag. This removes the double diffing on first render.
 - `TemplateResult.parseParts()` returns the part descriptors without `path`
 - `?attribute` bindings write `name=""` for true also when the attribute is present with another value, for example a reflected `name="false"` in server rendered markup, and remove the attribute for false and the string `'false'`
 - server rendered markers that do not match the template are reported with `console.warn` and the template is rendered client side instead
