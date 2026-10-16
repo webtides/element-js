@@ -228,7 +228,7 @@ describe('TemplateResult.parseParts()', () => {
         const documentFragment = convertStringToTemplate(templateResult.templateString);
         const childNodes = [...documentFragment.childNodes];
         const parts = templateResult.parseParts(childNodes);
-        assert.deepEqual(parts, [{ type: 'node', path: [0, 2] }]);
+        assert.deepEqual(parts, [{ type: 'node' }]);
     });
 
     it('creates an attribute part for an interpolation inside an attribute', async () => {
@@ -236,7 +236,7 @@ describe('TemplateResult.parseParts()', () => {
         const documentFragment = convertStringToTemplate(templateResult.templateString);
         const childNodes = [...documentFragment.childNodes];
         const parts = templateResult.parseParts(childNodes);
-        assert.deepEqual(parts, [{ type: 'attribute', path: [2], name: 'class', initialValue: '\x03' }]);
+        assert.deepEqual(parts, [{ type: 'attribute', name: 'class', initialValue: '\x03' }]);
     });
 
     it('creates multiple attribute parts for interpolations inside multiple attributes', async () => {
@@ -245,8 +245,8 @@ describe('TemplateResult.parseParts()', () => {
         const childNodes = [...documentFragment.childNodes];
         const parts = templateResult.parseParts(childNodes);
         assert.deepEqual(parts, [
-            { type: 'attribute', path: [2], name: 'id', initialValue: '\x03' },
-            { type: 'attribute', path: [4], name: 'class', initialValue: '\x03' },
+            { type: 'attribute', name: 'id', initialValue: '\x03' },
+            { type: 'attribute', name: 'class', initialValue: '\x03' },
         ]);
     });
 
@@ -256,8 +256,8 @@ describe('TemplateResult.parseParts()', () => {
         const childNodes = [...documentFragment.childNodes];
         const parts = templateResult.parseParts(childNodes);
         assert.deepEqual(parts, [
-            { type: 'attribute', path: [2], name: 'class', initialValue: '\x03 other \x03' },
-            { type: 'attribute', path: [3], name: 'class', initialValue: '\x03 other \x03' },
+            { type: 'attribute', name: 'class', initialValue: '\x03 other \x03' },
+            { type: 'attribute', name: 'class', initialValue: '\x03 other \x03' },
         ]);
     });
 
@@ -267,7 +267,7 @@ describe('TemplateResult.parseParts()', () => {
         const documentFragment = convertStringToTemplate(templateResult.templateString);
         const childNodes = [...documentFragment.childNodes];
         const parts = templateResult.parseParts(childNodes);
-        assert.deepEqual(parts, [{ type: 'directive', path: [2] }]);
+        assert.deepEqual(parts, [{ type: 'directive' }]);
     });
 
     it('creates no nested parts for text interpolation inside a nested node', async () => {
@@ -275,7 +275,7 @@ describe('TemplateResult.parseParts()', () => {
         const documentFragment = convertStringToTemplate(templateResult.templateString);
         const childNodes = [...documentFragment.childNodes];
         const parts = templateResult.parseParts(childNodes);
-        assert.deepEqual(parts, [{ type: 'node', path: [0, 2] }]);
+        assert.deepEqual(parts, [{ type: 'node' }]);
     });
 });
 
@@ -402,10 +402,13 @@ describe('TemplateResult SSR', () => {
         const el = await fixture(
             `<div><!--template-part--><div><!--dom-part-0-->Foo<!--/dom-part-0--></div><!--/template-part--></div>`,
         );
+        const serverRenderedDiv = el.querySelector('div');
         let text = 'Bar';
         const templateResult = html`<div>${text}</div>`;
         render(templateResult, el);
-        assert.equal(stripCommentMarkers(el.innerHTML), '<div>Foo</div>');
+        // the server rendered element is taken over, not rendered again, and the client value is applied
+        assert.strictEqual(el.querySelector('div'), serverRenderedDiv);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div>Bar</div>');
         const parts = templateResult.parseParts(el.childNodes);
         assert.equal(parts.length, 1);
         assert.equal(parts[0].type, 'node');
@@ -419,7 +422,6 @@ describe('TemplateResult SSR', () => {
         render(html`<div>${text}</div>`, el);
         text = 'Bar';
         render(html`<div>${text}</div>`, el);
-        // assert.equal(stripCommentMarkers(el.innerHTML), '<div>Bar</div>');
-        // TODO: this is actually working... but the element is not updating in the tests :(
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div>Bar</div>');
     });
 });

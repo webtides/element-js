@@ -1,4 +1,4 @@
-import { COMMENT_NODE, ELEMENT_NODE } from '../util/DOMHelper.js';
+import { COMMENT_NODE } from '../util/DOMHelper.js';
 import { Part } from './Part.js';
 import { TemplateResult } from './TemplateResult.js';
 import { TemplatePart } from './TemplatePart.js';
@@ -134,76 +134,45 @@ const unwrapArray = (nodes) => {
 };
 
 /**
- * @param {Comment} comment
- * @param {TemplatePart | any[] | any} initialValue
- * @param {boolean} serverSideRendered
- * @return {(function(*): void)|*}
+ * Creates the processor that writes a parsed value between the markers of a child node part.
+ * @param {Comment} comment - the end marker
+ * @return {(function(TemplatePart | any[] | any, boolean=): void)}
  */
-export const processNodePart = (comment, initialValue, serverSideRendered = false) => {
+export const processNodePart = (comment) => {
     let oldValueType = 'empty';
     let oldValue = undefined;
-    // this is for string values to be inserted into the DOM. A cached TextNode will be used so that we don't have to constantly create new DOM nodes.
-    // TODO: when server side rendered, we need to get the text node from the DOM no?!
-    let cachedTextNode = globalThis.document?.createTextNode('');
+    // string values are rendered into one text node that is reused across updates
+    const cachedTextNode = globalThis.document?.createTextNode('');
 
-    if (serverSideRendered) {
-        oldValueType = getType(initialValue);
-        oldValue = initialValue instanceof TemplatePart ? initialValue.strings : initialValue;
-    }
-
-    const processNodeValue = (newValue) => {
-        let newValueType = getType(newValue);
+    return (newValue, hydrate = false) => {
+        const newValueType = getType(newValue);
 
         if (oldValueType === newValueType && oldValue === newValue) return;
 
-        if (oldValueType !== newValueType) {
-            if (newValueType === 'empty') {
-                removeNodesBetweenComments(comment);
-            } else {
-                const getNodesForType = (value, type) => {
-                    if (type === 'templatePart') return value.childNodes;
-                    if (type === 'array') return unwrapArray(value);
-                    if (type === 'node') return [value];
-
-                    // Every else falls back to rendering a text node
-                    cachedTextNode.data = value;
-                    return [cachedTextNode];
-                };
-                replaceNodesBetweenComments(comment, getNodesForType(newValue, newValueType));
-            }
-
-            oldValueType = newValueType;
-            oldValue = newValue;
-            return;
-        }
-
-        if (newValueType === 'text') {
+        if (newValueType === 'empty') {
+            removeNodesBetweenComments(comment);
+        } else if (newValueType === 'text') {
             cachedTextNode.data = newValue;
-
-            oldValue = newValue;
-            return;
+            if (oldValueType !== 'text') replaceNodesBetweenComments(comment, [cachedTextNode]);
+        } else if (newValueType === 'templatePart') {
+            // a template part bound to server rendered DOM (hydration) is in place already and is left alone
+            if (newValue.childNodes[0].parentNode !== comment.parentNode) {
+                replaceNodesBetweenComments(comment, newValue.childNodes);
+            }
+        } else {
+            const nodes = newValueType === 'array' ? unwrapArray(newValue) : [newValue];
+            // a type change replaces what is there. Server rendered nodes (hydration) go through the diff instead,
+            // nodes that are in place already, for example a focused input, stay untouched
+            if (oldValueType !== newValueType && !hydrate) {
+                replaceNodesBetweenComments(comment, nodes);
+            } else {
+                diffChildNodes(nodes, comment);
+            }
         }
 
-        if (newValueType === 'array') {
-            diffChildNodes(unwrapArray(newValue), comment);
-
-            oldValue = newValue;
-            return;
-        }
-
-        if (newValueType === 'node') {
-            diffChildNodes([newValue], comment);
-
-            oldValue = newValue;
-        }
+        oldValueType = newValueType;
+        oldValue = newValue;
     };
-
-    if (!serverSideRendered) {
-        // initial rendering
-        processNodeValue(initialValue);
-    }
-
-    return processNodeValue;
 };
 
 /**
@@ -221,12 +190,11 @@ export class ChildNodePart extends Part {
 
     /**
      * @param {Node} startNode - the start comment marker node
-     * @param {any | any[]} value
      */
-    constructor(startNode, value) {
+    constructor(startNode) {
         if (!startNode || startNode?.nodeType !== COMMENT_NODE) {
             throw new Error(
-                startNode ? 'ChildNodePart: startNode is undefined' : 'ChildNodePart: startNode is not a comment node',
+                startNode ? 'ChildNodePart: startNode is not a comment node' : 'ChildNodePart: startNode is undefined',
             );
         }
 
@@ -234,69 +202,60 @@ export class ChildNodePart extends Part {
 
         startNode.__part = this; // add Part to comment node for debugging in the browser
         this.markers = PartMarkers.createFromStartNode(startNode);
-
-        // value can become array | TemplatePart | any
-        const initialValue = this.parseValue(value);
-
-        this.processor = processNodePart(this.markers?.endNode, initialValue, this.markers?.serverSideRendered);
-    }
-
-    /**
-     * @param {any} value
-     * @return {*}
-     */
-    update(value) {
-        const parsedValue = this.parseValue(value);
-
-        if (value instanceof TemplateResult || Array.isArray(value)) {
-            this.updateParts(value);
-        }
-
-        this.processor?.(parsedValue);
-    }
-
-    /**
-     * @param {TemplateResult | any[]} value
-     */
-    updateParts(value) {
-        if (value instanceof TemplateResult) {
-            this.templatePart.update(value);
-        }
-        if (Array.isArray(value)) {
-            for (let index = 0; index < value.length; index++) {
-                this.arrayParts[index]?.update(value[index]);
-            }
-        }
+        this.processor = processNodePart(this.markers.endNode);
     }
 
     /**
      * @param {TemplateResult | any[] | any} value
+     * @param {boolean} [hydrate] - bind nested template parts to the server rendered markers instead of cloning
+     */
+    update(value, hydrate = false) {
+        // functions are resolved completely, parsing and updating have to work on the same value
+        let resolvedValue = value;
+        while (typeof resolvedValue === 'function') resolvedValue = resolvedValue();
+        const parsedValue = this.parseValue(resolvedValue, hydrate);
+        this.updateParts(resolvedValue, hydrate);
+        this.processor(parsedValue, hydrate);
+    }
+
+    /**
+     * @param {TemplateResult | any[] | any} value
+     * @param {boolean} [hydrate]
+     */
+    updateParts(value, hydrate = false) {
+        if (value instanceof TemplateResult) {
+            this.templatePart.update(value, hydrate);
+        }
+        if (Array.isArray(value)) {
+            for (let index = 0; index < value.length; index++) {
+                this.arrayParts[index]?.update(value[index], hydrate);
+            }
+        }
+    }
+
+    /**
+     * Creates the nested parts for a value. When hydrating, nested template parts are bound to the server rendered
+     * template-part markers between this part's markers.
+     * @param {TemplateResult | any[] | any} value
+     * @param {boolean} hydrate
      * @return {TemplatePart | Node | string | Array<TemplatePart | Node | string>}
      */
-    parseValue(value) {
+    parseValue(value, hydrate = false) {
         if (value instanceof TemplateResult) {
             if (!this.templatePart) {
-                this.templatePart = new TemplatePart(this.markers?.findNestedStartNode('template-part'), value);
-                if (!this.markers?.serverSideRendered) {
-                    // INFO: this is similar to TemplateResult#237
-                    replaceNodesBetweenComments(this.markers?.endNode, this.templatePart.childNodes);
-                }
+                const startNode = hydrate ? this.markers.findNestedStartNode('template-part') : undefined;
+                this.templatePart = new TemplatePart(startNode, value);
             } else if (this.templatePart.strings !== value.strings) {
                 // this means we have a different TemplateResult here with maybe different parts also
                 this.templatePart = new TemplatePart(undefined, value);
-                // INFO: this is similar to TemplateResult#237
-                replaceNodesBetweenComments(this.markers?.endNode, this.templatePart.childNodes);
             }
             return this.templatePart;
         }
         if (Array.isArray(value)) {
-            return this.parseArray(value);
+            return this.parseArray(value, hydrate);
         }
         if (value?.nodeType) {
             return value;
-        }
-        if (typeof value === 'function') {
-            return this.parseValue(value());
         }
         if (value === null || value === undefined) {
             return value;
@@ -308,10 +267,16 @@ export class ChildNodePart extends Part {
     /**
      * Nested TemplateResults values need to be unrolled in order for update functions to be able to process them
      * @param {any[]} values
+     * @param {boolean} hydrate
      * @return {any[]}
      */
-    parseArray(values) {
+    parseArray(values, hydrate = false) {
         const parsedValues = [];
+        // the server rendered template-part markers directly between this part's markers, one per nested template.
+        // Other values (text, nodes) have no marker, so the templates are counted separately
+        const nestedStartNodes = hydrate ? this.markers.findNestedStartNodes('template-part') : [];
+        let nestedIndex = 0;
+
         for (let index = 0; index < values.length; index++) {
             let value = values[index];
 
@@ -321,23 +286,16 @@ export class ChildNodePart extends Part {
                 // TODO this is probably wrong. Should only be taken from parts cache if it has the same type (eg. template vs string, mixed types arrays)
                 let templatePart = this.arrayParts[index];
                 if (!templatePart) {
-                    const templatePartCommentNodes = this.markers?.childNodes?.filter(
-                        (node) => node && node.nodeType === COMMENT_NODE && node.data === 'template-part',
-                    );
-                    const startNode = templatePartCommentNodes[index];
-                    templatePart = new TemplatePart(startNode, value);
+                    templatePart = new TemplatePart(nestedStartNodes[nestedIndex], value);
                     this.arrayParts[index] = templatePart;
                 }
+                nestedIndex++;
                 parsedValues[index] = templatePart;
             } else if (Array.isArray(value)) {
                 let childNodePart = this.arrayParts[index];
                 if (!childNodePart) {
                     // TODO: this seems not correct :( (maybe Template vs DOM Parts !?)
-                    const templatePartCommentNodes = this.markers?.childNodes?.filter(
-                        (node) => node && node.nodeType === COMMENT_NODE && node.data === 'template-part',
-                    );
-                    const startNode = templatePartCommentNodes[index];
-                    childNodePart = new ChildNodePart(startNode, value);
+                    childNodePart = new ChildNodePart(nestedStartNodes[index]);
                     this.arrayParts[index] = childNodePart;
                 }
                 parsedValues[index] = childNodePart;

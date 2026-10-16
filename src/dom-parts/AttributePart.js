@@ -1,16 +1,25 @@
 import { Part } from './Part.js';
 
+// the first update always writes, also into server rendered DOM whose attribute values the part does not know
+const NOT_SET = Symbol('not set');
+
 /**
  * @param {Element} node
  * @param {String} name
- * @param {Boolean} oldValue
  * @return {(function(*): void)|*}
  */
-const processBooleanAttribute = (node, name, oldValue) => {
+const processBooleanAttribute = (node, name) => {
+    let oldValue = NOT_SET;
     return (newValue) => {
         const value = !!newValue?.valueOf() && newValue !== 'false';
         if (oldValue !== value) {
-            node.toggleAttribute(name, (oldValue = !!value));
+            oldValue = value;
+            // not toggleAttribute(): server rendered markup may carry `name="false"`, true has to become `name=""`
+            if (value) {
+                node.setAttribute(name, '');
+            } else {
+                node.removeAttribute(name);
+            }
         }
     };
 };
@@ -49,7 +58,7 @@ const processEventAttribute = (node, name) => {
  * @return {(function(*): void)|*}
  */
 const processAttribute = (node, name) => {
-    let oldValue;
+    let oldValue = NOT_SET;
     return (newValue) => {
         const value = newValue?.valueOf();
         if (oldValue !== value) {
@@ -74,7 +83,7 @@ const attributePartsCache = new WeakMap();
 export const processAttributePart = (node, name) => {
     // boolean attribute: ?boolean=${...}
     if (name.startsWith('?')) {
-        return processBooleanAttribute(node, name.slice(1), false);
+        return processBooleanAttribute(node, name.slice(1));
     }
 
     // property attribute: .property=${...}
