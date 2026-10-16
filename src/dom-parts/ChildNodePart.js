@@ -209,7 +209,9 @@ export class ChildNodePart extends Part {
      * @param {boolean} [hydrate] - bind nested template parts to the server rendered markers instead of cloning
      */
     update(value, hydrate = false) {
-        const resolvedValue = typeof value === 'function' ? value() : value;
+        // functions are resolved completely, parsing and updating have to work on the same value
+        let resolvedValue = value;
+        while (typeof resolvedValue === 'function') resolvedValue = resolvedValue();
         const parsedValue = this.parseValue(resolvedValue, hydrate);
         this.updateParts(resolvedValue, hydrate);
         this.processor(parsedValue);
@@ -254,9 +256,6 @@ export class ChildNodePart extends Part {
         if (value?.nodeType) {
             return value;
         }
-        if (typeof value === 'function') {
-            return this.parseValue(value(), hydrate);
-        }
         if (value === null || value === undefined) {
             return value;
         }
@@ -272,8 +271,10 @@ export class ChildNodePart extends Part {
      */
     parseArray(values, hydrate = false) {
         const parsedValues = [];
-        // the server rendered template-part markers directly between this part's markers, one per nested template
+        // the server rendered template-part markers directly between this part's markers, one per nested template.
+        // Other values (text, nodes) have no marker, so the templates are counted separately
         const nestedStartNodes = hydrate ? this.markers.findNestedStartNodes('template-part') : [];
+        let nestedIndex = 0;
 
         for (let index = 0; index < values.length; index++) {
             let value = values[index];
@@ -284,9 +285,10 @@ export class ChildNodePart extends Part {
                 // TODO this is probably wrong. Should only be taken from parts cache if it has the same type (eg. template vs string, mixed types arrays)
                 let templatePart = this.arrayParts[index];
                 if (!templatePart) {
-                    templatePart = new TemplatePart(nestedStartNodes[index], value);
+                    templatePart = new TemplatePart(nestedStartNodes[nestedIndex], value);
                     this.arrayParts[index] = templatePart;
                 }
+                nestedIndex++;
                 parsedValues[index] = templatePart;
             } else if (Array.isArray(value)) {
                 let childNodePart = this.arrayParts[index];

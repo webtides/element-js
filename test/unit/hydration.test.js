@@ -243,4 +243,21 @@ describe('hydration of server rendered templates', () => {
             ['a', 'b', 'c'],
         );
     });
+
+    it('binds the templates of a mixed array to their own server rendered markers', async () => {
+        let clicks = 0;
+        const template = () =>
+            html`<div>${[html`<span>a</span>`, 'text', html`<button @click="${() => clicks++}">b</button>`]}</div>`;
+        const el = await serverRendered(template());
+        const serverButton = el.querySelector('button');
+
+        render(template(), el);
+        assert.strictEqual(el.querySelector('button'), serverButton);
+        serverButton.click();
+        assert.equal(clicks, 1);
+
+        render(template(), el);
+        serverButton.click();
+        assert.equal(clicks, 2);
+    });
 });
