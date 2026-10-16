@@ -23,6 +23,8 @@ export default {
     nodeResolve: true,
     concurrency: 1,
     browsers: [chromeLauncher({ concurrency: 1 })],
+    // a shared CI runner can take a while to bring up the first page, the default of 30 s failed there once
+    browserStartTimeout: 120000,
     testFramework: {
         config: {
             timeout: 300000,
