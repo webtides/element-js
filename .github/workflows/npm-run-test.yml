@@ -4,10 +4,8 @@ on:
   push:
     branches:
       - main
+  # every pull request, whatever it targets
   pull_request:
-    branches:
-      - main
-      - '1.0'
 
 jobs:
   test:

@@ -1,0 +1,65 @@
+name: Benchmark
+
+on:
+  push:
+    branches:
+      - main
+  # every pull request, whatever it targets: a stacked PR is compared against the tip of the branch below it
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # the base commit of a pull request is measured in the same job
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - name: Benchmark
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BENCH_BASE_REF: ${{ github.base_ref }}
+          BENCH_GIT_REF: ${{ github.head_ref || github.ref_name }}
+          BENCH_GIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if [ -n "$BASE_SHA" ]; then
+            node benchmark/run.mjs --base "$BASE_SHA" --rounds 15
+          else
+            node benchmark/run.mjs --rounds 15
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: |
+            benchmark/results/latest.json
+            benchmark/results/latest.md
+            benchmark/results/base.json
+          if-no-files-found: ignore
+      # Base and head are measured right after each other on the same runner, so the deltas are meaningful.
+      # Still a shared runner: the comment flags deviations, it does not gate.
+      - name: Comment on pull request
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- benchmark-report -->';
+            const body = `${marker}\n${fs.readFileSync('benchmark/results/latest.md', 'utf8')}`;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number, per_page: 100 });
+            const existing = comments.find((comment) => comment.body?.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
