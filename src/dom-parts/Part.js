@@ -8,15 +8,7 @@ export class Part {
      * Applies a value to the DOM.
      * @abstract
      * @param {TemplateResult | any[] | any} value
+     * @param {boolean} [hydrate] - first update of server rendered DOM, nested parts bind to the server rendered markers
      */
-    update(value) {}
-
-    /**
-     * Takes over server rendered DOM for the first client side value. The default applies the value. Parts whose
-     * value has a representation in the server markup override this and keep the server state until the next update.
-     * @param {TemplateResult | any[] | any} value
-     */
-    hydrate(value) {
-        this.update(value);
-    }
+    update(value, hydrate = false) {}
 }

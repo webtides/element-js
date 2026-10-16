@@ -42,7 +42,7 @@ const parseTemplate = (templateResult) => {
 /**
  * One rendered instance of a template. Binds the parts of the template to DOM nodes: either to a fresh clone of the
  * template fragment, or, when hydrating, to the markers in server rendered DOM. Both bindings walk the same comment
- * markers, see walkPartMarkers(). Construction only binds, values flow through update() and hydrate().
+ * markers, see walkPartMarkers(). Construction only binds, values flow through update().
  */
 export class TemplatePart extends Part {
     /** @type {PartMarkers} */
@@ -90,8 +90,10 @@ export class TemplatePart extends Part {
 
     /**
      * @param {TemplateResult} templateResult
+     * @param {boolean} [hydrate] - first update of server rendered DOM: nested parts bind to the server rendered
+     *   markers instead of cloning, see ChildNodePart.parseValue(). Nodes that are in place already stay untouched.
      */
-    update(templateResult) {
+    update(templateResult, hydrate = false) {
         if (this.strings !== templateResult.strings) {
             // a different template: render it fresh and swap the content between the existing markers
             const { startNode, endNode } = this.markers;
@@ -102,34 +104,18 @@ export class TemplatePart extends Part {
             this.childNodes = this.markers.childNodes;
             this.hydrated = false;
         }
-        this.updateParts(templateResult.values);
+        // an instance that could not be bound to server DOM is a fresh clone, its parts clone as well
+        this.updateParts(templateResult.values, hydrate && this.hydrated);
         if (this.hasRootNodeParts) this.refreshChildNodes();
     }
 
     /**
-     * Takes over the server rendered DOM for the first client side values. Parts keep the server state where it
-     * exists (text, attributes, child nodes) and apply what the server cannot render (event listeners, properties,
-     * directives). An instance that could not be bound to server DOM renders client side instead.
-     * @param {TemplateResult} templateResult
-     */
-    hydrate(templateResult) {
-        if (!this.hydrated) {
-            this.update(templateResult);
-            return;
-        }
-        const values = templateResult.values;
-        for (let index = 0; index < values.length; index++) {
-            this.parts[index]?.hydrate(values[index]);
-        }
-        this.refreshChildNodes();
-    }
-
-    /**
      * @param {any[]} values
+     * @param {boolean} [hydrate]
      */
-    updateParts(values) {
+    updateParts(values, hydrate = false) {
         for (let index = 0; index < values.length; index++) {
-            this.parts[index]?.update(values[index]);
+            this.parts[index]?.update(values[index], hydrate);
         }
     }
 

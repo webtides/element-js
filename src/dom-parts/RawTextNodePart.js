@@ -61,9 +61,4 @@ export class RawTextNodePart extends Part {
             this.node.textContent = this.initialValue.replace(/\x03/g, () => this.values[replaceIndex++]);
         }
     }
-
-    /**
-     * The server rendered the text content already, the next update writes it completely anyway.
-     */
-    hydrate() {}
 }

@@ -264,10 +264,9 @@ export class TemplateResult {
         templatePart = new TemplatePart(startNode, this);
         templatePartsCache.set(domNode, templatePart);
 
-        if (templatePart.hydrated) {
-            templatePart.hydrate(this);
-        } else {
-            templatePart.update(this);
+        const hydrated = templatePart.hydrated;
+        templatePart.update(this, hydrated);
+        if (!hydrated) {
             domNode.replaceChildren(...templatePart.childNodes);
         }
     }
