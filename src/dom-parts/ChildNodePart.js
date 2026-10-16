@@ -136,7 +136,7 @@ const unwrapArray = (nodes) => {
 /**
  * Creates the processor that writes a parsed value between the markers of a child node part.
  * @param {Comment} comment - the end marker
- * @return {(function(TemplatePart | any[] | any): void)}
+ * @return {(function(TemplatePart | any[] | any, boolean=): void)}
  */
 export const processNodePart = (comment) => {
     let oldValueType = 'empty';
@@ -144,7 +144,7 @@ export const processNodePart = (comment) => {
     // string values are rendered into one text node that is reused across updates
     const cachedTextNode = globalThis.document?.createTextNode('');
 
-    return (newValue) => {
+    return (newValue, hydrate = false) => {
         const newValueType = getType(newValue);
 
         if (oldValueType === newValueType && oldValue === newValue) return;
@@ -161,8 +161,9 @@ export const processNodePart = (comment) => {
             }
         } else {
             const nodes = newValueType === 'array' ? unwrapArray(newValue) : [newValue];
-            // a type change replaces what is there, unless the nodes are server rendered and in place already
-            if (oldValueType !== newValueType && nodes[0]?.parentNode !== comment.parentNode) {
+            // a type change replaces what is there. Server rendered nodes (hydration) go through the diff instead,
+            // nodes that are in place already, for example a focused input, stay untouched
+            if (oldValueType !== newValueType && !hydrate) {
                 replaceNodesBetweenComments(comment, nodes);
             } else {
                 diffChildNodes(nodes, comment);
@@ -214,7 +215,7 @@ export class ChildNodePart extends Part {
         while (typeof resolvedValue === 'function') resolvedValue = resolvedValue();
         const parsedValue = this.parseValue(resolvedValue, hydrate);
         this.updateParts(resolvedValue, hydrate);
-        this.processor(parsedValue);
+        this.processor(parsedValue, hydrate);
     }
 
     /**

@@ -22,6 +22,21 @@ const withWarnings = async (fn) => {
     return warnings;
 };
 
+// records the lifecycle of an element in a mixed array, hydration must not disconnect and reconnect it
+const lifecycle = [];
+customElements.define(
+    'hydration-lifecycle-el',
+    class extends HTMLElement {
+        connectedCallback() {
+            lifecycle.push('connected');
+        }
+
+        disconnectedCallback() {
+            lifecycle.push('disconnected');
+        }
+    },
+);
+
 describe('hydration of server rendered templates', () => {
     it('keeps the server rendered text on hydration and updates it afterwards', async () => {
         const template = (text) => html`<p>${text}</p>`;
@@ -259,5 +274,30 @@ describe('hydration of server rendered templates', () => {
         render(template(), el);
         serverButton.click();
         assert.equal(clicks, 2);
+    });
+
+    it('keeps a focused input in a mixed array on hydration', async () => {
+        const template = () => html`<div>${['prefix', html`<input />`]}</div>`;
+        const el = await serverRendered(template());
+        const input = el.querySelector('input');
+        input.focus();
+        assert.isTrue(document.activeElement === input);
+
+        render(template(), el);
+        // compared as booleans: a failing strictEqual on DOM nodes makes chai format the whole document
+        assert.isTrue(el.querySelector('input') === input, 'the server rendered input is kept');
+        assert.isTrue(document.activeElement === input, 'the focus is kept');
+    });
+
+    it('does not reconnect custom elements in a mixed array on hydration', async () => {
+        const template = () => html`<div>${['prefix', html`<hydration-lifecycle-el></hydration-lifecycle-el>`]}</div>`;
+        const el = await serverRendered(template());
+        lifecycle.length = 0;
+
+        render(template(), el);
+        assert.deepEqual(lifecycle, []);
+
+        render(template(), el);
+        assert.deepEqual(lifecycle, []);
     });
 });
