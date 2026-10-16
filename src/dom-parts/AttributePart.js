@@ -6,12 +6,20 @@ import { Part } from './Part.js';
  * @return {(function(*): void)|*}
  */
 const processBooleanAttribute = (node, name) => {
-    // seeded from the DOM so that a hydrated element keeps its server rendered state until a value differs
-    let oldValue = node.hasAttribute(name);
+    // seeded from the DOM so that a hydrated element keeps its server rendered state until a value differs. In
+    // element-js a boolean attribute carries its value: reflected properties render as `name="false"`, which is false
+    // although the attribute is present. The seed applies the same rule as the update below.
+    let oldValue = node.hasAttribute(name) && node.getAttribute(name) !== 'false';
     return (newValue) => {
         const value = !!newValue?.valueOf() && newValue !== 'false';
         if (oldValue !== value) {
-            node.toggleAttribute(name, (oldValue = !!value));
+            oldValue = value;
+            // not toggleAttribute(): a present `name="false"` has to become `name=""`
+            if (value) {
+                node.setAttribute(name, '');
+            } else {
+                node.removeAttribute(name);
+            }
         }
     };
 };
