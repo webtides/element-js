@@ -61,6 +61,34 @@ describe('hydration of server rendered templates', () => {
         assert.isFalse(button.hasAttribute('disabled'));
     });
 
+    it('treats a server rendered name="false" as false, like element-js reflection renders it', async () => {
+        const template = (loaded) => html`<span ?loaded="${loaded}">x</span>`;
+        // a child element that reflects its `loaded: false` property leaves loaded="false" in the server markup
+        const el = await fixture(`<div>${template(false).toString().replace('<span', '<span loaded="false"')}</div>`);
+        const span = el.querySelector('span');
+
+        render(template(false), el);
+        assert.equal(span.getAttribute('loaded'), 'false');
+
+        render(template(true), el);
+        assert.equal(span.getAttribute('loaded'), '');
+
+        render(template(false), el);
+        assert.isFalse(span.hasAttribute('loaded'));
+    });
+
+    it('removes a boolean attribute for the string "false" on hydrated elements', async () => {
+        const template = (loaded) => html`<span ?loaded="${loaded}">x</span>`;
+        const el = await serverRendered(template(true));
+        const span = el.querySelector('span');
+
+        render(template(true), el);
+        assert.isTrue(span.hasAttribute('loaded'));
+
+        render(template('false'), el);
+        assert.isFalse(span.hasAttribute('loaded'));
+    });
+
     it('updates attributes with multiple interpolations on hydrated elements', async () => {
         const template = (a, b) => html`<p class="${a} static ${b}">x</p>`;
         const el = await serverRendered(template('one', 'two'));
