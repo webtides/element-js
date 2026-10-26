@@ -70,8 +70,9 @@ export const getNodesBetweenComments = (commentNode, includeComments = false) =>
 
 /**
  * Brings the nodes between the markers in line with newChildNodes, in that order. Walks the live DOM with a cursor
- * instead of a snapshot: a new node that is in the DOM already, for example a hydrated template behind a server
- * rendered text, is moved in front of the cursor, whatever is left at the end is removed.
+ * instead of a snapshot: a node that is at the cursor already stays, a node that is in the DOM further back, for
+ * example a hydrated template behind a server rendered text, moves up in front of the cursor, anything else replaces
+ * what the cursor points at. Whatever is left at the end is removed.
  * @param {Node[]} newChildNodes
  * @param {Comment} startNode - the start marker
  * @param {Comment} endNode - the end marker
@@ -84,15 +85,18 @@ const diffChildNodes = (newChildNodes, startNode, endNode) => {
         if (!newChildNode?.nodeType) {
             throw new Error('ChildNodePart: newChildNode is not a node');
         }
-        // only a detached node is compared by value: a fresh text node does not replace an equal one, the nodes of
-        // a template clone, which still sit in their fragment, always replace what the server rendered in their place
-        if (
-            current === newChildNode ||
-            (current !== endNode && !newChildNode.parentNode && current.isEqualNode(newChildNode))
-        ) {
+        if (current === newChildNode) {
+            current = current.nextSibling;
+        } else if (current === endNode || newChildNode.parentNode === parentNode) {
+            parentNode.insertBefore(newChildNode, current);
+        } else if (!newChildNode.parentNode && current.isEqualNode(newChildNode)) {
+            // only a detached node is compared by value: a fresh text node does not replace an equal one, the nodes
+            // of a template clone, which still sit in their fragment, always replace what the server rendered
             current = current.nextSibling;
         } else {
-            parentNode.insertBefore(newChildNode, current);
+            const next = current.nextSibling;
+            parentNode.replaceChild(newChildNode, current);
+            current = next;
         }
     }
     while (current !== endNode) {

@@ -5,6 +5,21 @@ import { html } from '../../src/TemplateElement.js';
 import { unsafeHTML } from '../../src/dom-parts/directives.js';
 import { stripCommentMarkers } from '../util/testing-helpers.js';
 
+// records the lifecycle of an element in an array, an update of the items around it must not move it
+const lifecycle = [];
+customElements.define(
+    'bindings-lifecycle-el',
+    class extends HTMLElement {
+        connectedCallback() {
+            lifecycle.push('connected');
+        }
+
+        disconnectedCallback() {
+            lifecycle.push('disconnected');
+        }
+    },
+);
+
 describe(`template bindings for rendering TemplateResults client side and server side`, () => {
     it('creates the correct string from the literal', async () => {
         const el = document.createElement('div');
@@ -155,6 +170,31 @@ describe(`template bindings for rendering TemplateResults client side and server
             el.querySelector('b') === second && el.querySelector('i') === first,
             'the nodes are moved, not replaced',
         );
+    });
+
+    it('keeps a focused input in an array when the text in front of it changes', async () => {
+        const el = await fixture('<div></div>');
+        const template = (text) => html`<div>${[text, html`<input />`]}</div>`;
+        render(template('before'), el);
+        const input = el.querySelector('input');
+        input.focus();
+        assert.isTrue(document.activeElement === input);
+
+        render(template('after'), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div>after <input></div>');
+        // compared as booleans: a failing strictEqual on DOM nodes makes chai format the whole document
+        assert.isTrue(el.querySelector('input') === input, 'the input is kept');
+        assert.isTrue(document.activeElement === input, 'the focus is kept');
+    });
+
+    it('does not reconnect a custom element in an array when the text in front of it changes', async () => {
+        const el = await fixture('<div></div>');
+        const template = (text) => html`<div>${[text, html`<bindings-lifecycle-el></bindings-lifecycle-el>`]}</div>`;
+        render(template('before'), el);
+        lifecycle.length = 0;
+
+        render(template('after'), el);
+        assert.deepEqual(lifecycle, []);
     });
 
     it('can render arrays of mixed values', async () => {
