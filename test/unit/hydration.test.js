@@ -300,4 +300,46 @@ describe('hydration of server rendered templates', () => {
         render(template(), el);
         assert.deepEqual(lifecycle, []);
     });
+
+    it('keeps a hydrated template when the server rendered a text in front of it', async () => {
+        const template = (items) => html`<div>${items}</div>`;
+        const inner = () => html`<b>x</b>`;
+        const el = await serverRendered(template(['prefix', inner()]));
+
+        render(template([inner()]), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div><b>x</b></div>');
+    });
+
+    it('moves a hydrated template behind a text the server did not render', async () => {
+        const template = (items) => html`<div>${items}</div>`;
+        const inner = () => html`<b>x</b>`;
+        const el = await serverRendered(template([inner(), 'suffix']));
+
+        render(template(['prefix', inner()]), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div>prefix <b>x</b></div>');
+    });
+
+    it('renders an item of a mixed array client side when its server rendered markers do not match', async () => {
+        let clicks = 0;
+        const template = (items) => html`<div>${items}</div>`;
+        const el = await serverRendered(template(['prefix', html`<button @input="${() => {}}">b</button>`]));
+
+        const warnings = await withWarnings(async () =>
+            render(template(['prefix', html`<button @click="${() => clicks++}">b</button>`]), el),
+        );
+        assert.equal(warnings.length, 1);
+        el.querySelector('button').click();
+        assert.equal(clicks, 1);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div>prefix <button>b</button></div>');
+    });
+
+    it('renders an item of a list client side when its server rendered markers do not match', async () => {
+        let clicks = 0;
+        const template = (items) => html`<div>${items}</div>`;
+        const el = await serverRendered(template([html`<button @input="${() => {}}">b</button>`]));
+
+        await withWarnings(async () => render(template([html`<button @click="${() => clicks++}">b</button>`]), el));
+        el.querySelector('button').click();
+        assert.equal(clicks, 1);
+    });
 });

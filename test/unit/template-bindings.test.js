@@ -141,6 +141,22 @@ describe(`template bindings for rendering TemplateResults client side and server
         );
     });
 
+    it('reorders DOM nodes in an array', async () => {
+        const el = document.createElement('div');
+        const template = (nodes) => html`<div>${nodes}</div>`;
+        const first = document.createElement('i');
+        const second = document.createElement('b');
+        render(template([first, second]), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div><i></i><b></b></div>');
+
+        render(template([second, first]), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div><b></b><i></i></div>');
+        assert.isTrue(
+            el.querySelector('b') === second && el.querySelector('i') === first,
+            'the nodes are moved, not replaced',
+        );
+    });
+
     it('can render arrays of mixed values', async () => {
         const el = document.createElement('div');
         let list = [1, '2', true, html`<span>${'Test'}</span>`, () => 'Function'];
