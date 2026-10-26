@@ -342,4 +342,29 @@ describe('hydration of server rendered templates', () => {
         el.querySelector('button').click();
         assert.equal(clicks, 1);
     });
+
+    it('keeps both equal siblings of a hydrated template when a text is inserted in front of it', async () => {
+        const template = (items) => html`<div>${items}</div>`;
+        // the two equal siblings have to be adjacent, a whitespace text node between them would hide the case
+        // prettier-ignore
+        const inner = () => html`<li>x</li><li>x</li>`;
+        const el = await serverRendered(template([inner()]));
+
+        render(template(['prefix', inner()]), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div>prefix <li>x</li><li>x</li></div>');
+        assert.equal(el.querySelectorAll('li').length, 2);
+    });
+
+    it('leaves a hydrated template untouched when the text in front of it goes away', async () => {
+        const template = (items) => html`<div>${items}</div>`;
+        const inner = () => html`<input />`;
+        const el = await serverRendered(template(['prefix', inner()]));
+        const input = el.querySelector('input');
+        input.focus();
+
+        render(template([inner()]), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div><input></div>');
+        assert.isTrue(el.querySelector('input') === input, 'the server rendered input is kept');
+        assert.isTrue(document.activeElement === input, 'the focus is kept');
+    });
 });

@@ -197,6 +197,20 @@ describe(`template bindings for rendering TemplateResults client side and server
         assert.deepEqual(lifecycle, []);
     });
 
+    it('removes a node from the middle of an array without touching the others', async () => {
+        const el = await fixture('<div></div>');
+        const template = (nodes) => html`<div>${nodes}</div>`;
+        const first = document.createElement('i');
+        const second = document.createElement('b');
+        const input = document.createElement('input');
+        render(template([first, second, input]), el);
+        input.focus();
+
+        render(template([first, input]), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div><i></i><input></div>');
+        assert.isTrue(document.activeElement === input, 'the focus is kept');
+    });
+
     it('can render arrays of mixed values', async () => {
         const el = document.createElement('div');
         let list = [1, '2', true, html`<span>${'Test'}</span>`, () => 'Function'];
