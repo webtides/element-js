@@ -69,34 +69,48 @@ export const getNodesBetweenComments = (commentNode, includeComments = false) =>
 };
 
 /**
- * Brings the nodes between the markers in line with newChildNodes, in that order. Walks the live DOM with a cursor
- * instead of a snapshot: a node that is at the cursor already stays, a node that is in the DOM further back, for
- * example a hydrated template behind a server rendered text, moves up in front of the cursor, anything else replaces
- * what the cursor points at. Whatever is left at the end is removed.
+ * A node that is not in the DOM yet takes over an equal node that is in place: a fresh text node leaves the text node
+ * that is there alone. The nodes of a template clone still sit in their fragment and never take over, they replace
+ * what the server rendered in their place.
+ * @param {Node} node
+ * @param {Node} newChildNode
+ * @return {boolean}
+ */
+const takesOver = (node, newChildNode) => !newChildNode.parentNode && node.isEqualNode(newChildNode);
+
+/**
+ * Brings the nodes between the markers in line with newChildNodes, in that order. Walks the live DOM with a cursor:
+ * a node that is at the cursor already stays, stale nodes at the cursor are removed, anything else is inserted in
+ * front of the cursor, which moves a node that is in the DOM further back, for example a hydrated template behind a
+ * server rendered text. Nodes that are in place are never touched, so focus and element lifecycles survive.
  * @param {Node[]} newChildNodes
  * @param {Comment} startNode - the start marker
  * @param {Comment} endNode - the end marker
  */
 const diffChildNodes = (newChildNodes, startNode, endNode) => {
     const parentNode = endNode.parentNode;
+    // the set of new nodes tells a stale node from one that is needed further on. It is only built when the nodes
+    // deviate from what is there, a list whose nodes are all in place never pays for it
+    let keep;
     let current = startNode.nextSibling;
     for (let index = 0; index < newChildNodes.length; index++) {
         const newChildNode = newChildNodes[index];
         if (!newChildNode?.nodeType) {
             throw new Error('ChildNodePart: newChildNode is not a node');
         }
-        if (current === newChildNode) {
-            current = current.nextSibling;
-        } else if (current === endNode || newChildNode.parentNode === parentNode) {
-            parentNode.insertBefore(newChildNode, current);
-        } else if (!newChildNode.parentNode && current.isEqualNode(newChildNode)) {
-            // only a detached node is compared by value: a fresh text node does not replace an equal one, the nodes
-            // of a template clone, which still sit in their fragment, always replace what the server rendered
+        if (current !== newChildNode && current !== endNode) {
+            keep ??= new Set(newChildNodes);
+            while (current !== endNode && !keep.has(current) && !takesOver(current, newChildNode)) {
+                const next = current.nextSibling;
+                parentNode.removeChild(current);
+                current = next;
+            }
+        }
+        if (current === newChildNode || (current !== endNode && !keep.has(current))) {
+            // in place already, or a stale node the new one takes over
             current = current.nextSibling;
         } else {
-            const next = current.nextSibling;
-            parentNode.replaceChild(newChildNode, current);
-            current = next;
+            parentNode.insertBefore(newChildNode, current);
         }
     }
     while (current !== endNode) {
