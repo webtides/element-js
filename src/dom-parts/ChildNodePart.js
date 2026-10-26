@@ -69,42 +69,36 @@ export const getNodesBetweenComments = (commentNode, includeComments = false) =>
 };
 
 /**
+ * Brings the nodes between the markers in line with newChildNodes, in that order. Walks the live DOM with a cursor
+ * instead of a snapshot: a new node that is in the DOM already, for example a hydrated template behind a server
+ * rendered text, is moved in front of the cursor, whatever is left at the end is removed.
  * @param {Node[]} newChildNodes
- * @param {Comment} anchorNode
+ * @param {Comment} startNode - the start marker
+ * @param {Comment} endNode - the end marker
  */
-const diffChildNodes = function (newChildNodes, anchorNode) {
-    const parentNode = anchorNode.parentNode;
-    const oldChildNodes = getNodesBetweenComments(anchorNode);
-
-    const length = Math.max(oldChildNodes.length, newChildNodes.length);
-    // Diff each node in the child node lists
-    for (let index = 0; index < length; index++) {
-        let oldChildNode = oldChildNodes[index];
-        let newChildNode = newChildNodes[index];
-
-        if (newChildNode && !newChildNode.nodeType) {
+const diffChildNodes = (newChildNodes, startNode, endNode) => {
+    const parentNode = endNode.parentNode;
+    let current = startNode.nextSibling;
+    for (let index = 0; index < newChildNodes.length; index++) {
+        const newChildNode = newChildNodes[index];
+        if (!newChildNode?.nodeType) {
             throw new Error('ChildNodePart: newChildNode is not a node');
         }
-
-        // If the DOM node doesn't exist, append/copy the new node
-        if (oldChildNode === undefined) {
-            parentNode.insertBefore(newChildNode, anchorNode);
-            continue;
+        // only a detached node is compared by value: a fresh text node does not replace an equal one, the nodes of
+        // a template clone, which still sit in their fragment, always replace what the server rendered in their place
+        if (
+            current === newChildNode ||
+            (current !== endNode && !newChildNode.parentNode && current.isEqualNode(newChildNode))
+        ) {
+            current = current.nextSibling;
+        } else {
+            parentNode.insertBefore(newChildNode, current);
         }
-
-        // If the new node doesn't exist, remove the node in the DOM
-        if (newChildNode === undefined) {
-            parentNode.removeChild(oldChildNode);
-            continue;
-        }
-
-        // If DOM node is equal to the new node, don't do anything in the DOM
-        if (oldChildNode === newChildNode || oldChildNode.isEqualNode(newChildNode)) {
-            continue;
-        }
-
-        // Everything else is somehow different and can be replaced
-        parentNode.replaceChild(newChildNode, oldChildNode);
+    }
+    while (current !== endNode) {
+        const next = current.nextSibling;
+        parentNode.removeChild(current);
+        current = next;
     }
 };
 
@@ -135,10 +129,10 @@ const unwrapArray = (nodes) => {
 
 /**
  * Creates the processor that writes a parsed value between the markers of a child node part.
- * @param {Comment} comment - the end marker
+ * @param {PartMarkers} markers - the start and end marker of the part
  * @return {(function(TemplatePart | any[] | any, boolean=): void)}
  */
-export const processNodePart = (comment) => {
+export const processNodePart = ({ startNode, endNode }) => {
     let oldValueType = 'empty';
     let oldValue = undefined;
     // string values are rendered into one text node that is reused across updates
@@ -150,23 +144,23 @@ export const processNodePart = (comment) => {
         if (oldValueType === newValueType && oldValue === newValue) return;
 
         if (newValueType === 'empty') {
-            removeNodesBetweenComments(comment);
+            removeNodesBetweenComments(endNode);
         } else if (newValueType === 'text') {
             cachedTextNode.data = newValue;
-            if (oldValueType !== 'text') replaceNodesBetweenComments(comment, [cachedTextNode]);
+            if (oldValueType !== 'text') replaceNodesBetweenComments(endNode, [cachedTextNode]);
         } else if (newValueType === 'templatePart') {
             // a template part bound to server rendered DOM (hydration) is in place already and is left alone
-            if (newValue.childNodes[0].parentNode !== comment.parentNode) {
-                replaceNodesBetweenComments(comment, newValue.childNodes);
+            if (newValue.childNodes[0].parentNode !== endNode.parentNode) {
+                replaceNodesBetweenComments(endNode, newValue.childNodes);
             }
         } else {
             const nodes = newValueType === 'array' ? unwrapArray(newValue) : [newValue];
             // a type change replaces what is there. Server rendered nodes (hydration) go through the diff instead,
             // nodes that are in place already, for example a focused input, stay untouched
             if (oldValueType !== newValueType && !hydrate) {
-                replaceNodesBetweenComments(comment, nodes);
+                replaceNodesBetweenComments(endNode, nodes);
             } else {
-                diffChildNodes(nodes, comment);
+                diffChildNodes(nodes, startNode, endNode);
             }
         }
 
@@ -202,7 +196,7 @@ export class ChildNodePart extends Part {
 
         startNode.__part = this; // add Part to comment node for debugging in the browser
         this.markers = PartMarkers.createFromStartNode(startNode);
-        this.processor = processNodePart(this.markers.endNode);
+        this.processor = processNodePart(this.markers);
     }
 
     /**
