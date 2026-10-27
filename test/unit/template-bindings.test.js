@@ -2,6 +2,7 @@ import { fixture, assert, nextFrame, oneEvent } from '@open-wc/testing';
 import { render } from '../../src/dom-parts/render.js';
 import { defineDirective, Directive } from '../../src/util/Directive.js';
 import { html } from '../../src/TemplateElement.js';
+import { BaseElement } from '../../src/BaseElement.js';
 import { unsafeHTML } from '../../src/dom-parts/directives.js';
 import { stripCommentMarkers } from '../util/testing-helpers.js';
 
@@ -9,6 +10,16 @@ import { stripCommentMarkers } from '../util/testing-helpers.js';
 // text items in the DOM
 // prettier-ignore
 const list = (items) => html`<ul>${items}</ul>`;
+
+// the target of property bindings in server rendered markup, it maps the attributes back to its properties
+customElements.define(
+    'bindings-property-target',
+    class extends BaseElement {
+        properties() {
+            return { options: null, sliderOptions: null };
+        }
+    },
+);
 
 // records the lifecycle of an element in an array, an update of the items around it must not move it
 const lifecycle = [];
@@ -447,6 +458,36 @@ describe(`template bindings for rendering TemplateResults client side and server
             stripCommentMarkers(el.innerHTML),
             stripCommentMarkers(templateResult.toString()),
             'CSR template does match SSR template',
+        );
+    });
+
+    it('writes camelCase property bindings as attributes the element maps back to the property', async () => {
+        const template = (value) =>
+            html`<bindings-property-target .options="${value}" .sliderOptions="${value}"></bindings-property-target>`;
+        const el = await fixture(`<div>${template({ gap: 16 }).toString()}</div>`);
+        await nextFrame();
+
+        const target = el.querySelector('bindings-property-target');
+        assert.deepEqual(target.options, { gap: 16 });
+        assert.deepEqual(target.sliderOptions, { gap: 16 });
+    });
+
+    it('leaves out an attribute whose value is null or undefined, client side and server side', async () => {
+        const el = document.createElement('div');
+        const template = (id, title) => html`<div id="${id}" title="${title}" class="${'some'}">Text</div>`;
+        render(template(null, undefined), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div class="some">Text</div>');
+        assert.equal(
+            stripCommentMarkers(el.innerHTML),
+            stripCommentMarkers(template(null, undefined).toString()),
+            'CSR template does not match SSR template',
+        );
+
+        render(template('one', 'two'), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div class="some" id="one" title="two">Text</div>');
+        assert.equal(
+            stripCommentMarkers(template('one', 'two').toString()),
+            '<div id="one" title="two" class="some">Text</div>',
         );
     });
 

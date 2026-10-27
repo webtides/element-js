@@ -1,5 +1,5 @@
 import { COMMENT_NODE, encodeHTML } from '../util/DOMHelper.js';
-import { encodeAttribute, isObjectLike } from '../util/AttributeParser.js';
+import { camelToDash, encodeAttribute, isObjectLike } from '../util/AttributeParser.js';
 import { TemplatePart } from './TemplatePart.js';
 import { walkPartMarkers } from './PartMarkers.js';
 
@@ -311,7 +311,9 @@ export class TemplateResult {
                     }
 
                     if (name.startsWith('.')) {
-                        const propertyName = name.replace('.', '');
+                        // a property cannot be set in a string, the value is written as the attribute that
+                        // BaseElement maps back to the property on upgrade: camelCase becomes dash-case
+                        const attributeName = camelToDash(name.replace('.', ''));
                         return [
                             {
                                 type: 'attribute',
@@ -321,7 +323,7 @@ export class TemplateResult {
                                         return '';
                                     }
                                     // in all other cases, just escape it in quotes
-                                    return attribute(propertyName, value, quotes);
+                                    return attribute(attributeName, value, quotes);
                                 },
                             },
                         ];
@@ -363,6 +365,9 @@ export class TemplateResult {
                             // Note: this will coarse the values into strings, but it's probably ok since there can only be multiple values in string attributes?!
                             const parsedValue = initialValue.replace(/\x03/g, () => values[replaceIndex++]);
                             values = [];
+                            // an attribute whose sole value is null or undefined is left out, the DOM renderer
+                            // removes it as well
+                            if (initialValue === '\x03' && value == null) return '';
                             return attribute(searchParams.get('name'), parsedValue, quotes);
                         },
                     });

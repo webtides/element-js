@@ -33,6 +33,8 @@ to [Semantic Versioning](http://semver.org/).
 - #172 arrays nested in an array are rendered flat, like the server renders them, client side and on hydration
 - #173 functions as array items are resolved completely, a function that returns a template or another function works like a function as a single value
 - #157 an array item that switches to a different template, or between a text and a template, is rendered fresh at its index, also after the array shrank and grew again. `null` and `undefined` items of an array render nothing, like on the server
+- #167 `toString()` leaves out an attribute whose value is `null` or `undefined`, like the DOM renderer removes it. An attribute with several interpolations keeps writing every value as text
+- #169 `toString()` writes a camelCase property binding as the dash-case attribute that maps back to the property on upgrade, `.sliderOptions` becomes `slider-options`
 
 ### CHANGED
 
