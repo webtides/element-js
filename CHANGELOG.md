@@ -35,6 +35,7 @@ to [Semantic Versioning](http://semver.org/).
 - #157 an array item that switches to a different template, or between a text and a template, is rendered fresh at its index, also after the array shrank and grew again. `null` and `undefined` items of an array render nothing, like on the server
 - #167 `toString()` leaves out an attribute whose value is `null` or `undefined`, like the DOM renderer removes it. An attribute with several interpolations keeps writing every value as text
 - #169 `toString()` writes a camelCase property binding as the dash-case attribute that maps back to the property on upgrade, `.sliderOptions` becomes `slider-options`
+- #163 an attribute whose name starts with "on" is written as an attribute when its value is not a function, so `on="${state}"` or `once="${flag}"` work on an element. A function is the "old school" event listener, client side and in `toString()`
 
 ### CHANGED
 

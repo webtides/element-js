@@ -329,7 +329,7 @@ export class TemplateResult {
                         ];
                     }
 
-                    if (name.startsWith('@') || name.startsWith('on')) {
+                    if (name.startsWith('@')) {
                         return [
                             {
                                 type: 'attribute',
@@ -368,7 +368,10 @@ export class TemplateResult {
                             // an attribute whose sole value is null or undefined is left out, the DOM renderer
                             // removes it as well
                             if (initialValue === '\x03' && value == null) return '';
-                            return attribute(searchParams.get('name'), parsedValue, quotes);
+                            // a listener on an "old school" event attribute (onevent=${...}) has nothing to do on
+                            // the server side, any other value of an attribute that starts with "on" is written
+                            if (name.startsWith('on') && typeof value === 'function') return '';
+                            return attribute(name, parsedValue, quotes);
                         },
                     });
                     return attributeUpdates;
