@@ -88,6 +88,11 @@ class ShowcaseDsd extends TemplateElement {
         return { count: 0 };
     }
 
+    styles() {
+        // adopted into the declarative shadow root on the first render, the server markup carries no styles
+        return ['button { background: #4338ca; color: white; padding: 0.5rem 0.75rem; border-radius: 0.375rem; }'];
+    }
+
     template() {
         // the server markup in the page is the toString() of this template, kept on one line to mirror it
         // prettier-ignore

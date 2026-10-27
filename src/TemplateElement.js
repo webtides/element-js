@@ -55,10 +55,12 @@ class TemplateElement extends StyledElement {
      * This will attach a shadow DOM if the element is supposed to render in shadow DOM.
      */
     renderTemplate() {
-        const firstRender = this._options.shadowRender && !this.shadowRoot;
-        if (firstRender) {
+        if (this._options.shadowRender && !this.shadowRoot) {
             this.attachShadow({ mode: 'open' });
-            // init external stylesheets
+        }
+        // the first render adopts the style sheets, also into a declarative shadow root that the parser attached
+        if (this._options.shadowRender && !this._stylesAdopted) {
+            this._stylesAdopted = true;
             this.initStyleAdoption();
         }
 
