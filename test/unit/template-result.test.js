@@ -388,6 +388,22 @@ describe('TemplateResult.toString()', () => {
         );
     });
 
+    it('writes a camelCase property binding as a dash-case attribute', async () => {
+        const templateResult = html`<div .sliderOptions="${{ gap: 16 }}">Text</div>`;
+        assert.equal(
+            stripWhitespace(templateResult.toString()),
+            '<!--template-part--><!--dom-part-0?type=attribute&name=.sliderOptions&initialValue=%03--><div slider-options="{&quot;gap&quot;:16}">Text</div><!--/template-part-->',
+        );
+    });
+
+    it('leaves out an attribute whose sole value is null or undefined', async () => {
+        const templateResult = html`<div id="${null}" title="${undefined}" class="${'some'}">Text</div>`;
+        assert.equal(
+            stripWhitespace(templateResult.toString()),
+            '<!--template-part--><!--dom-part-0?type=attribute&name=id&initialValue=%03--><!--dom-part-1?type=attribute&name=title&initialValue=%03--><!--dom-part-2?type=attribute&name=class&initialValue=%03--><div class="some">Text</div><!--/template-part-->',
+        );
+    });
+
     it('evaluates @event and onEvent attributes as nothing', async () => {
         const templateResult = html`<div @e="${() => {}}" onClick="${() => {}}" onClick="console.log('')">Text</div>`;
         assert.equal(
