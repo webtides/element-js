@@ -26,7 +26,7 @@ to [Semantic Versioning](http://semver.org/).
 
 ### FIXED
 
-- #168 hydrated templates bind their parts to the server rendered DOM. Updates after hydration reach attributes, text, child nodes and lists. The first client values go through the normal update, server rendered templates and lists stay in place.
+- #168 hydrated templates bind their parts to the server rendered DOM. Updates after hydration reach attributes, text, child nodes and lists. The first client values go through the normal update, server rendered templates, lists, text nodes and attributes that match are left untouched.
 - #115 hydration does not depend on the whitespace around the markers anymore.
 - arrays are synced by walking the live DOM instead of an index snapshot: hydrated templates survive other items the server rendered around them, array items whose server markers do not match are rendered client side, DOM nodes in arrays can be reordered, and list updates got considerably faster.
 - a nested template at the root of a template no longer confuses the marker lookup (`PartMarkers.createFromStartNode` is nesting aware)

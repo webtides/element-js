@@ -56,7 +56,7 @@ defineElement('hydration-counter', HydrationCounter);
 const scenarios = [
     {
         name: 'Text and attribute',
-        hint: 'Compare the hydrate step with the update: hydrating binds the parts to the nodes that are there, the update changes one attribute and one text node.',
+        hint: 'Hydrating writes nothing, the step has no mutations. The update afterwards changes one attribute and one text node.',
         state: () => ({ count: 0 }),
         template: ({ count }) => html`<p data-count="${count}">count: ${count}</p>`,
         actions: { 'count + 1': ({ count }) => ({ count: count + 1 }) },

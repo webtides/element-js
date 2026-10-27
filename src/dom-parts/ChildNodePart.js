@@ -1,4 +1,4 @@
-import { COMMENT_NODE } from '../util/DOMHelper.js';
+import { COMMENT_NODE, TEXT_NODE } from '../util/DOMHelper.js';
 import { Part } from './Part.js';
 import { TemplateResult } from './TemplateResult.js';
 import { TemplatePart } from './TemplatePart.js';
@@ -153,8 +153,9 @@ const unwrapArray = (nodes) => {
 export const processNodePart = ({ startNode, endNode }) => {
     let oldValueType = 'empty';
     let oldValue = undefined;
-    // string values are rendered into one text node that is reused across updates
-    const cachedTextNode = globalThis.document?.createTextNode('');
+    // string values are rendered into one text node that is reused across updates. Hydration takes over the server
+    // rendered text node as that node
+    let cachedTextNode = globalThis.document?.createTextNode('');
 
     return (newValue, hydrate = false) => {
         const newValueType = getType(newValue);
@@ -164,8 +165,15 @@ export const processNodePart = ({ startNode, endNode }) => {
         if (newValueType === 'empty') {
             removeNodesBetweenComments(endNode);
         } else if (newValueType === 'text') {
-            cachedTextNode.data = newValue;
-            if (oldValueType !== 'text') replaceNodesBetweenComments(endNode, [cachedTextNode]);
+            if (oldValueType !== 'text') {
+                const serverTextNode = startNode.nextSibling;
+                if (hydrate && serverTextNode.nodeType === TEXT_NODE && serverTextNode.nextSibling === endNode) {
+                    cachedTextNode = serverTextNode;
+                } else {
+                    replaceNodesBetweenComments(endNode, [cachedTextNode]);
+                }
+            }
+            if (cachedTextNode.data !== String(newValue)) cachedTextNode.data = newValue;
         } else if (newValueType === 'templatePart') {
             // a template part bound to server rendered DOM (hydration) is in place already and is left alone
             if (newValue.childNodes[0].parentNode !== endNode.parentNode) {
