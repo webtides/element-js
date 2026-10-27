@@ -3,6 +3,11 @@
     <head>
         <meta charset="UTF-8" />
         <title>element-js showcase</title>
+        <!-- the dev server does not redirect a directory URL to its trailing slash, relative links and modules need it -->
+        <script>
+            if (!location.pathname.endsWith('/'))
+                location.replace(`${location.pathname}/${location.search}${location.hash}`);
+        </script>
         <script type="module" src="state.js"></script>
         <script type="module" src="composition.js"></script>
         <script type="module" src="templates.js"></script>

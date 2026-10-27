@@ -3,6 +3,11 @@
     <head>
         <meta charset="UTF-8" />
         <title>Hydration</title>
+        <!-- the dev server does not redirect a directory URL to its trailing slash, relative links and modules need it -->
+        <script>
+            if (!location.pathname.endsWith('/'))
+                location.replace(`${location.pathname}/${location.search}${location.hash}`);
+        </script>
         <script type="module" src="hydration.js"></script>
         <script src="https://cdn.tailwindcss.com"></script>
         <style type="text/tailwindcss">
