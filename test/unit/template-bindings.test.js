@@ -5,6 +5,11 @@ import { html } from '../../src/TemplateElement.js';
 import { unsafeHTML } from '../../src/dom-parts/directives.js';
 import { stripCommentMarkers } from '../util/testing-helpers.js';
 
+// a list whose items are the test subject, kept on one line: whitespace around the items would show up next to
+// text items in the DOM
+// prettier-ignore
+const list = (items) => html`<ul>${items}</ul>`;
+
 // records the lifecycle of an element in an array, an update of the items around it must not move it
 const lifecycle = [];
 customElements.define(
@@ -222,6 +227,93 @@ describe(`template bindings for rendering TemplateResults client side and server
             stripCommentMarkers(templateResult.toString()),
             'CSR template does not match SSR template',
         );
+    });
+
+    it('flattens arrays nested in arrays like the server does', async () => {
+        const el = document.createElement('div');
+        const li = (text) => html`<li>${text}</li>`;
+        render(list([li('a'), [li('b'), li('c')]]), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<ul><li>a</li><li>b</li><li>c</li></ul>');
+        assert.equal(
+            stripCommentMarkers(el.innerHTML),
+            stripCommentMarkers(list([li('a'), [li('b'), li('c')]]).toString()),
+            'CSR template does not match SSR template',
+        );
+
+        render(list([li('a'), [li('b'), [li('c'), li('d')]]]), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<ul><li>a</li><li>b</li><li>c</li><li>d</li></ul>');
+
+        render(list([[li('a')], li('b')]), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<ul><li>a</li><li>b</li></ul>');
+    });
+
+    it('resolves functions in arrays that return templates or text', async () => {
+        const el = document.createElement('div');
+        const items = (text) => [() => html`<li>${text}</li>`, html`<li>b</li>`, () => () => text];
+        render(list(items('a')), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<ul><li>a</li><li>b</li>a</ul>');
+        assert.equal(
+            stripCommentMarkers(el.innerHTML),
+            stripCommentMarkers(list(items('a')).toString()),
+            'CSR template does not match SSR template',
+        );
+
+        render(list(items('c')), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<ul><li>c</li><li>b</li>c</ul>');
+    });
+
+    it('renders nothing for null and undefined items in an array', async () => {
+        const el = document.createElement('div');
+        const li = (text) => html`<li>${text}</li>`;
+        render(list([li('a'), null, li('c'), undefined]), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<ul><li>a</li><li>c</li></ul>');
+        assert.equal(
+            stripCommentMarkers(el.innerHTML),
+            stripCommentMarkers(list([li('a'), null, li('c'), undefined]).toString()),
+            'CSR template does not match SSR template',
+        );
+
+        render(list([li('a'), li('b'), li('c'), null]), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<ul><li>a</li><li>b</li><li>c</li></ul>');
+
+        render(list([null, undefined]), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<ul></ul>');
+    });
+
+    it('renders a different template at an index whose item was removed before', async () => {
+        const el = document.createElement('div');
+        // the pattern of #157: every item picks one of two templates and the length changes between updates
+        const template = (kinds) =>
+            html`<ul>
+                ${kinds.map((kind, index) =>
+                    kind === 'i' ? html`<li><i>${index}</i></li>` : html`<li><b>${index}</b></li>`,
+                )}
+            </ul>`;
+        render(template(['i', 'i', 'i']), el);
+        render(template(['i']), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<ul><li><i>0</i></li></ul>');
+
+        render(template(['b', 'b', 'b']), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<ul><li><b>0</b></li><li><b>1</b></li><li><b>2</b></li></ul>');
+
+        render(template(['i', 'b', 'i', 'b']), el);
+        assert.equal(
+            stripCommentMarkers(el.innerHTML),
+            '<ul><li><i>0</i></li><li><b>1</b></li><li><i>2</i></li><li><b>3</b></li></ul>',
+        );
+    });
+
+    it('switches an array item between a text and a template', async () => {
+        const el = document.createElement('div');
+        const li = () => html`<li>b</li>`;
+        render(list(['a', li()]), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<ul>a <li>b</li></ul>');
+
+        render(list([li(), 'a']), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<ul><li>b</li>a</ul>');
+
+        render(list(['a', li()]), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<ul>a <li>b</li></ul>');
     });
 
     it('correctly sanitizes an array of unsafe strings', async () => {

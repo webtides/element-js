@@ -367,6 +367,29 @@ describe('hydration of server rendered templates', () => {
         assert.isTrue(el.querySelector('input') === input, 'the server rendered input is kept');
         assert.isTrue(document.activeElement === input, 'the focus is kept');
     });
+    it('hydrates nested arrays, function items and empty items of an array without touching the DOM', async () => {
+        // kept on one line: whitespace around the items would show up next to the text item in the DOM
+        // prettier-ignore
+        const template = (items) => html`<ul>${items}</ul>`;
+        const li = (text) => html`<li>${text}</li>`;
+        const items = (text) => [li('a'), [li('b'), [li('c')]], () => li(text), () => 'text', null];
+        const el = await serverRendered(template(items('d')));
+        const observer = new MutationObserver(() => {});
+        observer.observe(el, { childList: true, attributes: true, characterData: true, subtree: true });
+
+        render(template(items('d')), el);
+        const records = observer.takeRecords();
+        observer.disconnect();
+        assert.deepEqual(
+            records.map((record) => `${record.type} on ${record.target.nodeName}`),
+            [],
+        );
+        assert.equal(stripCommentMarkers(el.innerHTML), '<ul><li>a</li><li>b</li><li>c</li><li>d</li>text</ul>');
+
+        render(template(items('e')), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<ul><li>a</li><li>b</li><li>c</li><li>e</li>text</ul>');
+    });
+
     it('leaves server rendered nodes alone when the values match', async () => {
         const template = (count, items) =>
             html`<p data-count="${count}" ?hidden="${false}" @click="${() => {}}">count: ${count}</p>
