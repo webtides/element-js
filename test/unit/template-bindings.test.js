@@ -461,6 +461,49 @@ describe(`template bindings for rendering TemplateResults client side and server
         );
     });
 
+    it('writes an attribute that starts with "on" when the value is not a function', async () => {
+        const el = document.createElement('div');
+        let clicks = 0;
+        const template = (state) => html`<a on="${state}" once="${state}" onclick="${() => clicks++}">Label</a>`;
+        render(template('default'), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<a on="default" once="default">Label</a>');
+        assert.equal(
+            stripCommentMarkers(el.innerHTML),
+            stripCommentMarkers(template('default').toString()),
+            'CSR template does not match SSR template',
+        );
+        el.querySelector('a').click();
+        assert.equal(clicks, 1);
+
+        render(template(''), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<a on="" once="">Label</a>');
+        render(template(null), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<a>Label</a>');
+    });
+
+    it('switches an attribute that starts with "on" between an attribute and a listener', async () => {
+        const el = document.createElement('div');
+        let calls = 0;
+        // the string is an inline handler the browser compiles, it has to be valid JavaScript
+        const template = (value) => html`<a onclick="${value}">Label</a>`;
+        render(template('void 0'), el);
+        const anchor = el.querySelector('a');
+        assert.equal(anchor.getAttribute('onclick'), 'void 0');
+
+        render(
+            template(() => calls++),
+            el,
+        );
+        assert.isFalse(anchor.hasAttribute('onclick'));
+        anchor.click();
+        assert.equal(calls, 1);
+
+        render(template('void 0'), el);
+        assert.equal(anchor.getAttribute('onclick'), 'void 0');
+        anchor.click();
+        assert.equal(calls, 1);
+    });
+
     it('writes camelCase property bindings as attributes the element maps back to the property', async () => {
         const template = (value) =>
             html`<bindings-property-target .options="${value}" .sliderOptions="${value}"></bindings-property-target>`;

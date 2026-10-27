@@ -100,9 +100,21 @@ export const processAttributePart = (node, name) => {
         return processPropertyAttribute(node, name.slice(1));
     }
 
-    // event attribute: @event=${...} || "old school" event attribute: onevent=${...}
-    if (name.startsWith('@') || name.startsWith('on')) {
+    // event attribute: @event=${...}
+    if (name.startsWith('@')) {
         return processEventAttribute(node, name);
+    }
+
+    // "old school" event attribute: onevent=${...}. A function is the listener, any other value is written as an
+    // attribute: `on="${state}"` or `once="${flag}"` are attributes of the element that happen to start with "on"
+    if (name.startsWith('on')) {
+        const listener = processEventAttribute(node, name);
+        const attribute = processAttribute(node, name);
+        return (value) => {
+            const isListener = typeof value === 'function';
+            listener(isListener ? value : undefined);
+            attribute(isListener ? undefined : value);
+        };
     }
 
     // normal "string" attribute: attribute=${...}

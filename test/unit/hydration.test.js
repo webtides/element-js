@@ -63,6 +63,24 @@ describe('hydration of server rendered templates', () => {
         assert.strictEqual(el.querySelector('p'), p, 'the server rendered element is kept');
     });
 
+    it('leaves a server rendered attribute that starts with "on" alone and updates it', async () => {
+        const template = (state) => html`<p on="${state}">x</p>`;
+        const el = await serverRendered(template('default'));
+        const observer = new MutationObserver(() => {});
+        observer.observe(el, { childList: true, attributes: true, characterData: true, subtree: true });
+
+        render(template('default'), el);
+        const records = observer.takeRecords();
+        observer.disconnect();
+        assert.deepEqual(
+            records.map((record) => `${record.type} on ${record.target.nodeName}`),
+            [],
+        );
+
+        render(template('other'), el);
+        assert.equal(el.querySelector('p').getAttribute('on'), 'other');
+    });
+
     it('updates boolean attribute parts on hydrated elements', async () => {
         const template = (disabled) => html`<button ?disabled="${disabled}">x</button>`;
         const el = await serverRendered(template(true));

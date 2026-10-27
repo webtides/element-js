@@ -411,6 +411,14 @@ describe('TemplateResult.toString()', () => {
             '<!--template-part--><!--dom-part-0?type=attribute&name=%40e&initialValue=%03--><!--dom-part-1?type=attribute&name=onClick&initialValue=%03--><div onClick="console.log(\'\')">Text</div><!--/template-part-->',
         );
     });
+
+    it('writes an attribute that starts with "on" when the value is not a function', async () => {
+        const templateResult = html`<div on="${'default'}" once="${'x'}" onClick="${() => {}}">Text</div>`;
+        assert.equal(
+            stripWhitespace(templateResult.toString()),
+            '<!--template-part--><!--dom-part-0?type=attribute&name=on&initialValue=%03--><!--dom-part-1?type=attribute&name=once&initialValue=%03--><!--dom-part-2?type=attribute&name=onClick&initialValue=%03--><div on="default" once="x" >Text</div><!--/template-part-->',
+        );
+    });
 });
 
 describe('TemplateResult SSR', () => {
