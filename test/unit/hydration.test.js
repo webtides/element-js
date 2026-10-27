@@ -367,6 +367,7 @@ describe('hydration of server rendered templates', () => {
         assert.isTrue(el.querySelector('input') === input, 'the server rendered input is kept');
         assert.isTrue(document.activeElement === input, 'the focus is kept');
     });
+
     it('hydrates nested arrays, function items and empty items of an array without touching the DOM', async () => {
         // kept on one line: whitespace around the items would show up next to the text item in the DOM
         // prettier-ignore
