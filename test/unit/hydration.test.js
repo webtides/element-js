@@ -367,4 +367,34 @@ describe('hydration of server rendered templates', () => {
         assert.isTrue(el.querySelector('input') === input, 'the server rendered input is kept');
         assert.isTrue(document.activeElement === input, 'the focus is kept');
     });
+    it('leaves server rendered nodes alone when the values match', async () => {
+        const template = (count, items) =>
+            html`<p data-count="${count}" ?hidden="${false}" @click="${() => {}}">count: ${count}</p>
+                <ul>
+                    ${items.map((item) => html`<li>${item}</li>`)}
+                </ul>`;
+        const el = await serverRendered(template(3, ['a', 'b']));
+        const observer = new MutationObserver(() => {});
+        observer.observe(el, { childList: true, attributes: true, characterData: true, subtree: true });
+
+        render(template(3, ['a', 'b']), el);
+        const records = observer.takeRecords();
+        observer.disconnect();
+        assert.deepEqual(
+            records.map((record) => `${record.type} on ${record.target.nodeName}`),
+            [],
+        );
+    });
+
+    it('takes over the server rendered text node and updates it in place', async () => {
+        const template = (text) => html`<p>${text}</p>`;
+        const el = await serverRendered(template('Foo'));
+        const p = el.querySelector('p');
+        const textNode = [...p.childNodes].find((node) => node.nodeType === Node.TEXT_NODE && node.data === 'Foo');
+
+        render(template('Foo'), el);
+        render(template('Bar'), el);
+        assert.isTrue(textNode.parentNode === p, 'the server rendered text node is kept');
+        assert.equal(textNode.data, 'Bar');
+    });
 });

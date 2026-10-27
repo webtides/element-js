@@ -1,6 +1,7 @@
 import { Part } from './Part.js';
 
-// the first update always writes, also into server rendered DOM whose attribute values the part does not know
+// marks the first update: it compares with the attribute in the DOM once, so a fresh clone, which carries the
+// placeholder, gets written and server rendered markup that fits already is left alone
 const NOT_SET = Symbol('not set');
 
 /**
@@ -12,6 +13,10 @@ const processBooleanAttribute = (node, name) => {
     let oldValue = NOT_SET;
     return (newValue) => {
         const value = !!newValue?.valueOf() && newValue !== 'false';
+        if (oldValue === NOT_SET && node.getAttribute(name) === (value ? '' : null)) {
+            oldValue = value;
+            return;
+        }
         if (oldValue !== value) {
             oldValue = value;
             // not toggleAttribute(): server rendered markup may carry `name="false"`, true has to become `name=""`
@@ -61,6 +66,10 @@ const processAttribute = (node, name) => {
     let oldValue = NOT_SET;
     return (newValue) => {
         const value = newValue?.valueOf();
+        if (oldValue === NOT_SET && node.getAttribute(name) === (value == null ? null : String(value))) {
+            oldValue = value;
+            return;
+        }
         if (oldValue !== value) {
             oldValue = value;
             if (value == null) {
