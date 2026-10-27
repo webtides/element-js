@@ -128,20 +128,36 @@ function getType(value) {
     return 'text';
 }
 
-// TODO: handle funcitons?! Should be handled in parseArray!!!
+// the parsed items of an array as the child nodes to diff: template parts contribute their nodes, primitives become
+// text nodes, DOM nodes pass through
 const unwrapArray = (nodes) => {
-    // we have to unwrap any complex objects inside the array so that we can diff arrays of childNodes
     return nodes.flatMap((value) => {
         if (value instanceof TemplatePart) {
             return value.childNodes;
-        }
-        if (Array.isArray(value)) {
-            return unwrapArray(value);
         }
         if (typeof value === 'boolean' || typeof value === 'number' || typeof value === 'string') {
             return document.createTextNode(value);
         }
         return value;
+    });
+};
+
+/**
+ * Array items get the same treatment as a single value: functions are resolved completely, arrays nested in the array
+ * are flattened and null or undefined items are dropped, which is the list the server renders. An array that needs
+ * none of it is returned as is.
+ * @param {any[]} values
+ * @return {any[]}
+ */
+const resolveArrayItems = (values) => {
+    if (!values.some((value) => typeof value === 'function' || Array.isArray(value) || value == null)) {
+        return values;
+    }
+    return values.flatMap((item) => {
+        let value = item;
+        while (typeof value === 'function') value = value();
+        if (Array.isArray(value)) return resolveArrayItems(value);
+        return value == null ? [] : [value];
     });
 };
 
@@ -205,7 +221,7 @@ export class ChildNodePart extends Part {
     /** @type {TemplatePart|undefined} */
     templatePart;
 
-    /** @type {Part[]} */
+    /** @type {TemplatePart[]} indexed like the items of an array value, only template items have a part */
     arrayParts = [];
 
     /**
@@ -230,9 +246,11 @@ export class ChildNodePart extends Part {
      * @param {boolean} [hydrate] - bind nested template parts to the server rendered markers instead of cloning
      */
     update(value, hydrate = false) {
-        // functions are resolved completely, parsing and updating have to work on the same value
+        // functions are resolved completely and array items are normalized, parsing and updating have to work on the
+        // same value
         let resolvedValue = value;
         while (typeof resolvedValue === 'function') resolvedValue = resolvedValue();
+        if (Array.isArray(resolvedValue)) resolvedValue = resolveArrayItems(resolvedValue);
         const parsedValue = this.parseValue(resolvedValue, hydrate);
         this.updateParts(resolvedValue, hydrate);
         this.processor(parsedValue, hydrate);
@@ -248,7 +266,7 @@ export class ChildNodePart extends Part {
         }
         if (Array.isArray(value)) {
             for (let index = 0; index < value.length; index++) {
-                this.arrayParts[index]?.update(value[index], hydrate);
+                if (value[index] instanceof TemplateResult) this.arrayParts[index].update(value[index], hydrate);
             }
         }
     }
@@ -285,10 +303,12 @@ export class ChildNodePart extends Part {
     }
 
     /**
-     * Nested TemplateResults values need to be unrolled in order for update functions to be able to process them
+     * Creates the template parts for the template items of an array, indexed like the items. A different template at
+     * an index gets a new part, the nodes of the part that was there go away with the diff. Other items (text, nodes)
+     * pass through, functions and nested arrays are resolved before, see update().
      * @param {any[]} values
      * @param {boolean} hydrate
-     * @return {any[]}
+     * @return {Array<TemplatePart | Node | string>}
      */
     parseArray(values, hydrate = false) {
         const parsedValues = [];
@@ -298,30 +318,17 @@ export class ChildNodePart extends Part {
         let nestedIndex = 0;
 
         for (let index = 0; index < values.length; index++) {
-            let value = values[index];
-
-            // TODO: it would be better to use this.parseValue() here!!!
-
+            const value = values[index];
             if (value instanceof TemplateResult) {
-                // TODO this is probably wrong. Should only be taken from parts cache if it has the same type (eg. template vs string, mixed types arrays)
                 let templatePart = this.arrayParts[index];
-                if (!templatePart) {
+                if (!templatePart || templatePart.strings !== value.strings) {
                     templatePart = new TemplatePart(nestedStartNodes[nestedIndex], value);
                     this.arrayParts[index] = templatePart;
                 }
                 nestedIndex++;
                 parsedValues[index] = templatePart;
-            } else if (Array.isArray(value)) {
-                let childNodePart = this.arrayParts[index];
-                if (!childNodePart) {
-                    // TODO: this seems not correct :( (maybe Template vs DOM Parts !?)
-                    childNodePart = new ChildNodePart(nestedStartNodes[index]);
-                    this.arrayParts[index] = childNodePart;
-                }
-                parsedValues[index] = childNodePart;
             } else {
-                // TODO: what if the value from the function is a TemplatePart or an array?! Should we do this first thing?!
-                parsedValues[index] = typeof value === 'function' ? value() : value;
+                parsedValues[index] = value;
             }
         }
 

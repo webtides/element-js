@@ -30,6 +30,9 @@ to [Semantic Versioning](http://semver.org/).
 - #115 hydration does not depend on the whitespace around the markers anymore.
 - arrays are synced by walking the live DOM instead of an index snapshot: hydrated templates survive other items the server rendered around them, array items whose server markers do not match are rendered client side, DOM nodes in arrays can be reordered, and list updates got considerably faster.
 - a nested template at the root of a template no longer confuses the marker lookup (`PartMarkers.createFromStartNode` is nesting aware)
+- #172 arrays nested in an array are rendered flat, like the server renders them, client side and on hydration
+- #173 functions as array items are resolved completely, a function that returns a template or another function works like a function as a single value
+- #157 an array item that switches to a different template, or between a text and a template, is rendered fresh at its index, also after the array shrank and grew again. `null` and `undefined` items of an array render nothing, like on the server
 
 ### CHANGED
 
