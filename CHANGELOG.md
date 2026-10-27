@@ -22,6 +22,7 @@ to [Semantic Versioning](http://semver.org/).
 
 - renderer benchmark in `benchmark/`: `npm run bench` measures `render()` headless on a js-framework-benchmark style table with that benchmark's operation set plus hydration, `npm run bench:compare` measures `main` right after it on the same machine and flags deviations, `--base <ref>` compares against any commit, `--micro` includes the part binding strategies. Every operation has a post-condition on the DOM, a measurement whose post-condition fails is reported as invalid. See `benchmark/README.md`.
 - the benchmark runs on every pull request, measures the base commit in the same job and posts the report as a sticky comment on the pull request. Tests and benchmark run for pull requests against any branch, not only `main`.
+- `examples/showcase/` walks through every documented feature, one section per docs chapter. `examples/hydration/` plays hydration through with a mutation log: server markup, hydration and the updates afterwards. `examples/index.html` links all example pages.
 
 ### FIXED
 

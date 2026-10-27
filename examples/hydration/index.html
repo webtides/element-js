@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Hydration</title>
+        <script type="module" src="hydration.js"></script>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style type="text/tailwindcss">
+            .btn {
+                @apply inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed;
+            }
+            .btn-secondary {
+                @apply bg-gray-600 hover:bg-gray-700 focus:ring-gray-500;
+            }
+            .btn-active {
+                @apply ring-2 ring-offset-2 ring-indigo-500;
+            }
+            #log .step {
+                @apply mt-2 font-semibold text-gray-900;
+            }
+            #log .warn {
+                @apply text-red-700;
+            }
+        </style>
+    </head>
+    <body class="p-8 max-w-6xl mx-auto text-gray-800">
+        <h1 class="text-3xl mb-2">Hydration</h1>
+        <p class="mb-6 text-gray-600">
+            Each scenario renders a template to a string the way the server does, inserts that string into the page and
+            then renders the same template into it. Hydration binds the parts to the existing nodes, the mutation log
+            shows what every step changes in the DOM.
+        </p>
+
+        <nav id="scenarios" class="flex flex-wrap gap-2 mb-6"></nav>
+
+        <section class="grid grid-cols-2 gap-6">
+            <div>
+                <h2 class="text-xl mb-2">Server</h2>
+                <p id="hint" class="text-sm text-gray-600 mb-2 min-h-10"></p>
+                <pre id="server-markup" class="text-xs bg-gray-100 p-3 rounded overflow-auto"></pre>
+            </div>
+            <div>
+                <h2 class="text-xl mb-2">Browser</h2>
+                <div class="flex flex-wrap gap-2 mb-2">
+                    <button id="render-server" type="button" class="btn">1. insert the server markup</button>
+                    <button id="hydrate" type="button" class="btn">2. hydrate</button>
+                </div>
+                <div id="actions" class="flex flex-wrap gap-2 mb-2"></div>
+                <div id="dom" class="border rounded p-4 min-h-24"></div>
+                <p id="focus" class="text-sm text-gray-600 mt-2"></p>
+            </div>
+        </section>
+
+        <section class="mt-6">
+            <h2 class="text-xl mb-2">
+                DOM mutations
+                <button id="clear-log" type="button" class="btn btn-secondary ml-2">clear</button>
+            </h2>
+            <ol id="log" class="text-sm font-mono"></ol>
+        </section>
+    </body>
+</html>

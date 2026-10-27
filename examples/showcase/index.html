@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>element-js showcase</title>
+        <script type="module" src="state.js"></script>
+        <script type="module" src="composition.js"></script>
+        <script type="module" src="templates.js"></script>
+        <script type="module" src="styles.js"></script>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style type="text/tailwindcss">
+            .btn {
+                @apply inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
+            }
+            section {
+                @apply mb-8;
+            }
+            section > h2 {
+                @apply text-xl mb-1;
+            }
+            section > h2 a {
+                @apply text-sm font-normal text-indigo-700 ml-2;
+            }
+            section > .hint {
+                @apply text-sm text-gray-600 mb-3;
+            }
+            [data-highlight] {
+                @apply ring-2 ring-amber-500;
+            }
+            showcase-card {
+                --card-accent: #0f766e;
+            }
+        </style>
+        <style id="showcase-global-styles">
+            .showcase-global {
+                background: #047857;
+                color: white;
+                padding: 0.5rem 1rem;
+                border-radius: 0.375rem;
+            }
+        </style>
+    </head>
+    <body class="p-8 max-w-4xl mx-auto text-gray-800">
+        <h1 class="text-3xl mb-2">element-js showcase</h1>
+        <p class="mb-8 text-gray-600">
+            One section per feature, in the order of the documentation. Every section is a small element in the module
+            named in its heading, the sources are meant to be read next to the page.
+        </p>
+
+        <section>
+            <h2>
+                Properties and attributes
+                <a href="https://github.com/webtides/element-js/blob/main/docs/features/properties.md">docs</a>
+                <a href="state.js">state.js</a>
+            </h2>
+            <p class="hint">
+                The attributes in the page are parsed into a string, a number, a boolean, an array and an object. Only
+                <code>count</code> has <code>reflect: true</code>, watch its attribute in the inspector.
+            </p>
+            <showcase-properties
+                name="Jane"
+                count="5"
+                enabled="true"
+                tags='["red", "green"]'
+                config='{"theme": "light"}'
+            ></showcase-properties>
+        </section>
+
+        <section>
+            <h2>
+                Store, shared state
+                <a href="https://github.com/webtides/element-js/blob/main/docs/features/store.md">docs</a>
+                <a href="state.js">state.js</a>
+            </h2>
+            <p class="hint">Both elements hold the same Store instance, a change in one renders the other.</p>
+            <div class="flex gap-2">
+                <showcase-store label="A"></showcase-store>
+                <showcase-store label="B"></showcase-store>
+            </div>
+        </section>
+
+        <section>
+            <h2>
+                Watch and computed properties
+                <a href="https://github.com/webtides/element-js/blob/main/docs/features/watch.md">docs</a>
+                <a href="state.js">state.js</a>
+            </h2>
+            <p class="hint">
+                The watcher gets old and new value, the getter <code>fullName</code> is evaluated on every render.
+            </p>
+            <showcase-watch></showcase-watch>
+        </section>
+
+        <section>
+            <h2>
+                Lifecycle
+                <a href="https://github.com/webtides/element-js/blob/main/docs/concepts/lifecycle.md">docs</a>
+                <a href="state.js">state.js</a>
+            </h2>
+            <p class="hint">
+                The host is a renderless BaseElement, it logs the hooks of its child. Tick triggers
+                <code>beforeUpdate</code> and <code>afterUpdate</code>, remove triggers <code>disconnected</code>,
+                re-add <code>connected</code>.
+            </p>
+            <showcase-lifecycle-host>
+                <div class="flex gap-2 items-start">
+                    <span ref="slot"><showcase-lifecycle ref="element"></showcase-lifecycle></span>
+                    <button type="button" class="btn" data-toggle>remove / re-add</button>
+                </div>
+                <pre ref="log" class="text-xs text-gray-600 mt-2 h-24 overflow-auto"></pre>
+            </showcase-lifecycle-host>
+        </section>
+
+        <section>
+            <h2>
+                Context protocol
+                <a
+                    href="https://github.com/webtides/element-js/blob/main/docs/features/dependency-injection-context-protocol.md"
+                    >docs</a
+                >
+                <a href="composition.js">composition.js</a>
+            </h2>
+            <p class="hint">
+                The provider lists a value and a Store in <code>provideProperties()</code>. The value is handed over
+                when the consumer connects, the Store is shared by reference and follows the select. The manual consumer
+                asked once on connect.
+            </p>
+            <showcase-provider></showcase-provider>
+        </section>
+
+        <section>
+            <h2>
+                Methods and refs
+                <a href="https://github.com/webtides/element-js/blob/main/docs/features/methods.md">docs</a>
+                <a href="composition.js">composition.js</a>
+            </h2>
+            <p class="hint">
+                The outer element is renderless, its <code>events()</code> map calls <code>show()</code> on the modal
+                through <code>this.$refs.modal</code>.
+            </p>
+            <showcase-methods>
+                <button type="button" class="btn" data-open>open the modal</button>
+                <showcase-modal ref="modal"></showcase-modal>
+            </showcase-methods>
+        </section>
+
+        <section>
+            <h2>
+                Events
+                <a href="https://github.com/webtides/element-js/blob/main/docs/features/events.md">docs</a>
+                <a href="composition.js">composition.js</a>
+            </h2>
+            <p class="hint">
+                The child dispatches a custom event with <code>this.dispatch()</code>, the parent listens through its
+                <code>events()</code> map, also on <code>window</code> with listener options. Resize the window.
+            </p>
+            <showcase-events></showcase-events>
+        </section>
+
+        <section>
+            <h2>
+                Renderless element
+                <a href="https://github.com/webtides/element-js/blob/main/docs/features/renderless.md">docs</a>
+                <a href="composition.js">composition.js</a>
+            </h2>
+            <p class="hint">
+                No template, the markup is right here. The element only wires events and uses the refs, the entries are
+                a list ref <code>ref="entries[]"</code>.
+            </p>
+            <showcase-dropdown class="relative inline-block">
+                <button type="button" class="btn"><span ref="label">Options</span></button>
+                <ul ref="list" class="hidden absolute mt-1 bg-white border rounded shadow w-40 cursor-pointer">
+                    <li ref="entries[]" class="px-3 py-1 hover:bg-gray-100">Profile</li>
+                    <li ref="entries[]" class="px-3 py-1 hover:bg-gray-100">Settings</li>
+                    <li ref="entries[]" class="px-3 py-1 hover:bg-gray-100">Sign out</li>
+                </ul>
+            </showcase-dropdown>
+        </section>
+
+        <section>
+            <h2>
+                Templates and directives
+                <a href="https://github.com/webtides/element-js/blob/main/docs/features/templates.md">docs</a>
+                <a href="templates.js">templates.js</a>
+            </h2>
+            <p class="hint">
+                <code>choose()</code> for the tabs, <code>when()</code> for the login, a list with a nested template
+                function, <code>classMap()</code>, <code>styleMap()</code>, <code>unsafeHTML()</code>,
+                <code>spreadAttributes()</code>, <code>optionalAttribute()</code> and a custom directive built with
+                <code>defineDirective()</code> on the about tab.
+            </p>
+            <showcase-templates></showcase-templates>
+        </section>
+
+        <section>
+            <h2>
+                Shadow DOM, slots and element styles
+                <a href="https://github.com/webtides/element-js/blob/main/docs/features/styles.md">docs</a>
+                <a href="styles.js">styles.js</a>
+            </h2>
+            <p class="hint">
+                Rendered in shadow DOM with <code>adoptGlobalStyles: false</code>, so Tailwind does not reach inside.
+                The slotted content keeps the page styles, the accent colour comes from the custom property
+                <code>--card-accent</code> set on the tag in the page.
+            </p>
+            <showcase-card>
+                <span slot="header" class="font-bold">Slotted header</span>
+                <p class="text-gray-600">Slotted default content, styled by the page.</p>
+                <button slot="footer" type="button" class="btn">slotted footer button</button>
+            </showcase-card>
+        </section>
+
+        <section>
+            <h2>
+                Light DOM styles
+                <a
+                    href="https://github.com/webtides/element-js/blob/main/docs/features/styles.md#shadow-dom-vs-light-dom"
+                    >docs</a
+                >
+                <a href="styles.js">styles.js</a>
+            </h2>
+            <p class="hint">The element renders in the page, its sheet is applied with a tag prefixed selector.</p>
+            <showcase-badge></showcase-badge>
+        </section>
+
+        <section>
+            <h2>
+                Global styles in shadow DOM
+                <a href="https://github.com/webtides/element-js/blob/main/docs/features/global-styles.md">docs</a>
+                <a href="styles.js">styles.js</a>
+            </h2>
+            <p class="hint">
+                Same markup in two shadow roots. The first adopts <code>#showcase-global-styles</code> from the document
+                head, the second adopts nothing.
+            </p>
+            <div class="flex flex-col gap-2">
+                <showcase-global-styles></showcase-global-styles>
+                <showcase-no-global-styles></showcase-no-global-styles>
+            </div>
+        </section>
+
+        <section>
+            <h2>
+                Declarative shadow DOM
+                <a
+                    href="https://github.com/webtides/element-js/blob/main/docs/features/templates.md#ssr-server-side-rendering"
+                    >docs</a
+                >
+                <a href="styles.js">styles.js</a>
+            </h2>
+            <p class="hint">
+                The shadow root below is in the page markup, with the markers the server wrote. The element hydrates it
+                on connect, the button works and the count updates in place.
+            </p>
+            <showcase-dsd>
+                <template shadowrootmode="open">
+                    <!--template-part-->
+                    <p>
+                        server rendered shadow root, count:
+                        <!--dom-part-0-->0<!--/dom-part-0-->
+                    </p>
+                    <!--dom-part-1?type=attribute&name=%40click&initialValue=%03-->
+                    <button type="button">count + 1</button>
+                    <!--/template-part-->
+                </template>
+            </showcase-dsd>
+        </section>
+
+        <section>
+            <h2>Hydration pages</h2>
+            <p class="hint">
+                <a class="text-indigo-700" href="../hydration/">DOM hydration</a>: server markup, hydration and the
+                updates afterwards with a mutation log.
+                <a class="text-indigo-700" href="../state-hydration/">State hydration</a>: elements and stores restore
+                their state from a serialized JSON block.
+            </p>
+        </section>
+    </body>
+</html>
