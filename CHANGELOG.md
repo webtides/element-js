@@ -36,6 +36,8 @@ to [Semantic Versioning](http://semver.org/).
 - #167 `toString()` leaves out an attribute whose value is `null` or `undefined`, like the DOM renderer removes it. An attribute with several interpolations keeps writing every value as text
 - #169 `toString()` writes a camelCase property binding as the dash-case attribute that maps back to the property on upgrade, `.sliderOptions` becomes `slider-options`
 - #163 an attribute whose name starts with "on" is written as an attribute when its value is not a function, so `on="${state}"` or `once="${flag}"` work on an element. A function is the "old school" event listener, client side and in `toString()`
+- #174 a declarative shadow root (`<template shadowrootmode>`) gets the element styles and the global styles adopted on the first render and follows global style changes
+- a global style that is added in the same mutation batch as other DOM changes is adopted, the global styles store looks at every record of a batch
 
 ### CHANGED
 

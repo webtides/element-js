@@ -122,6 +122,25 @@ describe('global-styles', () => {
         document.getElementById('globalStyles2').remove();
     });
 
+    it('adopts globalStyles that get added in the same mutation batch as other DOM changes', async () => {
+        const el = await fixture(`<${shadowTag}></${shadowTag}>`);
+        await nextFrame();
+
+        // another mutation before the style in the same batch, the store has to look at every record
+        const marker = document.createElement('div');
+        document.body.appendChild(marker);
+        marker.remove();
+        const style = document.createElement('STYLE');
+        style.id = 'globalStyles3';
+        style.appendChild(document.createTextNode(`p{color: ${color3}}`));
+        document.head.appendChild(style);
+
+        await nextFrame();
+        const computedColor = window.getComputedStyle(el.$refs.coloredP).getPropertyValue('color');
+        assert.equal(computedColor, color3);
+        style.remove();
+    });
+
     it('does not adopt globalStyles in shadowDom if option is false', async () => {
         const el = await fixture(`<${shadowNonAdoptingTag}></${shadowNonAdoptingTag}>`);
         //this needs to be called to find the styles added ar runtime

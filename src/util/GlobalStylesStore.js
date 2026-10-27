@@ -16,12 +16,11 @@ class GlobalStylesStore extends Store {
     }
 
     initMutationObserver() {
-        const mutationObserver = new MutationObserver(async (mutationRecord) => {
-            if (!mutationRecord[0]) return;
-
-            const filteredNodes = Array.from(mutationRecord[0].addedNodes).filter(
-                (node) => node.tagName === 'STYLE' || node.tagName === 'LINK',
-            );
+        const mutationObserver = new MutationObserver((mutationRecords) => {
+            // a batch holds every mutation since the last callback, the styles can sit in any of its records
+            const filteredNodes = mutationRecords
+                .flatMap((record) => Array.from(record.addedNodes))
+                .filter((node) => node.tagName === 'STYLE' || node.tagName === 'LINK');
 
             filteredNodes.forEach((styleNode) => {
                 if (styleNode.tagName === 'LINK') {
