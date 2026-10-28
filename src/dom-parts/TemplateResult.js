@@ -4,7 +4,9 @@ import { TemplatePart } from './TemplatePart.js';
 import { walkPartMarkers } from './PartMarkers.js';
 
 const voidElements = /^(?:area|base|br|col|embed|hr|img|input|link|meta|source|track|wbr)$/i;
-const rawTextElements = /<(script|style|textarea|title)([^>]*)>(.*?)<\/\1>/i;
+// every raw text element of the template (g), with content that spans lines (s) and an end tag that may carry
+// whitespace before its closing bracket (</style\n>), which a formatter writes when it wraps the line
+const rawTextElements = /<(script|style|textarea|title)([^>]*)>(.*?)<\/\1\s*>/gis;
 const elements = /<([a-z]+[a-z0-9:._-]*)([^>]*?)(\/?)>/g;
 // TODO: v this will not match any values with escaped quotes like onClick='console.log("\'test")'
 const attributes = /([^\s=]*)=((?:")[^"]*(?:")|(?:')[^']*(?:')|[^\s\/>]*)|([^\s\/>]*)/g;
@@ -186,7 +188,12 @@ const getValue = (value) => {
                 case value.__unsafeHTML:
                     return value.string;
                 default:
-                    console.log('Cannot getValue for', value);
+                    console.warn(
+                        `element-js: toString() writes an object as the text "${String(
+                            value,
+                        )}", pass a primitive, an array, a TemplateResult or unsafeHTML()`,
+                        value,
+                    );
             }
             break;
         case 'function':
@@ -203,6 +210,21 @@ const ssrUpdatesCache = new WeakMap();
 
 /** @type {Map<Element, TemplatePart>} */
 const templatePartsCache = new WeakMap();
+
+/**
+ * Thrown when the markers of a template do not line up with its values.
+ */
+export class ParseTemplateError extends Error {
+    /**
+     * @param {string} message
+     * @param {object} details - the strings, the template string and what was parsed, for debugging
+     */
+    constructor(message, details) {
+        super(message);
+        this.name = 'ParseTemplateError';
+        this.details = details;
+    }
+}
 
 /**
  * @param {Node[] | NodeList} childNodes
@@ -253,14 +275,15 @@ export class TemplateResult {
      * @param {Element} domNode
      */
     renderInto(domNode) {
-        const startNode = findTemplatePartStartNode(domNode.childNodes);
-
         let templatePart = templatePartsCache.get(domNode);
-        if (templatePart && startNode) {
+        // the cached instance is valid while its markers are in the node, innerHTML or render() with a string may
+        // have removed them
+        if (templatePart && templatePart.markers.startNode.parentNode === domNode) {
             templatePart.update(this);
             return;
         }
 
+        const startNode = findTemplatePartStartNode(domNode.childNodes);
         templatePart = new TemplatePart(startNode, this);
         templatePartsCache.set(domNode, templatePart);
 
@@ -394,13 +417,10 @@ export class TemplateResult {
 
         // We couldn't correctly parse updates from the template
         if (updates.length !== strings.length - 1) {
-            throw {
-                name: 'ParseTemplateError',
-                message: 'Could not parse updates from template correctly. Updates length has not the expected length.',
-                strings,
-                templateString,
-                updates,
-            };
+            throw new ParseTemplateError(
+                'Could not parse updates from template correctly. Updates length has not the expected length.',
+                { strings, templateString, updates },
+            );
         }
 
         return updates;
@@ -423,17 +443,10 @@ export class TemplateResult {
 
         // We couldn't correctly parse parts from the template
         if (parts.length !== this.strings.length - 1 || parts.includes(undefined)) {
-            throw {
-                name: 'ParseTemplateError',
-                message:
-                    'Could not parse parts from template correctly. Parts length has not the expected length. -> ' +
-                    JSON.stringify({
-                        strings: this.strings,
-                        templateString: this.templateString,
-                        childNodes,
-                        parts,
-                    }),
-            };
+            throw new ParseTemplateError(
+                'Could not parse parts from template correctly. Parts length has not the expected length.',
+                { strings: this.strings, templateString: this.templateString, childNodes, parts },
+            );
         }
 
         return parts;

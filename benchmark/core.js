@@ -22,7 +22,24 @@
 import { html } from '../index.js';
 import { render } from '../src/dom-parts/render.js';
 import { TemplateResult } from '../src/dom-parts/TemplateResult.js';
-import { convertStringToTemplate, getNodePath } from '../src/util/DOMHelper.js';
+import { convertStringToTemplate } from '../src/util/DOMHelper.js';
+
+/**
+ * The childNodes index path of a node up to its root, innermost index first. The `path` strategy below resolves its
+ * parts this way, as `TemplatePart` did up to 1.2.12.
+ * @param {Node} node
+ * @return {number[]}
+ */
+const getNodePath = (node) => {
+    const path = [];
+    let parentNode = node.parentNode;
+    while (parentNode) {
+        path.push([...parentNode.childNodes].indexOf(node));
+        node = parentNode;
+        parentNode = node.parentNode;
+    }
+    return path;
+};
 
 const SHOW_COMMENT = 128;
 const SHOW_ELEMENT_AND_COMMENT = 129;

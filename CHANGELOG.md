@@ -22,6 +22,27 @@ to [Semantic Versioning](http://semver.org/).
 
 - #119 a pushed `v*` tag creates the GitHub release after the npm publish, the release notes are the changelog section of the version followed by the generated pull request list. The publish stops when the tag does not match the version in `package.json`.
 
+### FIXED
+
+- #185 every `<style>`, `<script>`, `<textarea>` and `<title>` with interpolations gets its raw text part, not only the first one of a template, and an interpolation after a line break inside such an element is found as well
+- a raw text element with one interpolation and static text around it, `<style>.a { color: ${color}; }</style>`, keeps the static text. Client side and on hydration the whole content was replaced by the value
+- a raw text end tag with whitespace before its closing bracket, `</style\n>` as a formatter writes it, is recognised
+- `isOfSameNodeType()` returns false for a missing node instead of throwing
+
+### CHANGED
+
+- #187 the nodes between two markers are removed walking forward from the start marker, without collecting them backwards into a list first, clearing a long list is no longer slower than creating it
+- an array that shrinks releases the template parts of the items that are gone, they are no longer kept for a later growth
+- `unsafeHTML()` parses its string on the first render only, a render with the same string leaves the DOM alone without parsing
+- a child node part creates its text node when the first string arrives, parts that only render templates have none
+- `TemplateResult` throws `ParseTemplateError` instances, an `Error` subclass with a `details` property, instead of plain objects
+- `toString()` warns when it writes an object as text
+- `render()` recognises a node whose content was replaced from outside, by `innerHTML` or by a string rendered in between, and renders fresh instead of updating the detached instance
+
+### REMOVED
+
+- the DOM diffing helpers of the renderer before the dom-parts, `diffNodes`, `diffAttributes`, `hasChildNodes`, `getNodePath` and `decodeHTML` in `src/util/DOMHelper.js`, nothing in the library uses them. A project that imported them through `./src/util/DOMHelper.js` has to copy them.
+
 ## [1.3.0] - 2026-10-28
 
 ### ADDED
