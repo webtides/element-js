@@ -38,6 +38,7 @@ to [Semantic Versioning](http://semver.org/).
 - #163 an attribute whose name starts with "on" is written as an attribute when its value is not a function, so `on="${state}"` or `once="${flag}"` work on an element. A function is the "old school" event listener, client side and in `toString()`
 - #174 a declarative shadow root (`<template shadowrootmode>`) gets the element styles and the global styles adopted on the first render and follows global style changes
 - a global style that is added in the same mutation batch as other DOM changes is adopted, the global styles store looks at every record of a batch
+- #121 the custom directive example in the templates docs is a `Directive` class wrapped with `defineDirective()`, a plain function does not work at that position
 
 ### CHANGED
 

@@ -158,27 +158,36 @@ const attributeString = spreadAttributes(attrs);
 
 ##### Writing custom directives
 
-Directives in `element-js` are just functions. They accept parameters and return values that manipulate or produce templates or strings.
+The built-in directives above are plain functions that return a value for an attribute or a child position. A directive that works on the element itself sits inside the opening tag, between the attributes. It is a class that extends `Directive`, wrapped with `defineDirective()`:
 
-To write a custom directive:
-
-    Define a Function: This function will describe what your directive does. The function should return either a template, string, or another function based on its parameters.
+- `update(...values)` runs in the browser on every render, `this.node` is the element the directive sits on.
+- `stringify(...values)` runs when the template is rendered to a string, for example on the server, and returns what is written into the opening tag.
 
 ```javascript
-const visibility = (isVisible) => {
-    return isVisible ? '' : 'style="display: none;"';
-};
+import { Directive, defineDirective } from '@webtides/element-js';
+
+class HighlightDirective extends Directive {
+    update(active) {
+        this.node.toggleAttribute('data-highlight', active);
+    }
+
+    stringify(active) {
+        return active ? 'data-highlight' : '';
+    }
+}
+
+const highlight = defineDirective(HighlightDirective);
 ```
 
-Use your custom directive in your templates.
+`defineDirective()` returns the function to call in templates, its arguments are passed on to `update()` and `stringify()`:
 
 ```javascript
 function template() {
-    return html` <div ${visibility(false)}>This div will be hidden.</div> `;
+    return html` <div ${highlight(this.active)}>Highlighted while active.</div> `;
 }
 ```
 
-Remember, the power of directives is in their simplicity. They allow you to encapsulate logic in a function and reuse that logic across multiple templates.
+A plain function at this position throws, the renderer only accepts a directive created with `defineDirective()`. The `about` tab of `examples/showcase/` uses this directive.
 
 #### Slots
 
