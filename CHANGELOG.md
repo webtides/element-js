@@ -16,7 +16,7 @@ to [Semantic Versioning](http://semver.org/).
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
-## Unreleased
+## [1.3.0] - 2026-10-28
 
 ### ADDED
 
