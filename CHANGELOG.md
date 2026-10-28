@@ -16,6 +16,12 @@ to [Semantic Versioning](http://semver.org/).
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## Unreleased
+
+### ADDED
+
+- #119 a pushed `v*` tag creates the GitHub release after the npm publish, the release notes are the changelog section of the version followed by the generated pull request list. The publish stops when the tag does not match the version in `package.json`.
+
 ## [1.3.0] - 2026-10-28
 
 ### ADDED
