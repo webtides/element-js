@@ -302,6 +302,20 @@ export class FormControl extends TemplateElement {
 
 The templates you write for _element-js_ can easily be rendered on the server or any other environment different from the browser (like Service Workers, Node, etc.). _element-js_ uses special markers (as comments) in the HTML to track positions of control flow and interpolations. When elements get connected in the browser, they don't have to render the templates again. They only need to hydrate.
 
+##### Markers
+
+`toString()` of a template writes the same comment markers the client renders, they are all the client needs to hydrate the markup:
+
+```html
+<!--t:a3f9c1--><!--0--><div id="1" class="a b"><!--2-->text<!--/2--></div><!--/t-->
+```
+
+- `<!--t:a3f9c1-->` and `<!--/t-->` wrap a template instance, `a3f9c1` is a hash of the template literal.
+- `<!--2-->` and `<!--/2-->` wrap the value of an interpolation between elements, `2` is the index of the value in the literal.
+- `<!--0-->` in front of an element says that the element has attribute, text or directive bindings, `0` is the index of the first one. One marker per element, however many bindings it has.
+
+What a binding means (its attribute name, the static text around it, whether it is a boolean, property or event binding) is not in the markup, the client reads it from the template literal. That is why the hash is there: the client hydrates a template only when the server rendered the same literal. Markup of another literal, or of another version of _element-js_ with another marker format, is rendered client side instead, with a warning in the console.
+
 ##### Hydration
 
 When you render templates on the server, _element-js_ can efficiently hydrate elements. It uses the existing rendered templates and only adds event listeners and other things that only work in browser environments. One important piece of hydration is the state of the elements. It is not possible to embed the state into the server rendered templates. _element-js_ therefore uses a global JSON object where all elements (and stores) will serialize their state. If such an object is found upon connection of an element, it will restore its state.

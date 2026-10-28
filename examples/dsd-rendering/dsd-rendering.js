@@ -5,8 +5,13 @@ class ShadowElement extends TemplateElement {
         super({ shadowRender: true });
     }
 
+    properties() {
+        // the page sets source="server side" on the element with the declarative shadow root
+        return { source: 'client side' };
+    }
+
     template() {
-        return html` <div>client side shadow root content</div> `;
+        return html` <div>${this.source} shadow root content</div> `;
     }
 }
 

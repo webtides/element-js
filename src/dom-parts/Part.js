@@ -2,13 +2,10 @@
  * @abstract
  */
 export class Part {
-    processor = undefined;
-
     /**
-     * Applies a value to the DOM.
+     * Applies the values of the template to the DOM. A part reads its own values by the index of its descriptor.
      * @abstract
-     * @param {TemplateResult | any[] | any} value
-     * @param {boolean} [hydrate] - first update of server rendered DOM, nested parts bind to the server rendered markers
+     * @param {any[]} values - all values of the template
      */
-    update(value, hydrate = false) {}
+    update(values) {}
 }

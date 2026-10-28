@@ -1,182 +1,159 @@
 import { Part } from './Part.js';
+import {
+    attributeKind,
+    attributeValue,
+    eventTypeOf,
+    isBooleanTrue,
+    isWholeValue,
+    joinValues,
+    valuesChanged,
+} from './values.js';
 
-// marks the first update: it compares with the attribute in the DOM once, so a fresh clone, which carries the
-// placeholder, gets written and server rendered markup that fits already is left alone
+// marks the first commit: it compares with the attribute in the DOM once, so a fresh clone, which has no attribute
+// yet, gets written and server rendered markup that fits already is left alone
 const NOT_SET = Symbol('not set');
 
 /**
- * @param {Element} node
- * @param {String} name
- * @return {(function(*): void)|*}
+ * @param {Element} element
+ * @param {string} name
+ * @return {(value: any) => void}
  */
-const processBooleanAttribute = (node, name) => {
-    let oldValue = NOT_SET;
-    return (newValue) => {
-        const value = !!newValue?.valueOf() && newValue !== 'false';
-        if (oldValue === NOT_SET && node.getAttribute(name) === (value ? '' : null)) {
-            oldValue = value;
-            return;
-        }
-        if (oldValue !== value) {
-            oldValue = value;
-            // not toggleAttribute(): server rendered markup may carry `name="false"`, true has to become `name=""`
-            if (value) {
-                node.setAttribute(name, '');
-            } else {
-                node.removeAttribute(name);
-            }
-        }
-    };
-};
-
-/**
- * @param {Element} node
- * @param {String} name
- * @return {(function(*): void)|*}
- */
-const processPropertyAttribute = (node, name) => {
+const commitAttribute = (element, name) => {
+    let committed = NOT_SET;
     return (value) => {
-        node[name] = value;
-    };
-};
-
-/**
- * @param {Element} node
- * @param {String} name
- * @return {(function(*): void)|*}
- */
-const processEventAttribute = (node, name) => {
-    let oldValue = undefined;
-    let type = name.startsWith('@') ? name.slice(1) : name.toLowerCase().slice(2);
-
-    return (newValue) => {
-        if (oldValue !== newValue) {
-            if (oldValue) node.removeEventListener(type, oldValue);
-            if ((oldValue = newValue)) node.addEventListener(type, oldValue);
-        }
-    };
-};
-
-/**
- * @param {Element} node
- * @param {String} name
- * @return {(function(*): void)|*}
- */
-const processAttribute = (node, name) => {
-    let oldValue = NOT_SET;
-    return (newValue) => {
-        const value = newValue?.valueOf();
-        if (oldValue === NOT_SET && node.getAttribute(name) === (value == null ? null : String(value))) {
-            oldValue = value;
+        const text = value == null ? null : String(attributeValue(value));
+        if (committed === NOT_SET && element.getAttribute(name) === text) {
+            committed = text;
             return;
         }
-        if (oldValue !== value) {
-            oldValue = value;
-            if (value == null) {
-                node.removeAttribute(name);
-            } else {
-                node.setAttribute(name, value);
-            }
+        if (committed === text) return;
+        committed = text;
+        if (text === null) {
+            element.removeAttribute(name);
+        } else {
+            element.setAttribute(name, text);
         }
     };
 };
 
-/** @type {Map<Element, AttributePart>} */
-const attributePartsCache = new WeakMap();
-
 /**
- * @param {Element} node
- * @param {String} name
- * @return {(function(*): void)|*}
+ * @param {Element} element
+ * @param {string} name - without the ? prefix
+ * @return {(value: any) => void}
  */
-export const processAttributePart = (node, name) => {
-    // boolean attribute: ?boolean=${...}
-    if (name.startsWith('?')) {
-        return processBooleanAttribute(node, name.slice(1));
-    }
-
-    // property attribute: .property=${...}
-    if (name.startsWith('.')) {
-        return processPropertyAttribute(node, name.slice(1));
-    }
-
-    // event attribute: @event=${...}
-    if (name.startsWith('@')) {
-        return processEventAttribute(node, name);
-    }
-
-    // "old school" event attribute: onevent=${...}. A function is the listener, any other value is written as an
-    // attribute: `on="${state}"` or `once="${flag}"` are attributes of the element that happen to start with "on"
-    if (name.startsWith('on')) {
-        const listener = processEventAttribute(node, name);
-        const attribute = processAttribute(node, name);
-        return (value) => {
-            const isListener = typeof value === 'function';
-            listener(isListener ? value : undefined);
-            attribute(isListener ? undefined : value);
-        };
-    }
-
-    // normal "string" attribute: attribute=${...}
-    return processAttribute(node, name);
+const commitBooleanAttribute = (element, name) => {
+    let committed = NOT_SET;
+    return (value) => {
+        const present = isBooleanTrue(value);
+        if (committed === NOT_SET && element.getAttribute(name) === (present ? '' : null)) {
+            committed = present;
+            return;
+        }
+        if (committed === present) return;
+        committed = present;
+        // not toggleAttribute(): server rendered markup may carry `name="false"`, true has to become `name=""`
+        if (present) {
+            element.setAttribute(name, '');
+        } else {
+            element.removeAttribute(name);
+        }
+    };
 };
 
 /**
- * For updating a single attribute
+ * @param {Element} element
+ * @param {string} name - without the . prefix
+ * @return {(value: any) => void}
+ */
+const commitProperty = (element, name) => {
+    let committed = NOT_SET;
+    return (value) => {
+        if (committed === value) return;
+        committed = value;
+        element[name] = value;
+    };
+};
+
+/**
+ * @param {Element} element
+ * @param {string} name - `@type` or `ontype`
+ * @return {(listener: any) => void}
+ */
+const commitListener = (element, name) => {
+    const type = eventTypeOf(name);
+    let committed = undefined;
+    return (listener) => {
+        if (committed === listener) return;
+        if (committed) element.removeEventListener(type, committed);
+        committed = listener;
+        if (listener) element.addEventListener(type, listener);
+    };
+};
+
+/**
+ * @param {Element} element
+ * @param {string} name - the attribute name as written in the template, with its prefix
+ * @return {(value: any) => void} writes one value to the element according to the kind of binding
+ */
+const createCommit = (element, name) => {
+    switch (attributeKind(name)) {
+        case 'boolean':
+            return commitBooleanAttribute(element, name.slice(1));
+        case 'property':
+            return commitProperty(element, name.slice(1));
+        case 'event':
+            return commitListener(element, name);
+        case 'onevent': {
+            // a function is the listener, any other value is written as an attribute: `on="${state}"` or
+            // `once="${flag}"` are attributes of the element that happen to start with "on"
+            const listener = commitListener(element, name);
+            const attribute = commitAttribute(element, name);
+            return (value) => {
+                const isListener = typeof value === 'function';
+                listener(isListener ? value : undefined);
+                attribute(isListener ? undefined : value);
+            };
+        }
+        default:
+            return commitAttribute(element, name);
+    }
+};
+
+/**
+ * One attribute of an element with one or more interpolations: `class="${a} ${b}"`, `?disabled="${flag}"`,
+ * `.value="${text}"`, `@click="${listener}"`.
  */
 export class AttributePart extends Part {
-    name = undefined;
-    interpolations = 1;
-    values = [];
-    currentValueIndex = 0;
-    initialValue = undefined;
+    /** @type {import('./parseTemplate.js').AttributeDescriptor} */
+    descriptor;
+
+    /** @type {any[] | undefined} the values of the last update, for an attribute with several interpolations */
+    lastValues = undefined;
 
     /**
-     * @param {Comment} node
-     * @param {String} name
-     * @param {String} initialValue
+     * @param {Element} element
+     * @param {import('./parseTemplate.js').AttributeDescriptor} descriptor
      */
-    constructor(node, name, initialValue) {
-        // If we have multiple attribute parts with the same name, it means we have multiple
-        // interpolations inside that attribute. Instead of creating a new part, we will return the same
-        // as before and let it defer the update until the last interpolation gets updated
-        const attributePart = attributePartsCache.get(node.nextElementSibling);
-        if (attributePart && attributePart.name === name) {
-            attributePart.interpolations++;
-            node.__part = attributePart; // add Part to comment node for debugging in the browser
-            return attributePart;
-        }
-
+    constructor(element, descriptor) {
         super();
-        this.name = name;
-        this.initialValue = initialValue;
-        this.processor = processAttributePart(node.nextElementSibling, this.name);
-        node.__part = this; // add Part to comment node for debugging in the browser
-        attributePartsCache.set(node.nextElementSibling, this);
+        this.descriptor = descriptor;
+        // static text around the interpolation or several interpolations always join to a string attribute, the
+        // parser rejects both for the other kinds
+        this.whole = isWholeValue(descriptor);
+        this.commit = this.whole ? createCommit(element, descriptor.name) : commitAttribute(element, descriptor.name);
     }
 
     /**
-     * @param {string | number | bigint | boolean | undefined | symbol | null} value
+     * @param {any[]} values
      */
-    update(value) {
-        // If we only have one sole interpolation, we can just apply the update
-        if (this.initialValue === '\x03') {
-            this.processor(value);
+    update(values) {
+        const { index, span, strings } = this.descriptor;
+        if (this.whole) {
+            this.commit(values[index]);
             return;
         }
-
-        // Instead of applying the update immediately, we check if the part has multiple interpolations
-        // and store the values for each interpolation in a list
-        this.values[this.currentValueIndex++] = value;
-
-        // Only the last call to update (for the last interpolation) will actually trigger the update
-        // on the DOM processor. Here we can reset everything before the next round of updates
-        if (this.interpolations === this.currentValueIndex) {
-            this.currentValueIndex = 0;
-            let replaceIndex = 0;
-            // Note: this will coarse the values into strings, but it's probably ok since there can only be multiple values in string attributes?!
-            const parsedValue = this.initialValue.replace(/\x03/g, () => this.values[replaceIndex++]);
-            this.processor(parsedValue);
-        }
+        if (!valuesChanged(this.lastValues, values, index, span)) return;
+        this.lastValues = values.slice(index, index + span);
+        this.commit(joinValues(strings, values, index));
     }
 }
