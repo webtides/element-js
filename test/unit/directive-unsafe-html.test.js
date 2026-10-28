@@ -36,4 +36,29 @@ describe('unsafeHTML directive', () => {
         const nodes = unsafeContent();
         assert.equal(nodes.length, 2);
     });
+
+    it('parses the same HTML once and leaves the rendered nodes alone on the next render', async () => {
+        const OriginalDOMParser = globalThis.DOMParser;
+        let parses = 0;
+        globalThis.DOMParser = class extends OriginalDOMParser {
+            parseFromString(...args) {
+                parses++;
+                return super.parseFromString(...args);
+            }
+        };
+        try {
+            const el = document.createElement('div');
+            const template = (content) => html`<div>${unsafeHTML(content)}</div>`;
+            render(template('<strong>one</strong>'), el);
+            const strong = el.querySelector('strong');
+            render(template('<strong>one</strong>'), el);
+            assert.equal(parses, 1, 'the same string is not parsed again');
+            assert.equal(el.querySelector('strong'), strong, 'the rendered node stays');
+            render(template('<strong>two</strong>'), el);
+            assert.equal(parses, 2, 'a new string is parsed');
+            assert.equal(stripCommentMarkers(el.innerHTML), '<div><strong>two</strong></div>');
+        } finally {
+            globalThis.DOMParser = OriginalDOMParser;
+        }
+    });
 });

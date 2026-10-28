@@ -99,7 +99,7 @@ export class TemplatePart extends Part {
             const { startNode, endNode } = this.markers;
             this.bindClone(templateResult);
             const innerNodes = this.childNodes.slice(1, -1);
-            replaceNodesBetweenComments(endNode, innerNodes);
+            replaceNodesBetweenComments(startNode, endNode, innerNodes);
             this.markers = new PartMarkers(startNode, endNode, [startNode, ...innerNodes, endNode]);
             this.childNodes = this.markers.childNodes;
             this.hydrated = false;
@@ -127,7 +127,7 @@ export class TemplatePart extends Part {
     refreshChildNodes() {
         const { startNode, endNode } = this.markers;
         if (startNode.parentNode) {
-            this.childNodes = [startNode, ...getNodesBetweenComments(endNode), endNode];
+            this.childNodes = [startNode, ...getNodesBetweenComments(startNode, endNode), endNode];
         }
     }
 

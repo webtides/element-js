@@ -866,3 +866,23 @@ describe(`template bindings for rendering TemplateResults client side and server
         );
     });
 });
+
+describe(`render() into a node whose content changed from outside`, () => {
+    it('renders fresh after the node was emptied', async () => {
+        const el = document.createElement('div');
+        render(html`<p>${'one'}</p>`, el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<p>one</p>');
+        el.innerHTML = '';
+        render(html`<p>${'two'}</p>`, el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<p>two</p>');
+    });
+
+    it('renders fresh after a string was rendered in between', async () => {
+        const el = document.createElement('div');
+        render(html`<p>${'one'}</p>`, el);
+        render('<span>plain</span>', el);
+        assert.equal(el.innerHTML, '<span>plain</span>');
+        render(html`<p>${'three'}</p>`, el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<p>three</p>');
+    });
+});

@@ -20,7 +20,7 @@ describe(`RawTextNodePart class`, () => {
         const el = document.createElement('div');
         el.innerHTML = `<!--dom-part-0/raw-text-node=\x03--><textarea></textarea>`;
         const marker = el.childNodes[0];
-        const part = new RawTextNodePart(marker, '');
+        const part = new RawTextNodePart(marker, '\x03');
         assert.equal(stripCommentMarkers(el.textContent), '');
         part.update('foo bar baz');
         assert.equal(stripCommentMarkers(el.textContent), 'foo bar baz');
@@ -44,6 +44,34 @@ describe(`RawTextNodePart template string parsing`, () => {
             stripWhitespace(templateString),
             '<!--template-part--><!--dom-part-0?type=raw-text-node&initialValue=%03+bar+%03--><!--dom-part-1?type=raw-text-node&initialValue=%03+bar+%03--><textarea> bar </textarea><!--/template-part-->',
         );
+    });
+
+    it('adds placeholders for every text only node of the template, not only the first', async () => {
+        const templateResult = html`<textarea>${'foo'}</textarea><textarea>${'bar'}</textarea>`;
+        const templateString = createTemplateString(templateResult.strings);
+        assert.equal(
+            stripWhitespace(templateString),
+            '<!--template-part--><!--dom-part-0?type=raw-text-node&initialValue=%03--><textarea></textarea><!--dom-part-1?type=raw-text-node&initialValue=%03--><textarea></textarea><!--/template-part-->',
+        );
+    });
+
+    it('adds a placeholder for an interpolation after a line break inside a text only node', async () => {
+        // prettier-ignore
+        const templateResult = html`<style>
+    .a { color: ${'red'}; }
+</style>`;
+        const templateString = createTemplateString(templateResult.strings);
+        assert.include(templateString, '?type=raw-text-node&');
+        assert.notInclude(templateString, '<!--dom-part-0--><!--/dom-part-0-->');
+    });
+
+    it('recognises an end tag with whitespace before its closing bracket', async () => {
+        // prettier-ignore
+        const templateResult = html`<style>.a { color: ${'red'}; }</style
+        ><div></div>`;
+        const templateString = createTemplateString(templateResult.strings);
+        assert.include(templateString, '?type=raw-text-node&');
+        assert.notInclude(templateString, '<!--dom-part-0--><!--/dom-part-0-->');
     });
 });
 
@@ -87,6 +115,46 @@ describe(`RawTextNodePart template bindings`, () => {
         const templateResult = html`<textarea>${'foo'} bar ${'baz'}</textarea>`;
         render(templateResult, el);
         assert.equal(stripCommentMarkers(el.innerHTML), '<textarea>foo bar baz</textarea>');
+        assert.equal(
+            stripCommentMarkers(el.innerHTML),
+            stripCommentMarkers(templateResult.toString()),
+            'CSR template does not match SSR template',
+        );
+    });
+
+    it('keeps the static text around a single interpolation', async () => {
+        const el = document.createElement('div');
+        // prettier-ignore
+        const templateResult = html`<style>.a { color: ${'red'}; }</style>`;
+        render(templateResult, el);
+        assert.equal(el.querySelector('style').textContent, '.a { color: red; }');
+        assert.equal(
+            stripCommentMarkers(el.innerHTML),
+            stripCommentMarkers(templateResult.toString()),
+            'CSR template does not match SSR template',
+        );
+    });
+
+    it('renders every text only element of the template, not only the first', async () => {
+        const el = document.createElement('div');
+        const templateResult = html`<textarea>${'foo'}</textarea><textarea>${'bar'}</textarea>`;
+        render(templateResult, el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<textarea>foo</textarea><textarea>bar</textarea>');
+        assert.equal(
+            stripCommentMarkers(el.innerHTML),
+            stripCommentMarkers(templateResult.toString()),
+            'CSR template does not match SSR template',
+        );
+    });
+
+    it('renders an interpolation after a line break inside a text only element', async () => {
+        const el = document.createElement('div');
+        // prettier-ignore
+        const templateResult = html`<style>
+    .a { color: ${'red'}; }
+</style>`;
+        render(templateResult, el);
+        assert.equal(el.querySelector('style').textContent.trim(), '.a { color: red; }');
         assert.equal(
             stripCommentMarkers(el.innerHTML),
             stripCommentMarkers(templateResult.toString()),
