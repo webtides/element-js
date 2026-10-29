@@ -1,5 +1,4 @@
-import { COMMENT_NODE, convertStringToTemplate } from '../util/DOMHelper.js';
-import { Part } from './Part.js';
+import { convertStringToTemplate } from '../util/DOMHelper.js';
 import { AttributePart } from './AttributePart.js';
 import { ChildNodePart, getNodesBetweenComments, replaceNodesBetweenComments } from './ChildNodePart.js';
 import { DirectivePart } from './DirectivePart.js';
@@ -14,11 +13,11 @@ import { parseTemplate } from './parseTemplate.js';
  * markers, see walkPartMarkers(), and create the parts from the descriptors of the literal, see parseTemplate().
  * Construction only binds, values flow through update().
  */
-export class TemplatePart extends Part {
+export class TemplatePart {
     /** @type {PartMarkers} */
     markers;
 
-    /** @type {Part[]} one per descriptor of the template, in document order */
+    /** @type {{update: (values: any[]) => void}[]} one per descriptor of the template, in document order */
     parts = [];
 
     /** @type {TemplateStringsArray} */
@@ -43,12 +42,6 @@ export class TemplatePart extends Part {
      * @param {import('./TemplateResult.js').TemplateResult} templateResult
      */
     constructor(startNode, templateResult) {
-        if (startNode && startNode.nodeType !== COMMENT_NODE) {
-            throw new Error('TemplatePart: startNode is not a comment node');
-        }
-
-        super();
-
         if (startNode) {
             startNode.__part = this; // add Part to comment node for debugging in the browser
             this.hydrated = this.bindLive(startNode, templateResult);
@@ -157,7 +150,7 @@ export class TemplatePart extends Part {
     /**
      * Creates the parts that hang on one marker: a child node part on the marker itself, attribute, text and
      * directive parts on the element behind it.
-     * @param {Part[]} parts - receives the parts, in descriptor order
+     * @param {{update: (values: any[]) => void}[]} parts - receives the parts, in descriptor order
      * @param {import('./parseTemplate.js').Descriptor[]} descriptors
      * @param {Comment} markerNode
      * @param {any[]} values - the first values, a directive part needs its directive class
@@ -183,8 +176,6 @@ export class TemplatePart extends Part {
                 case 'directive':
                     parts.push(new DirectivePart(element, descriptor, values[descriptor.index]));
                     break;
-                default:
-                    throw new Error(`TemplatePart: cannot create a part for "${descriptor.kind}"`);
             }
         }
     }

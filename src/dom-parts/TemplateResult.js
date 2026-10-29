@@ -1,7 +1,7 @@
 import { COMMENT_NODE } from '../util/DOMHelper.js';
 import { TemplatePart } from './TemplatePart.js';
 import { isTemplateStart } from './markers.js';
-import { parseTemplate, ParseTemplateError } from './parseTemplate.js';
+import { ParseTemplateError } from './parseTemplate.js';
 import { stringify } from './stringify.js';
 
 /** @type {WeakMap<Element | ShadowRoot, TemplatePart>} the rendered instance of a node */
@@ -54,14 +54,6 @@ export class TemplateResult {
         if (!templatePart.hydrated) {
             domNode.replaceChildren(...templatePart.childNodes);
         }
-    }
-
-    /**
-     * The markup the client clones for this literal, with the markers in place and the bound attributes left out.
-     * @returns {string}
-     */
-    get templateString() {
-        return parseTemplate(this.strings).clientHtml;
     }
 
     /**

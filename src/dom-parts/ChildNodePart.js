@@ -1,5 +1,4 @@
-import { COMMENT_NODE, TEXT_NODE } from '../util/DOMHelper.js';
-import { Part } from './Part.js';
+import { convertStringToHTML, TEXT_NODE } from '../util/DOMHelper.js';
 import { TemplateResult } from './TemplateResult.js';
 import { TemplatePart } from './TemplatePart.js';
 import { PartMarkers } from './PartMarkers.js';
@@ -74,9 +73,6 @@ const diffChildNodes = (newChildNodes, startNode, endNode) => {
     let current = startNode.nextSibling;
     for (let index = 0; index < newChildNodes.length; index++) {
         const newChildNode = newChildNodes[index];
-        if (!newChildNode?.nodeType) {
-            throw new Error('ChildNodePart: newChildNode is not a node');
-        }
         if (current !== newChildNode && current !== endNode) {
             keep ??= new Set(newChildNodes);
             while (current !== endNode && !keep.has(current) && !takesOver(current, newChildNode)) {
@@ -100,10 +96,10 @@ const diffChildNodes = (newChildNodes, startNode, endNode) => {
 };
 
 /**
- * An interpolation between elements: a text, a node, a template, an array of those, or nothing. The value is
- * rendered between the start and the end marker of the part.
+ * An interpolation between elements: a text, a node, a template, HTML from unsafeHTML(), an array of those, or
+ * nothing. The value is rendered between the start and the end marker of the part.
  */
-export class ChildNodePart extends Part {
+export class ChildNodePart {
     /** @type {PartMarkers} */
     markers;
 
@@ -123,13 +119,10 @@ export class ChildNodePart extends Part {
     /** @type {Array<TemplatePart|undefined>} indexed like the items of an array value, only template items have a part */
     arrayParts = [];
 
-    /** @type {string|undefined} the HTML of the unsafeHTML() value that is rendered, if the value is one */
-    unsafeHTML = undefined;
-
-    /** @type {'empty' | 'text' | 'template' | 'node' | 'nodes'} the kind of what is between the markers */
+    /** @type {'empty' | 'text' | 'template' | 'node' | 'nodes' | 'html'} the kind of what is between the markers */
     oldKind = 'empty';
 
-    /** @type {any} the text, template part, node or node list that is between the markers */
+    /** @type {any} the text, template part, node, node list or HTML string that is between the markers */
     oldValue = undefined;
 
     /** @type {Text|undefined} string values are rendered into one text node that is reused across updates */
@@ -141,14 +134,6 @@ export class ChildNodePart extends Part {
      * @param {boolean} [hydrate] - the start marker is server rendered DOM
      */
     constructor(startNode, descriptor, hydrate = false) {
-        if (!startNode || startNode.nodeType !== COMMENT_NODE) {
-            throw new Error(
-                startNode ? 'ChildNodePart: startNode is not a comment node' : 'ChildNodePart: startNode is undefined',
-            );
-        }
-
-        super();
-
         startNode.__part = this; // add Part to comment node for debugging in the browser
         this.descriptor = descriptor;
         this.hydrating = hydrate;
@@ -166,19 +151,15 @@ export class ChildNodePart extends Part {
      * @param {TemplateResult | any[] | Node | any} value
      */
     setValue(value) {
-        // unsafeHTML() marks its function with the HTML string. The same string again has nothing to do, the nodes
-        // of the last parse are in place and are not parsed again
-        const unsafeHTML = value?.__unsafeHTML ? value.string : undefined;
-        if (unsafeHTML !== undefined && unsafeHTML === this.unsafeHTML) return;
-        this.unsafeHTML = unsafeHTML;
-
         const hydrate = this.hydrating;
         this.hydrating = false;
 
         let resolved = value;
         while (typeof resolved === 'function') resolved = resolved();
 
-        if (resolved instanceof TemplateResult) {
+        if (resolved?.__unsafeHTML) {
+            this.write('html', resolved.string, hydrate);
+        } else if (resolved instanceof TemplateResult) {
             this.write('template', this.updateTemplate(resolved, hydrate), hydrate);
         } else if (Array.isArray(resolved)) {
             const nodes = this.updateArray(resolved, hydrate);
@@ -234,6 +215,10 @@ export class ChildNodePart extends Part {
                 for (const inner of value) visit(inner);
                 return;
             }
+            if (value?.__unsafeHTML) {
+                for (const node of [...convertStringToHTML(value.string).childNodes]) visit(node);
+                return;
+            }
             if (value == null) return;
             if (value instanceof TemplateResult) {
                 let part = parts[position];
@@ -257,9 +242,10 @@ export class ChildNodePart extends Part {
     }
 
     /**
-     * Writes what was resolved for the value between the markers.
-     * @param {'empty' | 'text' | 'template' | 'node' | 'nodes'} kind
-     * @param {any} value - the text, the template part, the node or the node list
+     * Writes what was resolved for the value between the markers. The same text, node, node list or HTML string
+     * again has nothing to do, so the HTML of unsafeHTML() is parsed once per string.
+     * @param {'empty' | 'text' | 'template' | 'node' | 'nodes' | 'html'} kind
+     * @param {any} value - the text, the template part, the node, the node list or the HTML string
      * @param {boolean} hydrate - server rendered nodes that fit stay in place
      */
     write(kind, value, hydrate) {
@@ -286,7 +272,8 @@ export class ChildNodePart extends Part {
                 replaceNodesBetweenComments(startNode, endNode, value.childNodes);
             }
         } else {
-            const nodes = kind === 'node' ? [value] : value;
+            const nodes =
+                kind === 'node' ? [value] : kind === 'html' ? [...convertStringToHTML(value).childNodes] : value;
             // a change of kind replaces what is there. Server rendered nodes go through the diff instead, nodes that
             // are in place already, for example a focused input, stay untouched
             if (this.oldKind !== kind && !hydrate) {

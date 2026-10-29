@@ -17,6 +17,7 @@ const directive = defineDirective(
 const start = (templateResult) => `<!--t:${templateHash(templateResult.strings)}-->`;
 const end = '<!--/t-->';
 const descriptors = (templateResult) => parseTemplate(templateResult.strings).descriptors;
+const clientHtml = (templateResult) => parseTemplate(templateResult.strings).clientHtml;
 const withWarnings = (fn) => {
     const warnings = [];
     const original = console.warn;
@@ -32,7 +33,7 @@ const withWarnings = (fn) => {
 describe('parseTemplate()', () => {
     it('wraps the template in template markers that carry the hash of the literal', () => {
         const templateResult = html`<div>Text</div>`;
-        assert.equal(templateResult.templateString, `${start(templateResult)}<div>Text</div>${end}`);
+        assert.equal(clientHtml(templateResult), `${start(templateResult)}<div>Text</div>${end}`);
         assert.deepEqual(descriptors(templateResult), []);
     });
 
@@ -43,13 +44,13 @@ describe('parseTemplate()', () => {
 
     it('marks a child node interpolation with a start and an end marker', () => {
         const templateResult = html`<div>${'Text'}</div>`;
-        assert.equal(templateResult.templateString, `${start(templateResult)}<div><!--0--><!--/0--></div>${end}`);
+        assert.equal(clientHtml(templateResult), `${start(templateResult)}<div><!--0--><!--/0--></div>${end}`);
         assert.deepEqual(descriptors(templateResult), [{ kind: 'node', index: 0, marker: 0 }]);
     });
 
     it('puts one marker before an element with attribute interpolations and leaves those attributes out', () => {
         const templateResult = html`<div id="${1}" class="${'some'}">Text</div>`;
-        assert.equal(templateResult.templateString, `${start(templateResult)}<!--0--><div>Text</div>${end}`);
+        assert.equal(clientHtml(templateResult), `${start(templateResult)}<!--0--><div>Text</div>${end}`);
         assert.deepEqual(descriptors(templateResult), [
             { kind: 'attribute', index: 0, marker: 0, name: 'id', strings: ['', ''], span: 1 },
             { kind: 'attribute', index: 1, marker: 0, name: 'class', strings: ['', ''], span: 1 },
@@ -74,17 +75,14 @@ describe('parseTemplate()', () => {
         // prettier-ignore
         const templateResult = html`<div id='${1}' class="${'a'}" foo=${'b'} data-x='y' hidden>Text</div>`;
         assert.equal(
-            templateResult.templateString,
+            clientHtml(templateResult),
             `${start(templateResult)}<!--0--><div data-x='y' hidden>Text</div>${end}`,
         );
     });
 
     it('numbers a marker by the first value it stands for', () => {
         const templateResult = html`<div id="${1}" class="${'some'}">${'Text'}</div>`;
-        assert.equal(
-            templateResult.templateString,
-            `${start(templateResult)}<!--0--><div><!--2--><!--/2--></div>${end}`,
-        );
+        assert.equal(clientHtml(templateResult), `${start(templateResult)}<!--0--><div><!--2--><!--/2--></div>${end}`);
         assert.deepEqual(
             descriptors(templateResult).map(({ kind, index, marker }) => [kind, index, marker]),
             [
@@ -97,15 +95,12 @@ describe('parseTemplate()', () => {
 
     it('marks a self closing element', () => {
         const templateResult = html`<input name="foo" value="${'bar'}" />`;
-        assert.equal(templateResult.templateString, `${start(templateResult)}<!--0--><input name="foo" />${end}`);
+        assert.equal(clientHtml(templateResult), `${start(templateResult)}<!--0--><input name="foo" />${end}`);
     });
 
     it('describes an interpolation at an attribute position as a directive', () => {
         const templateResult = html`<div no-directive ${directive()}>Text</div>`;
-        assert.equal(
-            templateResult.templateString,
-            `${start(templateResult)}<!--0--><div no-directive>Text</div>${end}`,
-        );
+        assert.equal(clientHtml(templateResult), `${start(templateResult)}<!--0--><div no-directive>Text</div>${end}`);
         assert.deepEqual(descriptors(templateResult), [{ kind: 'directive', index: 0, marker: 0 }]);
     });
 
@@ -125,15 +120,19 @@ describe('parseTemplate()', () => {
     });
 
     it('rejects a boolean, property or event binding that is not the whole attribute value', () => {
-        assert.throws(() => html`<div ?a="${1} ${2}"></div>`.templateString, ParseTemplateError, /whole value/);
-        assert.throws(() => html`<div .a="x${1}"></div>`.templateString, ParseTemplateError, /whole value/);
-        assert.throws(() => html`<div @a="${1}y"></div>`.templateString, ParseTemplateError, /whole value/);
+        assert.throws(() => parseTemplate(html`<div ?a="${1} ${2}"></div>`.strings), ParseTemplateError, /whole value/);
+        assert.throws(() => parseTemplate(html`<div .a="x${1}"></div>`.strings), ParseTemplateError, /whole value/);
+        assert.throws(() => parseTemplate(html`<div @a="${1}y"></div>`.strings), ParseTemplateError, /whole value/);
     });
 
     it('rejects interpolations where no part can bind them', () => {
-        assert.throws(() => html`<!-- ${1} -->`.templateString, ParseTemplateError, /comment/);
-        assert.throws(() => html`<${'div'}></div>`.templateString, ParseTemplateError, /tag name/);
-        assert.throws(() => html`<div data-${'x'}="1"></div>`.templateString, ParseTemplateError, /attribute name/);
+        assert.throws(() => parseTemplate(html`<!-- ${1} -->`.strings), ParseTemplateError, /comment/);
+        assert.throws(() => parseTemplate(html`<${'div'}></div>`.strings), ParseTemplateError, /tag name/);
+        assert.throws(
+            () => parseTemplate(html`<div data-${'x'}="1"></div>`.strings),
+            ParseTemplateError,
+            /attribute name/,
+        );
     });
 });
 

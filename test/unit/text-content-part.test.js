@@ -7,6 +7,7 @@ import { parseTemplate, templateHash } from '../../src/dom-parts/parseTemplate.j
 
 const start = (templateResult) => `<!--t:${templateHash(templateResult.strings)}-->`;
 const end = '<!--/t-->';
+const clientHtml = (templateResult) => parseTemplate(templateResult.strings).clientHtml;
 const assertSameAsServer = (el, templateResult) =>
     assert.equal(
         stripCommentMarkers(el.innerHTML),
@@ -41,7 +42,7 @@ describe(`TextContentPart class`, () => {
 describe(`TextContentPart template parsing`, () => {
     it('puts the marker before the element and keeps the static text inside', async () => {
         const templateResult = html`<textarea>${'foo'} bar ${'baz'}</textarea>`;
-        assert.equal(templateResult.templateString, `${start(templateResult)}<!--0--><textarea> bar </textarea>${end}`);
+        assert.equal(clientHtml(templateResult), `${start(templateResult)}<!--0--><textarea> bar </textarea>${end}`);
         assert.deepEqual(parseTemplate(templateResult.strings).descriptors, [
             { kind: 'text', index: 0, marker: 0, tag: 'textarea', strings: ['', ' bar ', ''], span: 2 },
         ]);
@@ -50,7 +51,7 @@ describe(`TextContentPart template parsing`, () => {
     it('describes every raw text element of the template, not only the first', async () => {
         const templateResult = html`<textarea>${'foo'}</textarea><textarea>${'bar'}</textarea>`;
         assert.equal(
-            templateResult.templateString,
+            clientHtml(templateResult),
             `${start(templateResult)}<!--0--><textarea></textarea><!--1--><textarea></textarea>${end}`,
         );
         assert.deepEqual(parseTemplate(templateResult.strings).descriptors, [
@@ -81,7 +82,7 @@ describe(`TextContentPart template parsing`, () => {
         // prettier-ignore
         const templateResult = html`<style media="${'screen'}">.a { color: ${'red'}; }</style>`;
         assert.equal(
-            templateResult.templateString,
+            clientHtml(templateResult),
             `${start(templateResult)}<!--0--><style>.a { color: ; }</style>${end}`,
         );
         assert.deepEqual(

@@ -72,20 +72,3 @@ export const joinValues = (strings, values, index) => {
     }
     return joined;
 };
-
-/**
- * Whether the values of a binding changed since the last update. Compares value by value, so a binding with
- * several interpolations does not join its string for nothing.
- * @param {any[] | undefined} lastValues
- * @param {any[]} values
- * @param {number} index
- * @param {number} span
- * @return {boolean}
- */
-export const valuesChanged = (lastValues, values, index, span) => {
-    if (!lastValues) return true;
-    for (let position = 0; position < span; position++) {
-        if (lastValues[position] !== values[index + position]) return true;
-    }
-    return false;
-};

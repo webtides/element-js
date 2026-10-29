@@ -1,6 +1,5 @@
 import { camelToDash, encodeAttribute, isNaN } from '../util/AttributeParser.js';
 import { TemplateResult } from './TemplateResult.js';
-import { convertStringToHTML } from '../util/DOMHelper.js';
 import { defineDirective, Directive } from '../util/Directive.js';
 
 /**
@@ -54,22 +53,11 @@ const choose = (value, cases, defaultCase) => {
 };
 
 /**
- * Renders a given string as HTML instead of text, or as unescaped string in SSR mode.
- * The returned function parses the string on its first call and carries the string, so that a child node part can
- * tell the same HTML from new HTML without parsing it again.
+ * Renders a given string as HTML instead of text, client side as parsed nodes, in `toString()` as the string as is.
  * @param {string} string
- * @returns {(function(): Node[]) | { __unsafeHTML: true, string: string }}
+ * @returns {{ __unsafeHTML: true, string: string }}
  */
-const unsafeHTML = (string) => {
-    if (!globalThis.DOMParser) {
-        return { __unsafeHTML: true, string };
-    }
-    let childNodes;
-    const nodes = () => (childNodes ??= [...convertStringToHTML(string).childNodes]);
-    nodes.__unsafeHTML = true;
-    nodes.string = string;
-    return nodes;
-};
+const unsafeHTML = (string) => ({ __unsafeHTML: true, string });
 
 /**
  * Renders multiple attributes as key="value" pairs from a map of attributes
