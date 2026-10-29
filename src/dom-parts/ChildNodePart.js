@@ -191,8 +191,10 @@ export class ChildNodePart {
      * @param {boolean} hydrate
      */
     write(kind, value, hydrate) {
+        // the same text, node or HTML string again has nothing to do. An array may be the same instance with other
+        // items, a template result is new on every render, both are always written
+        if (kind === this.oldKind && value === this.oldValue && kind !== 'array') return;
         const { startNode, endNode } = this;
-        const parentNode = endNode.parentNode;
         if (kind !== this.oldKind) {
             if (!hydrate) removeNodesBetween(startNode, endNode);
             this.textNode = undefined;
@@ -206,7 +208,7 @@ export class ChildNodePart {
                         this.textNode = serverNode;
                     } else {
                         removeNodesBetween(startNode, endNode);
-                        this.textNode = parentNode.insertBefore(document.createTextNode(''), endNode);
+                        this.textNode = endNode.parentNode.insertBefore(document.createTextNode(''), endNode);
                     }
                 }
                 if (this.textNode.data !== value) this.textNode.data = value;
@@ -224,28 +226,24 @@ export class ChildNodePart {
                     templatePart.update(value);
                     if (!templatePart.hydrated) {
                         removeNodesBetween(startNode, endNode);
-                        templatePart.insertBefore(parentNode, endNode);
+                        templatePart.insertBefore(endNode.parentNode, endNode);
                     }
                 }
                 value = templatePart;
                 break;
             }
             case 'node':
-                if (value !== this.oldValue) {
+                removeNodesBetween(startNode, endNode);
+                endNode.parentNode.insertBefore(value, endNode);
+                break;
+            case 'html': {
+                const nodes = [...convertStringToHTML(value).childNodes];
+                if (!hydrate || !sameNodes(startNode, endNode, nodes)) {
                     removeNodesBetween(startNode, endNode);
-                    parentNode.insertBefore(value, endNode);
+                    for (const node of nodes) endNode.parentNode.insertBefore(node, endNode);
                 }
                 break;
-            case 'html':
-                // the same string again has nothing to do, so the HTML is parsed once per string
-                if (value !== this.oldValue) {
-                    const nodes = [...convertStringToHTML(value).childNodes];
-                    if (!hydrate || !sameNodes(startNode, endNode, nodes)) {
-                        removeNodesBetween(startNode, endNode);
-                        for (const node of nodes) parentNode.insertBefore(node, endNode);
-                    }
-                }
-                break;
+            }
             case 'array':
                 this.writeArray(value, hydrate);
                 break;
