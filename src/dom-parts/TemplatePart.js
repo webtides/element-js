@@ -1,182 +1,182 @@
 import { convertStringToTemplate } from '../util/DOMHelper.js';
 import { AttributePart } from './AttributePart.js';
-import { ChildNodePart, getNodesBetweenComments, replaceNodesBetweenComments } from './ChildNodePart.js';
+import { ChildNodePart } from './ChildNodePart.js';
 import { DirectivePart } from './DirectivePart.js';
 import { TextContentPart } from './TextContentPart.js';
-import { PartMarkers, walkPartMarkers } from './PartMarkers.js';
-import { templateHashOf } from './markers.js';
+import { isTemplateEnd, isTemplateStart, partIndexOf, templateHashOf } from './markers.js';
 import { parseTemplate } from './parseTemplate.js';
 
+const SHOW_COMMENT = 128; // NodeFilter.SHOW_COMMENT
+
 /**
- * One rendered instance of a template. Binds the parts of the template to DOM nodes: either to a fresh clone of the
- * template fragment, or, when hydrating, to the markers in server rendered DOM. Both bindings walk the same comment
- * markers, see walkPartMarkers(), and create the parts from the descriptors of the literal, see parseTemplate().
- * Construction only binds, values flow through update().
+ * @param {Element} element
+ * @param {import('./parseTemplate.js').Descriptor} descriptor
+ * @param {any[]} values - the first values, a directive part takes its directive class from them
+ * @return {{update: (values: any[]) => void}}
+ */
+const createElementPart = (element, descriptor, values) => {
+    switch (descriptor.kind) {
+        case 'attribute':
+            return new AttributePart(element, descriptor);
+        case 'text':
+            return new TextContentPart(element, descriptor);
+        default:
+            return new DirectivePart(element, descriptor, values[descriptor.index]);
+    }
+};
+
+/**
+ * One rendered instance of a template literal: the nodes from its template start marker to its end marker, and the
+ * parts bound to the markers in between. An instance binds either to a fresh clone of the template fragment, which
+ * stays in the fragment until insertBefore() puts it into the DOM, or, when hydrating, to the markers of server
+ * rendered DOM. Construction only binds, values flow through update().
  */
 export class TemplatePart {
-    /** @type {PartMarkers} */
-    markers;
+    /** @type {Comment} the template start marker */
+    startNode;
+
+    /** @type {Comment} the template end marker */
+    endNode;
+
+    /** @type {TemplateStringsArray} */
+    strings;
 
     /** @type {{update: (values: any[]) => void}[]} one per descriptor of the template, in document order */
     parts = [];
 
-    /** @type {TemplateStringsArray} */
-    strings = undefined;
-
-    /**
-     * The top level nodes of this instance, including its template markers and the content of parts at the root
-     * of the template. Refreshed after every update while the nodes are attached, kept as is while they are detached
-     * so that a removed instance can be inserted again.
-     * @type {Node[]}
-     */
-    childNodes = [];
-
-    /** @type {boolean} true when the parts are bound to server rendered DOM */
+    /** @type {boolean} the parts are bound to server rendered DOM */
     hydrated = false;
 
-    /** @type {boolean} true when a child node part at the root of the template can change the top level nodes */
-    hasRootNodeParts = false;
+    /** @type {DocumentFragment|undefined} the clone, until it is inserted */
+    fragment;
 
     /**
-     * @param {Comment|undefined} startNode - the template start marker of server rendered DOM to hydrate, or undefined to render client side
      * @param {import('./TemplateResult.js').TemplateResult} templateResult
+     * @param {Comment} [startNode] - the template start marker of server rendered DOM to hydrate
      */
-    constructor(startNode, templateResult) {
+    constructor(templateResult, startNode) {
+        const { strings, values } = templateResult;
+        const parsed = parseTemplate(strings);
+        this.strings = strings;
         if (startNode) {
-            startNode.__part = this; // add Part to comment node for debugging in the browser
-            this.hydrated = this.bindLive(startNode, templateResult);
+            this.hydrated = this.bindLive(startNode, parsed, values);
+            if (this.hydrated) return;
         }
-        if (!this.hydrated) {
-            this.bindClone(templateResult);
-        }
+        const fragment = (parsed.fragment ??= convertStringToTemplate(parsed.clientHtml));
+        this.fragment = globalThis.document.importNode(fragment, true);
+        this.bind(this.fragment.firstChild, parsed, values, false);
     }
 
     /**
      * @param {import('./TemplateResult.js').TemplateResult} templateResult
      */
     update(templateResult) {
-        if (this.strings !== templateResult.strings) {
-            // a different template: render it fresh and swap the content between the existing markers
-            const { startNode, endNode } = this.markers;
-            this.bindClone(templateResult);
-            const innerNodes = this.childNodes.slice(1, -1);
-            replaceNodesBetweenComments(startNode, endNode, innerNodes);
-            // the markers stay, the start marker names the literal that is rendered now
-            startNode.data = this.markers.startNode.data;
-            this.markers = new PartMarkers(startNode, endNode, [startNode, ...innerNodes, endNode]);
-            this.childNodes = this.markers.childNodes;
-            this.hydrated = false;
-        }
         const { values } = templateResult;
         for (const part of this.parts) part.update(values);
-        if (this.hasRootNodeParts) this.refreshChildNodes();
     }
 
     /**
-     * Re-reads the top level nodes between the markers. Parts at the root of the template insert and remove their
-     * content there, so the list is only known after an update. Detached nodes have no siblings to walk, the last
-     * known list is kept in that case.
+     * Puts the instance into the DOM: the fresh clone, or the nodes from the start to the end marker of an instance
+     * that is in the DOM already.
+     * @param {Node} parentNode
+     * @param {Node|null} refNode
      */
-    refreshChildNodes() {
-        const { startNode, endNode } = this.markers;
-        if (startNode.parentNode) {
-            this.childNodes = [startNode, ...getNodesBetweenComments(startNode, endNode), endNode];
+    insertBefore(parentNode, refNode) {
+        if (this.fragment) {
+            parentNode.insertBefore(this.fragment, refNode);
+            this.fragment = undefined;
+            return;
         }
-    }
-
-    /**
-     * Clones the template fragment and binds the parts to the markers in the clone.
-     * @param {import('./TemplateResult.js').TemplateResult} templateResult
-     */
-    bindClone(templateResult) {
-        const parsed = parseTemplate(templateResult.strings);
-        const fragment = (parsed.fragment ??= convertStringToTemplate(parsed.clientHtml));
-        const clone = globalThis.document.importNode(fragment, true);
-        const startNode = clone.firstChild;
-        startNode.__part = this; // add Part to comment node for debugging in the browser
-        const parts = [];
-        const endNode = walkPartMarkers(startNode, (node, index) => {
-            this.createParts(parts, parsed.byMarker.get(index), node, templateResult.values, false);
-        });
-        this.parts = parts;
-        this.strings = templateResult.strings;
-        this.hasRootNodeParts = parsed.hasRootNodeParts;
-        this.childNodes = [...clone.childNodes];
-        this.markers = new PartMarkers(startNode, endNode, this.childNodes);
+        const { endNode } = this;
+        let node = this.startNode;
+        for (;;) {
+            const next = node.nextSibling;
+            parentNode.insertBefore(node, refNode);
+            if (node === endNode) break;
+            node = next;
+        }
     }
 
     /**
      * Binds the parts to the markers of server rendered DOM. The start marker has to carry the hash of the literal
-     * and every marker of the literal has to be there.
-     * @param {Comment} startNode - the live template start marker
-     * @param {import('./TemplateResult.js').TemplateResult} templateResult
-     * @return {boolean} false if the markers do not match the template, nothing is bound in that case
+     * and the markers have to be those of the literal.
+     * @param {Comment} startNode
+     * @param {import('./parseTemplate.js').ParsedTemplate} parsed
+     * @param {any[]} values
+     * @return {boolean} false when the markers do not match, nothing is bound then
      */
-    bindLive(startNode, templateResult) {
-        const parsed = parseTemplate(templateResult.strings);
-        const parts = [];
-        let found = 0;
-        let endNode;
+    bindLive(startNode, parsed, values) {
+        let reason = 'the start marker carries the hash of another template';
         if (templateHashOf(startNode.data) === parsed.hash) {
             try {
-                endNode = walkPartMarkers(startNode, (node, index) => {
-                    const descriptors = parsed.byMarker.get(index);
-                    if (descriptors) {
-                        found++;
-                        this.createParts(parts, descriptors, node, templateResult.values, true);
-                    }
-                });
+                this.bind(startNode, parsed, values, true);
+                return true;
             } catch (error) {
-                endNode = undefined;
+                reason = error.message;
+                this.parts = [];
             }
         }
-
-        if (!endNode || found !== parsed.byMarker.size) {
-            console.warn(
-                'element-js: the server rendered markers do not match the template, rendering client side instead.',
-                { template: parsed.clientHtml, startNode },
-            );
-            return false;
-        }
-
-        this.parts = parts;
-        this.strings = templateResult.strings;
-        this.hasRootNodeParts = parsed.hasRootNodeParts;
-        this.markers = PartMarkers.createFromStartNode(startNode);
-        this.childNodes = this.markers.childNodes;
-        return true;
+        console.warn(
+            `element-js: the server rendered markers do not match the template, rendering client side instead: ${reason}`,
+            {
+                template: parsed.clientHtml,
+                startNode,
+            },
+        );
+        return false;
     }
 
     /**
-     * Creates the parts that hang on one marker: a child node part on the marker itself, attribute, text and
-     * directive parts on the element behind it.
-     * @param {{update: (values: any[]) => void}[]} parts - receives the parts, in descriptor order
-     * @param {import('./parseTemplate.js').Descriptor[]} descriptors
-     * @param {Comment} markerNode
-     * @param {any[]} values - the first values, a directive part needs its directive class
+     * Walks the comment markers from the template start marker to its end marker and creates the parts: a child node
+     * part on its marker, attribute, text and directive parts on the element behind their marker. Markers and
+     * descriptors are both in document order and the descriptors of one marker follow each other, so both are
+     * consumed in step. Nested template instances are skipped. The walk sees the same markers in a fresh clone and in
+     * server rendered DOM, where the values sit between the markers but are no comments.
+     * @param {Comment} startNode
+     * @param {import('./parseTemplate.js').ParsedTemplate} parsed
+     * @param {any[]} values
      * @param {boolean} hydrate
      */
-    createParts(parts, descriptors, markerNode, values, hydrate) {
-        for (const descriptor of descriptors) {
-            if (descriptor.kind === 'node') {
-                parts.push(new ChildNodePart(markerNode, descriptor, hydrate));
+    bind(startNode, parsed, values, hydrate) {
+        const { descriptors } = parsed;
+        const walker = globalThis.document.createTreeWalker(startNode.parentNode, SHOW_COMMENT);
+        walker.currentNode = startNode;
+        startNode.__part = this; // for debugging in the browser
+        this.startNode = startNode;
+        let depth = 1;
+        let next = 0;
+        let node;
+        while ((node = walker.nextNode())) {
+            const { data } = node;
+            if (isTemplateStart(data)) {
+                depth++;
                 continue;
             }
-            const element = markerNode.nextElementSibling;
-            if (!element) {
-                throw new Error(`TemplatePart: no element behind the marker ${markerNode.data}`);
+            if (isTemplateEnd(data)) {
+                if (--depth === 0) break;
+                continue;
             }
-            switch (descriptor.kind) {
-                case 'attribute':
-                    parts.push(new AttributePart(element, descriptor));
-                    break;
-                case 'text':
-                    parts.push(new TextContentPart(element, descriptor));
-                    break;
-                case 'directive':
-                    parts.push(new DirectivePart(element, descriptor, values[descriptor.index]));
-                    break;
+            const index = depth === 1 ? partIndexOf(data) : -1;
+            if (index === -1) continue;
+            const descriptor = descriptors[next];
+            if (descriptor?.marker !== index) {
+                throw new Error(`the marker <!--${index}--> has no binding in the template`);
+            }
+            if (descriptor.kind === 'node') {
+                this.parts.push(new ChildNodePart(node, descriptor, hydrate));
+                next++;
+                continue;
+            }
+            const element = node.nextElementSibling;
+            if (!element) throw new Error(`there is no element behind the marker <!--${index}-->`);
+            while (descriptors[next]?.marker === index) {
+                this.parts.push(createElementPart(element, descriptors[next++], values));
             }
         }
+        if (!node) throw new Error('the template end marker is missing');
+        if (next !== descriptors.length) {
+            throw new Error(`${descriptors.length - next} bindings of the template have no marker`);
+        }
+        this.endNode = node;
     }
 }

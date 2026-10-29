@@ -1,16 +1,16 @@
-import { convertStringToHTML, TEXT_NODE } from '../util/DOMHelper.js';
+import { COMMENT_NODE, TEXT_NODE, convertStringToHTML } from '../util/DOMHelper.js';
 import { TemplateResult } from './TemplateResult.js';
 import { TemplatePart } from './TemplatePart.js';
-import { PartMarkers } from './PartMarkers.js';
+import { endMarkerDataOf, isTemplateEnd, isTemplateStart } from './markers.js';
 
 /**
- * Removes every node between the two markers, walking forward from the start marker. The markers are siblings,
- * nested markers in between go with their nodes. Not a Range: the browser keeps every Range alive and updates it on
- * each DOM mutation, one per part makes every later insertion pay for all of them.
+ * Removes every node between the two markers, walking forward from the start marker. Not a Range: the browser keeps
+ * every Range alive and updates it on each DOM mutation, one per part makes every later insertion pay for all of
+ * them.
  * @param {Comment} startNode
  * @param {Comment} endNode
  */
-export const removeNodesBetweenComments = (startNode, endNode) => {
+const removeNodesBetween = (startNode, endNode) => {
     const parentNode = endNode.parentNode;
     let node = startNode.nextSibling;
     while (node !== endNode) {
@@ -20,79 +20,88 @@ export const removeNodesBetweenComments = (startNode, endNode) => {
     }
 };
 
+/** @param {Node} node */
+const isTemplateStartNode = (node) => node.nodeType === COMMENT_NODE && isTemplateStart(node.data);
+
+/**
+ * The end marker of a start marker, among its siblings. Nested template instances in between are skipped, their
+ * markers carry their own indices: the element marker <!--0--> of a nested template is not the end of the part
+ * <!--0--> around it.
+ * @param {Comment} startNode - a part start marker or a template start marker
+ * @return {Comment}
+ */
+const endMarkerOf = (startNode) => {
+    const closing = endMarkerDataOf(startNode.data);
+    let depth = 0;
+    for (let node = startNode.nextSibling; node; node = node.nextSibling) {
+        if (node.nodeType !== COMMENT_NODE) continue;
+        const { data } = node;
+        if (isTemplateStart(data)) {
+            depth++;
+        } else if (depth > 0) {
+            if (isTemplateEnd(data)) depth--;
+        } else if (data === closing) {
+            return node;
+        }
+    }
+    throw new Error(`the end marker of <!--${startNode.data}--> is missing`);
+};
+
+/**
+ * @param {Comment} startNode
+ * @param {Comment} endNode
+ * @return {Comment|undefined} the first template start marker between the markers
+ */
+const nestedTemplateStart = (startNode, endNode) => {
+    for (let node = startNode.nextSibling; node !== endNode; node = node.nextSibling) {
+        if (isTemplateStartNode(node)) return node;
+    }
+    return undefined;
+};
+
 /**
  * @param {Comment} startNode
  * @param {Comment} endNode
  * @param {Node[]} nodes
+ * @return {boolean} whether the nodes between the markers equal the given nodes, one by one
  */
-export const replaceNodesBetweenComments = (startNode, endNode, nodes) => {
-    removeNodesBetweenComments(startNode, endNode);
-    const parentNode = endNode.parentNode;
-    for (const node of nodes) {
-        parentNode.insertBefore(node, endNode);
+const sameNodes = (startNode, endNode, nodes) => {
+    let node = startNode.nextSibling;
+    for (const other of nodes) {
+        if (node === endNode || !node.isEqualNode(other)) return false;
+        node = node.nextSibling;
     }
+    return node === endNode;
 };
 
 /**
- * @param {Comment} startNode
- * @param {Comment} endNode
- * @return {Node[]} the nodes between the markers, the markers themselves not included
+ * @typedef {TemplatePart | Node} Item - what stands at one position of an array value: the template part of a
+ * template item, the node of a node or text item
  */
-export const getNodesBetweenComments = (startNode, endNode) => {
-    const nodes = [];
-    for (let node = startNode.nextSibling; node !== endNode; node = node.nextSibling) {
-        nodes.push(node);
-    }
-    return nodes;
-};
+
+/** @param {Item} item @return {Node} */
+const firstNodeOf = (item) => (item.nodeType ? item : item.startNode);
+
+/** @param {Item} item @return {Node} */
+const lastNodeOf = (item) => (item.nodeType ? item : item.endNode);
 
 /**
- * A node that is not in the DOM yet takes over an equal node that is in place: a fresh text node leaves the text node
- * that is there alone. The nodes of a template clone still sit in their fragment and never take over, they replace
- * what the server rendered in their place.
+ * Removes what starts at a node: a template instance up to its end marker, any other node by itself.
  * @param {Node} node
- * @param {Node} newChildNode
- * @return {boolean}
+ * @return {Node} the node behind it
  */
-const takesOver = (node, newChildNode) => !newChildNode.parentNode && node.isEqualNode(newChildNode);
-
-/**
- * Brings the nodes between the markers in line with newChildNodes, in that order. Walks the live DOM with a cursor:
- * a node that is at the cursor already stays, stale nodes at the cursor are removed, anything else is inserted in
- * front of the cursor, which moves a node that is in the DOM further back, for example a hydrated template behind a
- * server rendered text. Nodes that are in place are never touched, so focus and element lifecycles survive.
- * @param {Node[]} newChildNodes
- * @param {Comment} startNode - the start marker
- * @param {Comment} endNode - the end marker
- */
-const diffChildNodes = (newChildNodes, startNode, endNode) => {
-    const parentNode = endNode.parentNode;
-    // the set of new nodes tells a stale node from one that is needed further on. It is only built when the nodes
-    // deviate from what is there, a list whose nodes are all in place never pays for it
-    let keep;
-    let current = startNode.nextSibling;
-    for (let index = 0; index < newChildNodes.length; index++) {
-        const newChildNode = newChildNodes[index];
-        if (current !== newChildNode && current !== endNode) {
-            keep ??= new Set(newChildNodes);
-            while (current !== endNode && !keep.has(current) && !takesOver(current, newChildNode)) {
-                const next = current.nextSibling;
-                parentNode.removeChild(current);
-                current = next;
-            }
-        }
-        if (current === newChildNode || (current !== endNode && !keep.has(current))) {
-            // in place already, or a stale node the new one takes over
-            current = current.nextSibling;
-        } else {
-            parentNode.insertBefore(newChildNode, current);
-        }
-    }
-    while (current !== endNode) {
-        const next = current.nextSibling;
+const removeAt = (node) => {
+    const parentNode = node.parentNode;
+    const end = isTemplateStartNode(node) ? endMarkerOf(node) : node;
+    const next = end.nextSibling;
+    let current = node;
+    for (;;) {
+        const following = current.nextSibling;
         parentNode.removeChild(current);
-        current = next;
+        if (current === end) break;
+        current = following;
     }
+    return next;
 };
 
 /**
@@ -100,8 +109,11 @@ const diffChildNodes = (newChildNodes, startNode, endNode) => {
  * nothing. The value is rendered between the start and the end marker of the part.
  */
 export class ChildNodePart {
-    /** @type {PartMarkers} */
-    markers;
+    /** @type {Comment} */
+    startNode;
+
+    /** @type {Comment} */
+    endNode;
 
     /** @type {import('./parseTemplate.js').NodeDescriptor} */
     descriptor;
@@ -113,20 +125,17 @@ export class ChildNodePart {
      */
     hydrating;
 
-    /** @type {TemplatePart|undefined} the instance of a template value */
-    templatePart;
-
-    /** @type {Array<TemplatePart|undefined>} indexed like the items of an array value, only template items have a part */
-    arrayParts = [];
-
-    /** @type {'empty' | 'text' | 'template' | 'node' | 'nodes' | 'html'} the kind of what is between the markers */
+    /** @type {'empty' | 'text' | 'template' | 'node' | 'html' | 'array'} the kind of what is between the markers */
     oldKind = 'empty';
 
-    /** @type {any} the text, template part, node, node list or HTML string that is between the markers */
+    /** @type {any} the text, the template part, the node or the HTML string that is between the markers */
     oldValue = undefined;
 
-    /** @type {Text|undefined} string values are rendered into one text node that is reused across updates */
+    /** @type {Text|undefined} the text node of a text value, reused across updates */
     textNode;
+
+    /** @type {Item[]} the items of an array value, one per position */
+    items = [];
 
     /**
      * @param {Comment} startNode - the start marker
@@ -134,10 +143,11 @@ export class ChildNodePart {
      * @param {boolean} [hydrate] - the start marker is server rendered DOM
      */
     constructor(startNode, descriptor, hydrate = false) {
-        startNode.__part = this; // add Part to comment node for debugging in the browser
+        startNode.__part = this; // for debugging in the browser
+        this.startNode = startNode;
+        this.endNode = endMarkerOf(startNode);
         this.descriptor = descriptor;
         this.hydrating = hydrate;
-        this.markers = PartMarkers.createFromStartNode(startNode);
     }
 
     /**
@@ -160,10 +170,9 @@ export class ChildNodePart {
         if (resolved?.__unsafeHTML) {
             this.write('html', resolved.string, hydrate);
         } else if (resolved instanceof TemplateResult) {
-            this.write('template', this.updateTemplate(resolved, hydrate), hydrate);
+            this.write('template', resolved, hydrate);
         } else if (Array.isArray(resolved)) {
-            const nodes = this.updateArray(resolved, hydrate);
-            this.write(nodes.length === 0 ? 'empty' : 'nodes', nodes, hydrate);
+            this.write('array', resolved, hydrate);
         } else if (resolved?.nodeType) {
             this.write('node', resolved, hydrate);
         } else if (resolved == null) {
@@ -174,116 +183,170 @@ export class ChildNodePart {
     }
 
     /**
-     * The template part of a template value, updated. A template with another literal gets a new part, its nodes
-     * replace the old ones in write(). When hydrating, the part binds to the server rendered template between the
-     * markers.
-     * @param {TemplateResult} templateResult
+     * Writes a value between the markers. What a value of another kind left there goes away first. When hydrating,
+     * the server rendered nodes that fit the value are taken over instead: the text node of a text, the template
+     * instance of a template, equal nodes of HTML.
+     * @param {'empty' | 'text' | 'template' | 'node' | 'html' | 'array'} kind
+     * @param {any} value - the text, the template result, the node, the HTML string or the array
      * @param {boolean} hydrate
-     * @return {TemplatePart}
      */
-    updateTemplate(templateResult, hydrate) {
-        let templatePart = this.templatePart;
-        if (!templatePart) {
-            templatePart = new TemplatePart(hydrate ? this.markers.findNestedStartNode() : undefined, templateResult);
-        } else if (templatePart.strings !== templateResult.strings) {
-            templatePart = new TemplatePart(undefined, templateResult);
+    write(kind, value, hydrate) {
+        const { startNode, endNode } = this;
+        const parentNode = endNode.parentNode;
+        if (kind !== this.oldKind) {
+            if (!hydrate) removeNodesBetween(startNode, endNode);
+            this.textNode = undefined;
+            this.items = [];
         }
-        this.templatePart = templatePart;
-        templatePart.update(templateResult);
-        return templatePart;
+        switch (kind) {
+            case 'text':
+                if (!this.textNode) {
+                    const serverNode = startNode.nextSibling;
+                    if (hydrate && serverNode.nodeType === TEXT_NODE && serverNode.nextSibling === endNode) {
+                        this.textNode = serverNode;
+                    } else {
+                        removeNodesBetween(startNode, endNode);
+                        this.textNode = parentNode.insertBefore(document.createTextNode(''), endNode);
+                    }
+                }
+                if (this.textNode.data !== value) this.textNode.data = value;
+                break;
+            case 'template': {
+                // the same literal updates its instance, another literal gets a fresh instance in place of the old one
+                let templatePart = this.oldKind === 'template' ? this.oldValue : undefined;
+                if (templatePart?.strings === value.strings) {
+                    templatePart.update(value);
+                } else {
+                    templatePart = new TemplatePart(
+                        value,
+                        hydrate ? nestedTemplateStart(startNode, endNode) : undefined,
+                    );
+                    templatePart.update(value);
+                    if (!templatePart.hydrated) {
+                        removeNodesBetween(startNode, endNode);
+                        templatePart.insertBefore(parentNode, endNode);
+                    }
+                }
+                value = templatePart;
+                break;
+            }
+            case 'node':
+                if (value !== this.oldValue) {
+                    removeNodesBetween(startNode, endNode);
+                    parentNode.insertBefore(value, endNode);
+                }
+                break;
+            case 'html':
+                // the same string again has nothing to do, so the HTML is parsed once per string
+                if (value !== this.oldValue) {
+                    const nodes = [...convertStringToHTML(value).childNodes];
+                    if (!hydrate || !sameNodes(startNode, endNode, nodes)) {
+                        removeNodesBetween(startNode, endNode);
+                        for (const node of nodes) parentNode.insertBefore(node, endNode);
+                    }
+                }
+                break;
+            case 'array':
+                this.writeArray(value, hydrate);
+                break;
+            default:
+                if (hydrate) removeNodesBetween(startNode, endNode);
+        }
+        this.oldKind = kind;
+        this.oldValue = value;
     }
 
     /**
-     * The nodes of an array value, in one pass: functions are resolved, nested arrays flattened, null and undefined
-     * items dropped, which is the list the server renders. Template items get a part per position, updated here, a
-     * different literal at a position gets a new part. Primitives become text nodes, nodes pass through. When
-     * hydrating, the template parts bind to the server rendered templates between the markers, in order.
-     * @param {any[]} items
+     * Writes an array value. The items are the flat list the server renders as well: functions resolved, nested
+     * arrays flattened, null and undefined dropped, HTML of unsafeHTML() parsed into its nodes. Every position
+     * gets its item first: a template item keeps the template part at its position when the literal is the same,
+     * a text item keeps the text node at its position, a node item is the node. When hydrating, a template item
+     * binds to the next server rendered template instance, a text item takes over the text node and a node item
+     * an equal node at the server rendered position. Then the DOM is brought in line with the items: an item that
+     * is in place stays, what is in its place and not needed any more goes away, anything else is inserted or
+     * moved in front of the item that follows. Nodes that stay in place are never touched, so focus and element
+     * lifecycles survive.
+     * @param {any[]} array
      * @param {boolean} hydrate
-     * @return {Node[]}
      */
-    updateArray(items, hydrate) {
-        const nodes = [];
-        const parts = this.arrayParts;
-        const nestedStartNodes = hydrate ? this.markers.findNestedStartNodes() : undefined;
-        let position = 0;
-        let nested = 0;
+    writeArray(array, hydrate) {
+        const values = [];
         const visit = (item) => {
             let value = item;
             while (typeof value === 'function') value = value();
             if (Array.isArray(value)) {
                 for (const inner of value) visit(inner);
-                return;
+            } else if (value?.__unsafeHTML) {
+                values.push(...convertStringToHTML(value.string).childNodes);
+            } else if (value != null) {
+                values.push(value);
             }
-            if (value?.__unsafeHTML) {
-                for (const node of [...convertStringToHTML(value.string).childNodes]) visit(node);
-                return;
-            }
-            if (value == null) return;
-            if (value instanceof TemplateResult) {
-                let part = parts[position];
-                if (!part || part.strings !== value.strings) {
-                    part = new TemplatePart(nestedStartNodes?.[nested], value);
-                    parts[position] = part;
-                }
-                nested++;
-                part.update(value);
-                for (const node of part.childNodes) nodes.push(node);
-            } else {
-                parts[position] = undefined;
-                nodes.push(value?.nodeType ? value : document.createTextNode(value));
-            }
-            position++;
         };
-        for (const item of items) visit(item);
-        // the parts of items beyond the new length are released, their nodes go away with the diff
-        parts.length = position;
-        return nodes;
-    }
+        for (const item of array) visit(item);
 
-    /**
-     * Writes what was resolved for the value between the markers. The same text, node, node list or HTML string
-     * again has nothing to do, so the HTML of unsafeHTML() is parsed once per string.
-     * @param {'empty' | 'text' | 'template' | 'node' | 'nodes' | 'html'} kind
-     * @param {any} value - the text, the template part, the node, the node list or the HTML string
-     * @param {boolean} hydrate - server rendered nodes that fit stay in place
-     */
-    write(kind, value, hydrate) {
-        if (kind === this.oldKind && value === this.oldValue) return;
-        const { startNode, endNode } = this.markers;
-
-        if (kind === 'empty') {
-            removeNodesBetweenComments(startNode, endNode);
-        } else if (kind === 'text') {
-            if (this.oldKind !== 'text') {
-                const serverTextNode = startNode.nextSibling;
-                if (hydrate && serverTextNode.nodeType === TEXT_NODE && serverTextNode.nextSibling === endNode) {
-                    // the server rendered text node is taken over as the text node of the part
-                    this.textNode = serverTextNode;
+        const { startNode, endNode } = this;
+        const parentNode = endNode.parentNode;
+        const oldItems = this.items;
+        /** @type {Item[]} */
+        const items = [];
+        // the next server rendered node that no item has taken over yet
+        let server = hydrate ? startNode.nextSibling : endNode;
+        for (let position = 0; position < values.length; position++) {
+            const value = values[position];
+            const old = oldItems[position];
+            let item;
+            if (value instanceof TemplateResult) {
+                if (old instanceof TemplatePart && old.strings === value.strings) {
+                    item = old;
                 } else {
-                    this.textNode ??= document.createTextNode('');
-                    replaceNodesBetweenComments(startNode, endNode, [this.textNode]);
+                    let start;
+                    for (let node = server; node !== endNode && !start; node = node.nextSibling) {
+                        if (isTemplateStartNode(node)) start = node;
+                    }
+                    item = new TemplatePart(value, start);
+                    if (start) server = (item.hydrated ? item.endNode : endMarkerOf(start)).nextSibling;
                 }
-            }
-            if (this.textNode.data !== value) this.textNode.data = value;
-        } else if (kind === 'template') {
-            // a template part bound to server rendered DOM is in place already and is left alone
-            if (value.childNodes[0].parentNode !== endNode.parentNode) {
-                replaceNodesBetweenComments(startNode, endNode, value.childNodes);
-            }
-        } else {
-            const nodes =
-                kind === 'node' ? [value] : kind === 'html' ? [...convertStringToHTML(value).childNodes] : value;
-            // a change of kind replaces what is there. Server rendered nodes go through the diff instead, nodes that
-            // are in place already, for example a focused input, stay untouched
-            if (this.oldKind !== kind && !hydrate) {
-                replaceNodesBetweenComments(startNode, endNode, nodes);
+                item.update(value);
+            } else if (value.nodeType) {
+                item = value;
+                if (server !== endNode && server.isEqualNode(value)) {
+                    item = server;
+                    server = server.nextSibling;
+                }
             } else {
-                diffChildNodes(nodes, startNode, endNode);
+                const text = String(value);
+                if (old?.nodeType === TEXT_NODE) {
+                    item = old;
+                } else if (server.nodeType === TEXT_NODE) {
+                    item = server;
+                    server = server.nextSibling;
+                } else {
+                    item = document.createTextNode(text);
+                }
+                if (item.data !== text) item.data = text;
             }
+            items.push(item);
         }
 
-        this.oldKind = kind;
-        this.oldValue = value;
+        // the first nodes of the items tell a stale node from one that is needed further on. Only built when the
+        // DOM deviates from the items, a list whose items are all in place never pays for it
+        let keep;
+        let cursor = startNode.nextSibling;
+        for (const item of items) {
+            const first = firstNodeOf(item);
+            if (first !== cursor) {
+                keep ??= new Set(items.map(firstNodeOf));
+                while (cursor !== endNode && !keep.has(cursor)) cursor = removeAt(cursor);
+            }
+            if (first === cursor) {
+                cursor = lastNodeOf(item).nextSibling;
+            } else if (item.nodeType) {
+                parentNode.insertBefore(item, cursor);
+            } else {
+                item.insertBefore(parentNode, cursor);
+            }
+        }
+        while (cursor !== endNode) cursor = removeAt(cursor);
+        this.items = items;
     }
 }

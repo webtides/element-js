@@ -33,27 +33,28 @@ export class TemplateResult {
     }
 
     /**
-     * Renders into a DOM node. A node that already holds a rendered instance of this template is updated, a node with
-     * server rendered markup (a template start marker) is hydrated, anything else is replaced by a fresh render.
+     * Renders into a DOM node. A node that holds a rendered instance of this literal is updated, a node with server
+     * rendered markup, a template start marker, is hydrated, anything else is replaced by a fresh render.
      * @param {Element | ShadowRoot} domNode
      */
     renderInto(domNode) {
         let templatePart = templatePartsCache.get(domNode);
-        // the cached instance is valid while its markers are in the node, innerHTML or render() with a string may
-        // have removed them
-        if (templatePart && templatePart.markers.startNode.parentNode === domNode) {
+        // the instance of the same literal is updated while its markers are in the node, innerHTML or render() with
+        // a string may have removed them. Another literal renders fresh
+        if (templatePart?.strings === this.strings && templatePart.startNode.parentNode === domNode) {
             templatePart.update(this);
             return;
         }
 
-        const startNode = findTemplateStartNode(domNode.childNodes);
-        templatePart = new TemplatePart(startNode, this);
-        templatePartsCache.set(domNode, templatePart);
-
+        // server rendered markup is hydrated by the first render into the node
+        const startNode = templatePart ? undefined : findTemplateStartNode(domNode.childNodes);
+        templatePart = new TemplatePart(this, startNode);
         templatePart.update(this);
         if (!templatePart.hydrated) {
-            domNode.replaceChildren(...templatePart.childNodes);
+            domNode.replaceChildren();
+            templatePart.insertBefore(domNode, null);
         }
+        templatePartsCache.set(domNode, templatePart);
     }
 
     /**

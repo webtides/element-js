@@ -104,16 +104,6 @@ describe('parseTemplate()', () => {
         assert.deepEqual(descriptors(templateResult), [{ kind: 'directive', index: 0, marker: 0 }]);
     });
 
-    it('knows whether a child node interpolation sits at the root of the template', () => {
-        assert.isTrue(
-            parseTemplate(
-                html`${'a'}
-                    <p></p>`.strings,
-            ).hasRootNodeParts,
-        );
-        assert.isFalse(parseTemplate(html`<p>${'a'}</p>`.strings).hasRootNodeParts);
-    });
-
     it('creates no descriptors for the interpolations of a nested template', () => {
         const templateResult = html`<div>${html`<div>${'Text'}</div>`}</div>`;
         assert.deepEqual(descriptors(templateResult), [{ kind: 'node', index: 0, marker: 0 }]);

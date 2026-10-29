@@ -25,8 +25,6 @@ import { partEndMarker, partStartMarker, templateEndMarker, templateStartMarker 
  * @typedef {Object} ParsedTemplate
  * @property {string} hash - of the literal, the template start marker carries it
  * @property {Descriptor[]} descriptors - in document order
- * @property {Map<number, Descriptor[]>} byMarker - the descriptors that hang on each marker
- * @property {boolean} hasRootNodeParts - a child node part sits at the root of the template
  * @property {string} clientHtml
  * @property {string[]} ssrSegments
  * @property {DocumentFragment} [fragment] - the parsed clientHtml, set by the client renderer on first use
@@ -96,7 +94,6 @@ const tokenize = (source) => {
     const { length } = source;
     let position = 0;
     let index = 0; // of the next interpolation
-    let depth = 0; // of open elements, a child node interpolation at depth 0 sits at the root
     let text = '';
     const fail = (message) => {
         throw new ParseTemplateError(message, { source: source.replaceAll(MARK, '${…}'), position });
@@ -227,8 +224,6 @@ const tokenize = (source) => {
             }
             operation.endTag = match[0];
             position = match.index + match[0].length;
-        } else if (!selfClosing && !voidElements.has(lowerTag)) {
-            depth++;
         }
         operations.push(operation);
     };
@@ -237,7 +232,7 @@ const tokenize = (source) => {
         const char = source[position];
         if (char === MARK) {
             flushText();
-            operations.push({ type: 'node', index: index++, root: depth === 0 });
+            operations.push({ type: 'node', index: index++ });
             position++;
             continue;
         }
@@ -267,7 +262,6 @@ const tokenize = (source) => {
                 if (endTag.includes(MARK)) fail('an interpolation inside an end tag is not supported');
                 text += endTag;
                 position = end + 1;
-                if (depth > 0) depth--;
                 continue;
             }
         }
@@ -299,7 +293,6 @@ const build = (strings) => {
     const descriptors = [];
     const segments = [''];
     let clientHtml = '';
-    let hasRootNodeParts = false;
     const both = (markup) => {
         clientHtml += markup;
         segments[segments.length - 1] += markup;
@@ -320,7 +313,6 @@ const build = (strings) => {
         }
         if (operation.type === 'node') {
             const { index } = operation;
-            if (operation.root) hasRootNodeParts = true;
             both(partStartMarker(index));
             clientHtml += partEndMarker(index);
             cut({ kind: 'node', index, marker: index });
@@ -370,13 +362,7 @@ const build = (strings) => {
             { source: source.replaceAll(MARK, '${…}'), descriptors },
         );
     }
-    const byMarker = new Map();
-    for (const descriptor of descriptors) {
-        const list = byMarker.get(descriptor.marker);
-        if (list) list.push(descriptor);
-        else byMarker.set(descriptor.marker, [descriptor]);
-    }
-    return { hash, descriptors, byMarker, hasRootNodeParts, clientHtml, ssrSegments: segments };
+    return { hash, descriptors, clientHtml, ssrSegments: segments };
 };
 
 /** @type {WeakMap<TemplateStringsArray, ParsedTemplate>} */
