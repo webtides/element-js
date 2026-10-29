@@ -22,8 +22,28 @@ to [Semantic Versioning](http://semver.org/).
 
 - #119 a pushed `v*` tag creates the GitHub release after the npm publish, the release notes are the changelog section of the version followed by the generated pull request list. The publish stops when the tag does not match the version in `package.json`.
 
+### CHANGED
+
+- #184 one description of every binding for client rendering, hydration and `toString()`. The template literal is parsed once into descriptors (`src/dom-parts/parseTemplate.js`), the DOM parts and the server side writer are built from the same descriptors and apply the same rules (`src/dom-parts/values.js`). A rule changes in one place now.
+- #184 the markers in the markup carry only what hydration needs: `<!--t:HASH-->` and `<!--/t-->` around a template instance, with a hash of the literal, `<!--N-->` and `<!--/N-->` around a child node value, and one `<!--N-->` in front of an element with attribute, text or directive bindings, `N` being the index of the first value. The attribute name, the static text and the kind of a binding are no longer written into the markup, a raw text element no longer repeats its whole content in a comment per interpolation. **Server markup of an earlier version does not hydrate** with this version, the element renders client side with a warning. Server and client have to move to this version together, `@webtides/element-js-ssr-renderer` picks the format up through `toString()`.
+- #184 the client clone is the markup of the literal as written, the parser no longer inserts line breaks around elements. Templates without whitespace between an interpolation and an element render without whitespace there. Static attributes keep their spelling and quotes, only the whitespace in front of a closing bracket goes and a self closed element gets its end tag.
+- #184 the hash is checked once per template instance on hydration, instead of comparing the descriptor of every marker
+- #184 an attribute with several interpolations is one binding with the static pieces between them, its part joins the string and writes it when it changed. The same goes for the content of a raw text element.
+- #184 the parser rejects a template at parse time whose interpolations cannot be bound: a boolean, property or event binding that is not the whole attribute value, an interpolation in a comment, in a tag name or in an attribute name. Before, such templates were silently stringified or produced broken markup.
+- `toString()` writes every bound attribute with double quotes, whatever quotes the literal uses, and leaves no stray whitespace in a tag where a bound attribute or a directive was left out
+- an object or array in an attribute binding is written as JSON on the client too, like `toString()` and the attribute reflection do, instead of `[object Object]`
+- `null` and `undefined` among several interpolations of an attribute write nothing instead of the strings "null" and "undefined", client side and in `toString()`
+- a boolean attribute binding treats the string "false" as false in `toString()` too, like the client does
+- the hydrate flag is gone from the part API: a child node part knows from its binding whether it hydrates, nested parts bind to the server rendered markers on their first update
+- an array value is written in two passes: every position gets its item, the template part, text node or node, then one cursor walk brings the DOM in line with the items. A node that stays in place is never touched. Before, an update walked the items five times
+- a template instance and an array item are the nodes between their markers, the renderer keeps no lists of rendered nodes. A child node part that switches from a template to another value and back renders the template fresh
+- `unsafeHTML()` returns a plain object that carries the string, on the client as well, instead of a function that parses it. The child node part parses the string once per value. Code that called the returned function has to put the value into a template instead
+- `TemplateResult.toString()` joins the static segments of the literal with the written values, instead of running a regular expression replace over the whole template per call
+- `RawTextNodePart` is `TextContentPart`, `NodePart` is `DirectivePart`, `AttributePart` takes an element and a descriptor. Parts get all values of the template in `update(values)` and read their own by index. The parts on an element extend `ElementPart` (`src/dom-parts/ElementPart.js`), which reads the DOM once before the first write and writes only a change: `AttributePart`, `BooleanAttributePart`, `PropertyPart`, `EventPart`, `OnEventPart`, `TextContentPart` and `DirectivePart`. The `Part` base class is gone, `ChildNodePart` and `TemplatePart` stand on their own
+
 ### FIXED
 
+- #184 `toString()` wrote the content of `<style>` and `<script>` HTML encoded, `.a > .b` became `.a &gt; .b` in the delivered CSS and only hydration repaired it. The content of `<style>` and `<script>` is written as is, a value that contains the end tag of the element throws. `<textarea>` and `<title>` stay encoded, the parser decodes them
 - #185 every `<style>`, `<script>`, `<textarea>` and `<title>` with interpolations gets its raw text part, not only the first one of a template, and an interpolation after a line break inside such an element is found as well
 - a raw text element with one interpolation and static text around it, `<style>.a { color: ${color}; }</style>`, keeps the static text. Client side and on hydration the whole content was replaced by the value
 - a raw text end tag with whitespace before its closing bracket, `</style\n>` as a formatter writes it, is recognised
@@ -41,6 +61,9 @@ to [Semantic Versioning](http://semver.org/).
 
 ### REMOVED
 
+- `TemplateResult.parseParts()`, `TemplateResult.parseSSRUpdates()` and `createTemplateString()`, replaced by `parseTemplate()` in `src/dom-parts/parseTemplate.js`, which returns the descriptors, the client markup and the server segments of a literal
+- `src/dom-parts/RawTextNodePart.js` and `src/dom-parts/NodePart.js`, see `TextContentPart.js` and `DirectivePart.js`. `src/dom-parts/PartMarkers.js` and `src/dom-parts/Part.js`, a template instance and a child node part know their start and end marker themselves
+- `TemplateResult.templateString`, the client markup of a literal is `parseTemplate(strings).clientHtml`
 - the DOM diffing helpers of the renderer before the dom-parts, `diffNodes`, `diffAttributes`, `hasChildNodes`, `getNodePath` and `decodeHTML` in `src/util/DOMHelper.js`, nothing in the library uses them. A project that imported them through `./src/util/DOMHelper.js` has to copy them.
 
 ## [1.3.0] - 2026-10-28
