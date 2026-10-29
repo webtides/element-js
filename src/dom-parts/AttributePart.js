@@ -9,8 +9,8 @@ import {
     valuesChanged,
 } from './values.js';
 
-// marks the first commit: it compares with the attribute in the DOM once, so a fresh clone, which has no attribute
-// yet, gets written and server rendered markup that fits already is left alone
+// marks the first write: the writer compares with the attribute in the DOM once, so a fresh clone, which has no
+// attribute yet, gets written and server rendered markup that fits already is left alone
 const NOT_SET = Symbol('not set');
 
 /**
@@ -18,16 +18,16 @@ const NOT_SET = Symbol('not set');
  * @param {string} name
  * @return {(value: any) => void}
  */
-const commitAttribute = (element, name) => {
-    let committed = NOT_SET;
+const attributeWriter = (element, name) => {
+    let oldValue = NOT_SET;
     return (value) => {
         const text = value == null ? null : String(attributeValue(value));
-        if (committed === NOT_SET && element.getAttribute(name) === text) {
-            committed = text;
+        if (oldValue === NOT_SET && element.getAttribute(name) === text) {
+            oldValue = text;
             return;
         }
-        if (committed === text) return;
-        committed = text;
+        if (oldValue === text) return;
+        oldValue = text;
         if (text === null) {
             element.removeAttribute(name);
         } else {
@@ -41,16 +41,16 @@ const commitAttribute = (element, name) => {
  * @param {string} name - without the ? prefix
  * @return {(value: any) => void}
  */
-const commitBooleanAttribute = (element, name) => {
-    let committed = NOT_SET;
+const booleanAttributeWriter = (element, name) => {
+    let oldValue = NOT_SET;
     return (value) => {
         const present = isBooleanTrue(value);
-        if (committed === NOT_SET && element.getAttribute(name) === (present ? '' : null)) {
-            committed = present;
+        if (oldValue === NOT_SET && element.getAttribute(name) === (present ? '' : null)) {
+            oldValue = present;
             return;
         }
-        if (committed === present) return;
-        committed = present;
+        if (oldValue === present) return;
+        oldValue = present;
         // not toggleAttribute(): server rendered markup may carry `name="false"`, true has to become `name=""`
         if (present) {
             element.setAttribute(name, '');
@@ -65,11 +65,11 @@ const commitBooleanAttribute = (element, name) => {
  * @param {string} name - without the . prefix
  * @return {(value: any) => void}
  */
-const commitProperty = (element, name) => {
-    let committed = NOT_SET;
+const propertyWriter = (element, name) => {
+    let oldValue = NOT_SET;
     return (value) => {
-        if (committed === value) return;
-        committed = value;
+        if (oldValue === value) return;
+        oldValue = value;
         element[name] = value;
     };
 };
@@ -79,13 +79,13 @@ const commitProperty = (element, name) => {
  * @param {string} name - `@type` or `ontype`
  * @return {(listener: any) => void}
  */
-const commitListener = (element, name) => {
+const listenerWriter = (element, name) => {
     const type = eventTypeOf(name);
-    let committed = undefined;
+    let oldValue = undefined;
     return (listener) => {
-        if (committed === listener) return;
-        if (committed) element.removeEventListener(type, committed);
-        committed = listener;
+        if (oldValue === listener) return;
+        if (oldValue) element.removeEventListener(type, oldValue);
+        oldValue = listener;
         if (listener) element.addEventListener(type, listener);
     };
 };
@@ -93,21 +93,21 @@ const commitListener = (element, name) => {
 /**
  * @param {Element} element
  * @param {string} name - the attribute name as written in the template, with its prefix
- * @return {(value: any) => void} writes one value to the element according to the kind of binding
+ * @return {(value: any) => void} the writer for one value, according to the kind of binding
  */
-const createCommit = (element, name) => {
+const createWriter = (element, name) => {
     switch (attributeKind(name)) {
         case 'boolean':
-            return commitBooleanAttribute(element, name.slice(1));
+            return booleanAttributeWriter(element, name.slice(1));
         case 'property':
-            return commitProperty(element, name.slice(1));
+            return propertyWriter(element, name.slice(1));
         case 'event':
-            return commitListener(element, name);
+            return listenerWriter(element, name);
         case 'onevent': {
             // a function is the listener, any other value is written as an attribute: `on="${state}"` or
             // `once="${flag}"` are attributes of the element that happen to start with "on"
-            const listener = commitListener(element, name);
-            const attribute = commitAttribute(element, name);
+            const listener = listenerWriter(element, name);
+            const attribute = attributeWriter(element, name);
             return (value) => {
                 const isListener = typeof value === 'function';
                 listener(isListener ? value : undefined);
@@ -115,7 +115,7 @@ const createCommit = (element, name) => {
             };
         }
         default:
-            return commitAttribute(element, name);
+            return attributeWriter(element, name);
     }
 };
 
@@ -140,7 +140,7 @@ export class AttributePart extends Part {
         // static text around the interpolation or several interpolations always join to a string attribute, the
         // parser rejects both for the other kinds
         this.whole = isWholeValue(descriptor);
-        this.commit = this.whole ? createCommit(element, descriptor.name) : commitAttribute(element, descriptor.name);
+        this.write = this.whole ? createWriter(element, descriptor.name) : attributeWriter(element, descriptor.name);
     }
 
     /**
@@ -149,11 +149,11 @@ export class AttributePart extends Part {
     update(values) {
         const { index, span, strings } = this.descriptor;
         if (this.whole) {
-            this.commit(values[index]);
+            this.write(values[index]);
             return;
         }
         if (!valuesChanged(this.lastValues, values, index, span)) return;
         this.lastValues = values.slice(index, index + span);
-        this.commit(joinValues(strings, values, index));
+        this.write(joinValues(strings, values, index));
     }
 }

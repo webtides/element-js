@@ -126,11 +126,11 @@ export class ChildNodePart extends Part {
     /** @type {string|undefined} the HTML of the unsafeHTML() value that is rendered, if the value is one */
     unsafeHTML = undefined;
 
-    /** @type {'empty' | 'text' | 'template' | 'node' | 'nodes'} what is rendered between the markers */
-    renderedKind = 'empty';
+    /** @type {'empty' | 'text' | 'template' | 'node' | 'nodes'} the kind of what is between the markers */
+    oldKind = 'empty';
 
-    /** @type {any} the text, template part, node or node list that is rendered */
-    rendered = undefined;
+    /** @type {any} the text, template part, node or node list that is between the markers */
+    oldValue = undefined;
 
     /** @type {Text|undefined} string values are rendered into one text node that is reused across updates */
     textNode;
@@ -179,22 +179,22 @@ export class ChildNodePart extends Part {
         while (typeof resolved === 'function') resolved = resolved();
 
         if (resolved instanceof TemplateResult) {
-            this.commit('template', this.updateTemplate(resolved, hydrate), hydrate);
+            this.write('template', this.updateTemplate(resolved, hydrate), hydrate);
         } else if (Array.isArray(resolved)) {
             const nodes = this.updateArray(resolved, hydrate);
-            this.commit(nodes.length === 0 ? 'empty' : 'nodes', nodes, hydrate);
+            this.write(nodes.length === 0 ? 'empty' : 'nodes', nodes, hydrate);
         } else if (resolved?.nodeType) {
-            this.commit('node', resolved, hydrate);
+            this.write('node', resolved, hydrate);
         } else if (resolved == null) {
-            this.commit('empty', undefined, hydrate);
+            this.write('empty', undefined, hydrate);
         } else {
-            this.commit('text', String(resolved), hydrate);
+            this.write('text', String(resolved), hydrate);
         }
     }
 
     /**
      * The template part of a template value, updated. A template with another literal gets a new part, its nodes
-     * replace the old ones in commit(). When hydrating, the part binds to the server rendered template between the
+     * replace the old ones in write(). When hydrating, the part binds to the server rendered template between the
      * markers.
      * @param {TemplateResult} templateResult
      * @param {boolean} hydrate
@@ -257,19 +257,19 @@ export class ChildNodePart extends Part {
     }
 
     /**
-     * Writes what was rendered for the value between the markers.
+     * Writes what was resolved for the value between the markers.
      * @param {'empty' | 'text' | 'template' | 'node' | 'nodes'} kind
-     * @param {any} payload - the text, the template part, the node or the node list
+     * @param {any} value - the text, the template part, the node or the node list
      * @param {boolean} hydrate - server rendered nodes that fit stay in place
      */
-    commit(kind, payload, hydrate) {
-        if (kind === this.renderedKind && payload === this.rendered) return;
+    write(kind, value, hydrate) {
+        if (kind === this.oldKind && value === this.oldValue) return;
         const { startNode, endNode } = this.markers;
 
         if (kind === 'empty') {
             removeNodesBetweenComments(startNode, endNode);
         } else if (kind === 'text') {
-            if (this.renderedKind !== 'text') {
+            if (this.oldKind !== 'text') {
                 const serverTextNode = startNode.nextSibling;
                 if (hydrate && serverTextNode.nodeType === TEXT_NODE && serverTextNode.nextSibling === endNode) {
                     // the server rendered text node is taken over as the text node of the part
@@ -279,24 +279,24 @@ export class ChildNodePart extends Part {
                     replaceNodesBetweenComments(startNode, endNode, [this.textNode]);
                 }
             }
-            if (this.textNode.data !== payload) this.textNode.data = payload;
+            if (this.textNode.data !== value) this.textNode.data = value;
         } else if (kind === 'template') {
             // a template part bound to server rendered DOM is in place already and is left alone
-            if (payload.childNodes[0].parentNode !== endNode.parentNode) {
-                replaceNodesBetweenComments(startNode, endNode, payload.childNodes);
+            if (value.childNodes[0].parentNode !== endNode.parentNode) {
+                replaceNodesBetweenComments(startNode, endNode, value.childNodes);
             }
         } else {
-            const nodes = kind === 'node' ? [payload] : payload;
+            const nodes = kind === 'node' ? [value] : value;
             // a change of kind replaces what is there. Server rendered nodes go through the diff instead, nodes that
             // are in place already, for example a focused input, stay untouched
-            if (this.renderedKind !== kind && !hydrate) {
+            if (this.oldKind !== kind && !hydrate) {
                 replaceNodesBetweenComments(startNode, endNode, nodes);
             } else {
                 diffChildNodes(nodes, startNode, endNode);
             }
         }
 
-        this.renderedKind = kind;
-        this.rendered = payload;
+        this.oldKind = kind;
+        this.oldValue = value;
     }
 }

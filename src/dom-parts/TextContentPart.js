@@ -18,7 +18,7 @@ export class TextContentPart extends Part {
     lastValues = undefined;
 
     /** @type {string | typeof NOT_SET} the content that was written last */
-    committed = NOT_SET;
+    oldValue = NOT_SET;
 
     /**
      * @param {Element} element
@@ -39,12 +39,12 @@ export class TextContentPart extends Part {
         this.lastValues = values.slice(index, index + span);
         const content = joinValues(strings, values, index);
         // the first update compares with the DOM once, server rendered content that fits is left alone
-        if (this.committed === NOT_SET && this.element.textContent === content) {
-            this.committed = content;
+        if (this.oldValue === NOT_SET && this.element.textContent === content) {
+            this.oldValue = content;
             return;
         }
-        if (this.committed === content) return;
-        this.committed = content;
+        if (this.oldValue === content) return;
+        this.oldValue = content;
         this.element.textContent = content;
     }
 }
