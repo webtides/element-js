@@ -1,22 +1,10 @@
-import { COMMENT_NODE } from '../util/DOMHelper.js';
 import { TemplatePart } from './TemplatePart.js';
-import { isTemplateStart } from './markers.js';
+import { findTemplateStart } from './markers.js';
 import { ParseTemplateError } from './parseTemplate.js';
 import { stringify } from './stringify.js';
 
 /** @type {WeakMap<Element | ShadowRoot, TemplatePart>} the rendered instance of a node */
 const templatePartsCache = new WeakMap();
-
-/**
- * @param {Node[] | NodeList} childNodes
- * @return {Comment|undefined} the first template start marker among the nodes
- */
-const findTemplateStartNode = (childNodes) => {
-    for (const node of childNodes) {
-        if (node.nodeType === COMMENT_NODE && isTemplateStart(node.data)) return node;
-    }
-    return undefined;
-};
 
 /**
  * A template literal with its values, what html`` returns. Renders into the DOM through renderInto(), writes
@@ -47,7 +35,7 @@ export class TemplateResult {
         }
 
         // server rendered markup is hydrated by the first render into the node
-        const startNode = templatePart ? undefined : findTemplateStartNode(domNode.childNodes);
+        const startNode = templatePart ? undefined : findTemplateStart(domNode.firstChild);
         templatePart = new TemplatePart(this, startNode);
         templatePart.update(this);
         if (!templatePart.hydrated) {

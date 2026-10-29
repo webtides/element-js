@@ -1,31 +1,28 @@
+import { ElementPart } from './ElementPart.js';
 import { joinValues } from './values.js';
-import { textContentWriter } from './writers.js';
 
 /**
  * The content of a raw text element, `<style>`, `<script>`, `<textarea>` or `<title>`, with one or more
  * interpolations. The browser parses no markup in there, the whole content is written as one text.
  */
-export class TextContentPart {
-    /** @type {import('./parseTemplate.js').TextDescriptor} */
-    descriptor;
-
-    /** @type {(text: string) => void} */
-    write;
-
+export class TextContentPart extends ElementPart {
     /**
-     * @param {Element} element
-     * @param {import('./parseTemplate.js').TextDescriptor} descriptor
+     * @param {any[]} values
+     * @return {string}
      */
-    constructor(element, descriptor) {
-        this.descriptor = descriptor;
-        this.write = textContentWriter(element);
+    valueFrom(values) {
+        const { index, strings } = this.descriptor;
+        return joinValues(strings, values, index);
+    }
+
+    read() {
+        return this.element.textContent;
     }
 
     /**
-     * @param {any[]} values
+     * @param {string} text
      */
-    update(values) {
-        const { index, strings } = this.descriptor;
-        this.write(joinValues(strings, values, index));
+    write(text) {
+        this.element.textContent = text;
     }
 }

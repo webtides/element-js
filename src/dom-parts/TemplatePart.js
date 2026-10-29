@@ -1,29 +1,13 @@
 import { convertStringToTemplate } from '../util/DOMHelper.js';
-import { AttributePart } from './AttributePart.js';
+import { AttributePart, BooleanAttributePart, EventPart, OnEventPart, PropertyPart } from './AttributePart.js';
 import { ChildNodePart } from './ChildNodePart.js';
 import { DirectivePart } from './DirectivePart.js';
 import { TextContentPart } from './TextContentPart.js';
 import { isTemplateEnd, isTemplateStart, partIndexOf, templateHashOf } from './markers.js';
 import { parseTemplate } from './parseTemplate.js';
+import { attributeKind, isWholeValue } from './values.js';
 
 const SHOW_COMMENT = 128; // NodeFilter.SHOW_COMMENT
-
-/**
- * @param {Element} element
- * @param {import('./parseTemplate.js').Descriptor} descriptor
- * @param {any[]} values - the first values, a directive part takes its directive class from them
- * @return {{update: (values: any[]) => void}}
- */
-const createElementPart = (element, descriptor, values) => {
-    switch (descriptor.kind) {
-        case 'attribute':
-            return new AttributePart(element, descriptor);
-        case 'text':
-            return new TextContentPart(element, descriptor);
-        default:
-            return new DirectivePart(element, descriptor, values[descriptor.index]);
-    }
-};
 
 /**
  * One rendered instance of a template literal: the nodes from its template start marker to its end marker, and the
@@ -41,7 +25,7 @@ export class TemplatePart {
     /** @type {TemplateStringsArray} */
     strings;
 
-    /** @type {{update: (values: any[]) => void}[]} one per descriptor of the template, in document order */
+    /** @type {Array<ChildNodePart | import('./ElementPart.js').ElementPart>} one per descriptor, in document order */
     parts = [];
 
     /** @type {boolean} the parts are bound to server rendered DOM */
@@ -170,7 +154,7 @@ export class TemplatePart {
             const element = node.nextElementSibling;
             if (!element) throw new Error(`there is no element behind the marker <!--${index}-->`);
             while (descriptors[next]?.marker === index) {
-                this.parts.push(createElementPart(element, descriptors[next++], values));
+                this.parts.push(this.createElementPart(element, descriptors[next++], values));
             }
         }
         if (!node) throw new Error('the template end marker is missing');
@@ -178,5 +162,31 @@ export class TemplatePart {
             throw new Error(`${descriptors.length - next} bindings of the template have no marker`);
         }
         this.endNode = node;
+    }
+
+    /**
+     * The part of a binding on an element. An attribute binding that is the whole value gets the part of the kind its
+     * prefix names, any other attribute binding joins to a string attribute.
+     * @param {Element} element
+     * @param {import('./parseTemplate.js').Descriptor} descriptor
+     * @param {any[]} values - the first values, a directive part takes its directive class from them
+     * @return {import('./ElementPart.js').ElementPart}
+     */
+    createElementPart(element, descriptor, values) {
+        if (descriptor.kind === 'text') return new TextContentPart(element, descriptor);
+        if (descriptor.kind === 'directive') return new DirectivePart(element, descriptor, values[descriptor.index]);
+        if (!isWholeValue(descriptor)) return new AttributePart(element, descriptor);
+        switch (attributeKind(descriptor.name)) {
+            case 'boolean':
+                return new BooleanAttributePart(element, descriptor);
+            case 'property':
+                return new PropertyPart(element, descriptor);
+            case 'event':
+                return new EventPart(element, descriptor);
+            case 'onevent':
+                return new OnEventPart(element, descriptor);
+            default:
+                return new AttributePart(element, descriptor);
+        }
     }
 }

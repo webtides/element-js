@@ -10,6 +10,8 @@
  *                        first one. One marker per element, however many parts it has
  */
 
+import { COMMENT_NODE } from '../util/DOMHelper.js';
+
 const TEMPLATE_PREFIX = 't:';
 const TEMPLATE_END = '/t';
 const DIGITS = /^\d+$/;
@@ -35,3 +37,43 @@ export const partIndexOf = (data) => (DIGITS.test(data) ? parseInt(data, 10) : -
  * @return {string} the data of its end marker
  */
 export const endMarkerDataOf = (data) => (isTemplateStart(data) ? TEMPLATE_END : `/${data}`);
+
+/** @param {Node} node @return {boolean} whether the node is a template start marker */
+export const isTemplateStartNode = (node) => node.nodeType === COMMENT_NODE && isTemplateStart(node.data);
+
+/**
+ * The first template start marker among a node and its following siblings, up to the end node.
+ * @param {Node | null} node
+ * @param {Node | null} [endNode]
+ * @return {Comment | undefined}
+ */
+export const findTemplateStart = (node, endNode = null) => {
+    for (let current = node; current && current !== endNode; current = current.nextSibling) {
+        if (isTemplateStartNode(current)) return current;
+    }
+    return undefined;
+};
+
+/**
+ * The end marker of a start marker, among its following siblings. Nested template instances in between are skipped,
+ * their markers carry their own indices: the element marker <!--0--> of a nested template is not the end of the part
+ * <!--0--> around it.
+ * @param {Comment} startNode - a part start marker or a template start marker
+ * @return {Comment}
+ */
+export const endMarkerOf = (startNode) => {
+    const closing = endMarkerDataOf(startNode.data);
+    let depth = 0;
+    for (let node = startNode.nextSibling; node; node = node.nextSibling) {
+        if (node.nodeType !== COMMENT_NODE) continue;
+        const { data } = node;
+        if (isTemplateStart(data)) {
+            depth++;
+        } else if (depth > 0) {
+            if (isTemplateEnd(data)) depth--;
+        } else if (data === closing) {
+            return node;
+        }
+    }
+    throw new Error(`the end marker of <!--${startNode.data}--> is missing`);
+};
