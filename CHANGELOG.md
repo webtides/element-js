@@ -39,7 +39,7 @@ to [Semantic Versioning](http://semver.org/).
 - a template instance and an array item are the nodes between their markers, the renderer keeps no lists of rendered nodes. A child node part that switches from a template to another value and back renders the template fresh
 - `unsafeHTML()` returns a plain object that carries the string, on the client as well, instead of a function that parses it. The child node part parses the string once per value. Code that called the returned function has to put the value into a template instead
 - `TemplateResult.toString()` joins the static segments of the literal with the written values, instead of running a regular expression replace over the whole template per call
-- `RawTextNodePart` is `TextContentPart`, `NodePart` is `DirectivePart`, `AttributePart` takes an element and a descriptor. Parts get all values of the template in `update(values)` and read their own by index, there is no `Part` base class. The element parts share the DOM writers in `src/dom-parts/writers.js`
+- `RawTextNodePart` is `TextContentPart`, `NodePart` is `DirectivePart`, `AttributePart` takes an element and a descriptor. Parts get all values of the template in `update(values)` and read their own by index. The parts on an element extend `ElementPart` (`src/dom-parts/ElementPart.js`), which reads the DOM once before the first write and writes only a change: `AttributePart`, `BooleanAttributePart`, `PropertyPart`, `EventPart`, `OnEventPart`, `TextContentPart` and `DirectivePart`. The `Part` base class is gone, `ChildNodePart` and `TemplatePart` stand on their own
 
 ### FIXED
 
