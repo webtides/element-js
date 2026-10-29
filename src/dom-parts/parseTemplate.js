@@ -35,8 +35,11 @@ import { partEndMarker, partStartMarker, templateEndMarker, templateStartMarker 
 
 // stands in for the interpolations while the strings are parsed as one
 const MARK = '\x01';
-const WHITESPACE = /[\t\n\f\r ]/;
+const WHITESPACE = /[\t\n\f\r ]*/y;
 const TAG_NAME = /<([a-zA-Z][^\t\n\f\r />\x01]*)/y;
+// up to whitespace, `>` or `/>`, a name also up to `=`
+const ATTRIBUTE_NAME = /(?:[^\t\n\f\r =>/]|\/(?!>))*/y;
+const UNQUOTED_VALUE = /(?:[^\t\n\f\r >/]|\/(?!>))*/y;
 const voidElements = new Set([
     'area',
     'base',
@@ -86,239 +89,306 @@ export const templateHash = (strings) => {
 };
 
 /**
- * @param {TemplateStringsArray | string[]} strings
- * @return {ParsedTemplate}
+ * Follows the markup of a literal far enough to tell where each interpolation sits. Copies the literal as written into
+ * the client markup and the server segments, cuts the bindings out and puts the markers in.
  */
-const build = (strings) => {
-    const source = strings.join(MARK);
-    const { length } = source;
-    const hash = templateHash(strings);
-    const descriptors = [];
-    const segments = [''];
-    let clientHtml = '';
-    let position = 0;
-    let copied = 0; // the source up to here is in the output
-    let index = 0; // of the next interpolation
+class TemplateParser {
+    /** @type {TemplateStringsArray | string[]} */
+    strings;
 
-    const fail = (message) => {
-        throw new ParseTemplateError(message, { source: source.replaceAll(MARK, '${…}'), position });
-    };
-    const both = (markup) => {
-        clientHtml += markup;
-        segments[segments.length - 1] += markup;
-    };
-    const ssr = (markup) => {
-        segments[segments.length - 1] += markup;
-    };
-    /** copies the source up to the position into the output, as written */
-    const copyTo = (to) => {
-        both(source.slice(copied, to));
-        copied = to;
-    };
-    /** ends the static segment at a binding, the source up to the position is left out of the output */
-    const cut = (descriptor, to) => {
-        descriptors.push(descriptor);
-        segments.push('');
-        copied = to;
-    };
-    const skipWhitespace = () => {
-        while (position < length && WHITESPACE.test(source[position])) position++;
-    };
+    /** @type {string} the strings joined with MARK */
+    source;
+
+    /** @type {number} */
+    position = 0;
+
+    /** @type {number} the source up to here is in the output */
+    copied = 0;
+
+    /** @type {number} the index of the next interpolation */
+    index = 0;
+
+    /** @type {Descriptor[]} */
+    descriptors = [];
+
+    /** @type {string} */
+    clientHtml = '';
+
+    /** @type {string[]} */
+    ssrSegments = [''];
 
     /**
-     * Parses a start tag from its first attribute on, and the content of a raw text element, and writes the element
-     * with its marker and without its bound attributes.
+     * @param {TemplateStringsArray | string[]} strings
+     */
+    constructor(strings) {
+        this.strings = strings;
+        this.source = strings.join(MARK);
+    }
+
+    /**
+     * @return {ParsedTemplate}
+     */
+    parse() {
+        const { source, strings } = this;
+        const hash = templateHash(strings);
+        this.append(templateStartMarker(hash));
+        while (this.position < source.length) {
+            const char = source[this.position];
+            if (char === MARK) {
+                this.parseChildNode();
+            } else if (char === '<') {
+                this.parseMarkup();
+            } else {
+                this.position++;
+            }
+        }
+        this.copyTo(source.length);
+        this.append(templateEndMarker);
+
+        const consumed = this.descriptors.reduce((sum, descriptor) => sum + (descriptor.span ?? 1), 0);
+        if (consumed !== strings.length - 1) {
+            this.fail(`${strings.length - 1} interpolations in the template, ${consumed} of them could be bound`);
+        }
+        return { hash, descriptors: this.descriptors, clientHtml: this.clientHtml, ssrSegments: this.ssrSegments };
+    }
+
+    /**
+     * An interpolation between elements. The client markup gets both part markers, the server segments end between
+     * them.
+     */
+    parseChildNode() {
+        const { index, position } = this;
+        this.copyTo(position);
+        this.append(partStartMarker(index));
+        this.clientHtml += partEndMarker(index);
+        this.cut({ kind: 'node', index, marker: index }, position + 1);
+        this.ssrSegments[this.ssrSegments.length - 1] += partEndMarker(index);
+        this.index++;
+        this.position++;
+    }
+
+    /**
+     * A comment, a start tag or an end tag at the position. Comments and end tags are skipped, they are copied as
+     * they are. A `<` that starts none of them is text.
+     */
+    parseMarkup() {
+        const { source, position } = this;
+        if (source.startsWith('<!--', position)) {
+            const end = source.indexOf('-->', position + 4);
+            if (end === -1) this.fail('a comment is not closed');
+            if (source.slice(position, end).includes(MARK)) {
+                this.fail('an interpolation inside a comment is not supported');
+            }
+            this.position = end + 3;
+            return;
+        }
+        if (source[position + 1] === MARK) this.fail('an interpolation as a tag name is not supported');
+        const tag = this.match(TAG_NAME);
+        if (tag) {
+            this.parseElement(tag[1], position);
+        } else if (source[position + 1] === '/') {
+            const end = source.indexOf('>', position);
+            if (end === -1) this.fail('an end tag is not closed');
+            if (source.slice(position, end).includes(MARK)) {
+                this.fail('an interpolation inside an end tag is not supported');
+            }
+            this.position = end + 1;
+        } else {
+            this.position++;
+        }
+    }
+
+    /**
+     * An element, the position behind its tag name: the attributes of the start tag and the content of a raw text
+     * element. Writes the start tag with the marker in front and without its bound attributes.
      * @param {string} tag
      * @param {number} tagStart - the position of the <
      */
-    const parseElement = (tag, tagStart) => {
+    parseElement(tag, tagStart) {
         const lowerTag = tag.toLowerCase();
-        position = tagStart + 1 + tag.length;
-        /** @type {{from: number, to: number, descriptor: Descriptor}[]} the bindings in the tag with the source they take */
-        const bound = [];
+        /** @type {{from: number, to: number, descriptor: Descriptor}[]} the bindings with the source they take */
+        const bindings = [];
         let marker = -1; // the index of the first binding of the element
-        let tokenEnd = position; // the end of the last attribute or the tag name, before the whitespace after it
+        let tokenEnd; // the end of the tag name or of the last attribute, before the whitespace after it
         let selfClosing = false;
-        const bind = (descriptor, span) => {
-            if (marker === -1) marker = index;
-            bound.push({ from: tokenEnd, to: position, descriptor: { ...descriptor, index, marker } });
-            index += span;
-        };
         for (;;) {
-            tokenEnd = position;
-            skipWhitespace();
-            if (position >= length) fail(`the start tag <${tag}> is not closed`);
-            const char = source[position];
-            if (char === '>') {
-                position++;
-                break;
-            }
-            if (char === '/' && source[position + 1] === '>') {
-                selfClosing = true;
-                position += 2;
+            tokenEnd = this.position;
+            this.match(WHITESPACE);
+            const char = this.source[this.position];
+            if (char === undefined) this.fail(`the start tag <${tag}> is not closed`);
+            if (char === '>' || this.source.startsWith('/>', this.position)) {
+                selfClosing = char === '/';
+                this.position += selfClosing ? 2 : 1;
                 break;
             }
             if (char === '/') {
-                position++;
+                this.position++;
                 continue;
             }
-            if (char === MARK) {
-                // an interpolation at an attribute position is a directive
-                position++;
-                bind({ kind: 'directive' }, 1);
-                continue;
-            }
-            // an attribute: name, optionally = and a value
-            const nameStart = position;
-            while (
-                position < length &&
-                !WHITESPACE.test(source[position]) &&
-                source[position] !== '=' &&
-                source[position] !== '>' &&
-                !(source[position] === '/' && source[position + 1] === '>')
-            ) {
-                position++;
-            }
-            const name = source.slice(nameStart, position);
-            if (name.includes(MARK)) {
-                fail(
-                    `an interpolation in the attribute name "${name.replaceAll(
-                        MARK,
-                        '${…}',
-                    )}" of <${tag}> is not supported`,
-                );
-            }
-            const nameEnd = position;
-            skipWhitespace();
-            if (source[position] !== '=') {
-                position = nameEnd;
-                continue;
-            }
-            position++;
-            skipWhitespace();
-            let value;
-            const quote = source[position];
-            if (quote === '"' || quote === "'") {
-                const end = source.indexOf(quote, position + 1);
-                if (end === -1) fail(`the value of the attribute "${name}" of <${tag}> is not closed`);
-                value = source.slice(position + 1, end);
-                position = end + 1;
-            } else {
-                const valueStart = position;
-                while (
-                    position < length &&
-                    !WHITESPACE.test(source[position]) &&
-                    source[position] !== '>' &&
-                    !(source[position] === '/' && source[position + 1] === '>')
-                ) {
-                    position++;
-                }
-                value = source.slice(valueStart, position);
-            }
-            if (value.includes(MARK)) {
-                const strings = value.split(MARK);
-                const span = strings.length - 1;
-                if ('?.@'.includes(name[0]) && (span > 1 || strings[0] !== '' || strings[1] !== '')) {
-                    fail(
-                        `the value of "${name}" on <${tag}> has to be a single interpolation, a boolean, property or event binding takes the whole value`,
-                    );
-                }
-                bind({ kind: 'attribute', name, strings, span }, span);
-            }
+            const descriptor = this.parseAttribute(tag);
+            if (!descriptor) continue;
+            if (marker === -1) marker = this.index;
+            bindings.push({
+                from: tokenEnd,
+                to: this.position,
+                descriptor: { ...descriptor, index: this.index, marker },
+            });
+            this.index += descriptor.span ?? 1;
         }
-        const tagEnd = position;
+        const tagEnd = this.position;
 
-        let content;
+        let text;
         if (rawTextElements.has(lowerTag) && !selfClosing) {
-            // the content of a raw text element is text up to its end tag, whatever it looks like. An end tag may
-            // carry whitespace before its bracket, a formatter writes </style\n> when it wraps a line
-            const endTag = new RegExp(`</${lowerTag}[\\t\\n\\f\\r ]*>`, 'ig');
-            endTag.lastIndex = position;
-            const match = endTag.exec(source);
-            if (!match) fail(`the element <${tag}> has no end tag`);
-            const strings = source.slice(position, match.index).split(MARK);
+            const { strings, end } = this.parseRawText(tag, lowerTag);
             const span = strings.length - 1;
             if (span > 0) {
-                if (marker === -1) marker = index;
-                content = {
-                    to: match.index,
-                    descriptor: { kind: 'text', index, marker, tag: lowerTag, strings, span },
-                };
-                index += span;
+                if (marker === -1) marker = this.index;
+                text = { end, descriptor: { kind: 'text', index: this.index, marker, tag: lowerTag, strings, span } };
+                this.index += span;
             }
-            position = match.index + match[0].length;
         }
 
-        copyTo(tagStart);
-        if (marker !== -1) both(partStartMarker(marker));
-        for (const { from, to, descriptor } of bound) {
-            copyTo(from);
-            cut(descriptor, to);
+        this.copyTo(tagStart);
+        if (marker !== -1) this.append(partStartMarker(marker));
+        for (const { from, to, descriptor } of bindings) {
+            this.copyTo(from);
+            this.cut(descriptor, to);
         }
         // the tag is closed without the whitespace in front of the bracket. The browser does not close an element on
         // "/>", the end tag is written for it
-        copyTo(tokenEnd);
-        copied = tagEnd;
-        if (!selfClosing) both('>');
-        else both(voidElements.has(lowerTag) ? ' />' : `></${tag}>`);
-        if (content) {
-            clientHtml += content.descriptor.strings.join('');
-            cut(content.descriptor, content.to);
+        this.copyTo(tokenEnd);
+        this.copied = tagEnd;
+        if (!selfClosing) {
+            this.append('>');
+        } else {
+            this.append(voidElements.has(lowerTag) ? ' />' : `></${tag}>`);
         }
-    };
-
-    both(templateStartMarker(hash));
-    while (position < length) {
-        const char = source[position];
-        if (char === MARK) {
-            copyTo(position);
-            both(partStartMarker(index));
-            clientHtml += partEndMarker(index);
-            cut({ kind: 'node', index, marker: index }, position + 1);
-            ssr(partEndMarker(index));
-            index++;
-            position++;
-            continue;
+        if (text) {
+            this.clientHtml += text.descriptor.strings.join('');
+            this.cut(text.descriptor, text.end);
         }
-        if (char === '<') {
-            if (source.startsWith('<!--', position)) {
-                const end = source.indexOf('-->', position + 4);
-                if (end === -1) fail('a comment is not closed');
-                if (source.slice(position, end).includes(MARK))
-                    fail('an interpolation inside a comment is not supported');
-                position = end + 3;
-                continue;
-            }
-            if (source[position + 1] === MARK) fail('an interpolation as a tag name is not supported');
-            TAG_NAME.lastIndex = position;
-            const tagMatch = TAG_NAME.exec(source);
-            if (tagMatch) {
-                parseElement(tagMatch[1], position);
-                continue;
-            }
-            if (source[position + 1] === '/') {
-                const end = source.indexOf('>', position);
-                if (end === -1) fail('an end tag is not closed');
-                if (source.slice(position, end).includes(MARK))
-                    fail('an interpolation inside an end tag is not supported');
-                position = end + 1;
-                continue;
-            }
-        }
-        position++;
     }
-    copyTo(length);
-    both(templateEndMarker);
 
-    const consumed = descriptors.reduce((sum, descriptor) => sum + (descriptor.span ?? 1), 0);
-    if (consumed !== strings.length - 1) {
-        throw new ParseTemplateError(
-            `${strings.length - 1} interpolations in the template, ${consumed} of them could be bound`,
-            { source: source.replaceAll(MARK, '${…}'), descriptors },
-        );
+    /**
+     * An attribute of a start tag, or an interpolation at an attribute position, which is a directive.
+     * @param {string} tag
+     * @return {{kind: string, name?: string, strings?: string[], span?: number} | undefined} the binding, undefined
+     * for a static attribute
+     */
+    parseAttribute(tag) {
+        const { source } = this;
+        if (source[this.position] === MARK) {
+            this.position++;
+            return { kind: 'directive' };
+        }
+        const name = this.match(ATTRIBUTE_NAME)[0];
+        if (name.includes(MARK)) {
+            this.fail(
+                `an interpolation in the attribute name "${name.replaceAll(
+                    MARK,
+                    '${…}',
+                )}" of <${tag}> is not supported`,
+            );
+        }
+        const nameEnd = this.position;
+        this.match(WHITESPACE);
+        if (source[this.position] !== '=') {
+            this.position = nameEnd;
+            return undefined;
+        }
+        this.position++;
+        this.match(WHITESPACE);
+        let value;
+        const quote = source[this.position];
+        if (quote === '"' || quote === "'") {
+            const end = source.indexOf(quote, this.position + 1);
+            if (end === -1) this.fail(`the value of the attribute "${name}" of <${tag}> is not closed`);
+            value = source.slice(this.position + 1, end);
+            this.position = end + 1;
+        } else {
+            value = this.match(UNQUOTED_VALUE)[0];
+        }
+        if (!value.includes(MARK)) return undefined;
+        const strings = value.split(MARK);
+        const span = strings.length - 1;
+        if ('?.@'.includes(name[0]) && (span > 1 || strings[0] !== '' || strings[1] !== '')) {
+            this.fail(
+                `the value of "${name}" on <${tag}> has to be a single interpolation, a boolean, property or event binding takes the whole value`,
+            );
+        }
+        return { kind: 'attribute', name, strings, span };
     }
-    return { hash, descriptors, clientHtml, ssrSegments: segments };
-};
+
+    /**
+     * The content of a raw text element: text up to its end tag, whatever it looks like. An end tag may carry
+     * whitespace before its bracket, a formatter writes </style\n> when it wraps a line. The position moves behind
+     * the end tag.
+     * @param {string} tag
+     * @param {string} lowerTag
+     * @return {{strings: string[], end: number}} the static pieces of the content and the position of the end tag
+     */
+    parseRawText(tag, lowerTag) {
+        const endTag = new RegExp(`</${lowerTag}[\\t\\n\\f\\r ]*>`, 'ig');
+        endTag.lastIndex = this.position;
+        const match = endTag.exec(this.source);
+        if (!match) this.fail(`the element <${tag}> has no end tag`);
+        const strings = this.source.slice(this.position, match.index).split(MARK);
+        this.position = endTag.lastIndex;
+        return { strings, end: match.index };
+    }
+
+    /**
+     * Matches a sticky pattern at the position and moves behind the match.
+     * @param {RegExp} pattern
+     * @return {RegExpExecArray | null}
+     */
+    match(pattern) {
+        pattern.lastIndex = this.position;
+        const match = pattern.exec(this.source);
+        if (match) this.position = pattern.lastIndex;
+        return match;
+    }
+
+    /**
+     * Appends markup to the client markup and to the current server segment.
+     * @param {string} markup
+     */
+    append(markup) {
+        this.clientHtml += markup;
+        this.ssrSegments[this.ssrSegments.length - 1] += markup;
+    }
+
+    /**
+     * Copies the source up to a position into the output, as written.
+     * @param {number} to
+     */
+    copyTo(to) {
+        this.append(this.source.slice(this.copied, to));
+        this.copied = to;
+    }
+
+    /**
+     * Ends the server segment at a binding. The source up to the position is the binding, it stays out of the output.
+     * @param {Descriptor} descriptor
+     * @param {number} to
+     */
+    cut(descriptor, to) {
+        this.descriptors.push(descriptor);
+        this.ssrSegments.push('');
+        this.copied = to;
+    }
+
+    /**
+     * @param {string} message
+     */
+    fail(message) {
+        throw new ParseTemplateError(message, {
+            source: this.source.replaceAll(MARK, '${…}'),
+            position: this.position,
+            descriptors: this.descriptors,
+        });
+    }
+}
 
 /** @type {WeakMap<TemplateStringsArray, ParsedTemplate>} */
 const cache = new WeakMap();
@@ -331,7 +401,7 @@ const cache = new WeakMap();
 export const parseTemplate = (strings) => {
     let parsed = cache.get(strings);
     if (!parsed) {
-        parsed = build(strings);
+        parsed = new TemplateParser(strings).parse();
         cache.set(strings, parsed);
     }
     return parsed;
