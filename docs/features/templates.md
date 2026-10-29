@@ -131,7 +131,7 @@ Parameters:
 
 Returns:
 
-    A function that, when invoked, returns the HTML content.
+    A value that renders the string as HTML when it is placed in a template: as parsed nodes in the browser, as the string itself in `toString()`.
 
 **spreadAttributes(attributes)**
 

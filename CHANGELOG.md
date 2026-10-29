@@ -26,18 +26,20 @@ to [Semantic Versioning](http://semver.org/).
 
 - #184 one description of every binding for client rendering, hydration and `toString()`. The template literal is parsed once into descriptors (`src/dom-parts/parseTemplate.js`), the DOM parts and the server side writer are built from the same descriptors and apply the same rules (`src/dom-parts/values.js`). A rule changes in one place now.
 - #184 the markers in the markup carry only what hydration needs: `<!--t:HASH-->` and `<!--/t-->` around a template instance, with a hash of the literal, `<!--N-->` and `<!--/N-->` around a child node value, and one `<!--N-->` in front of an element with attribute, text or directive bindings, `N` being the index of the first value. The attribute name, the static text and the kind of a binding are no longer written into the markup, a raw text element no longer repeats its whole content in a comment per interpolation. **Server markup of an earlier version does not hydrate** with this version, the element renders client side with a warning. Server and client have to move to this version together, `@webtides/element-js-ssr-renderer` picks the format up through `toString()`.
-- #184 the client clone is the markup of the literal as written, the parser no longer inserts line breaks around elements. Templates without whitespace between an interpolation and an element render without whitespace there.
+- #184 the client clone is the markup of the literal as written, the parser no longer inserts line breaks around elements. Templates without whitespace between an interpolation and an element render without whitespace there. Static attributes keep their spelling and quotes, only the whitespace in front of a closing bracket goes and a self closed element gets its end tag.
 - #184 the hash is checked once per template instance on hydration, instead of comparing the descriptor of every marker
-- #184 an attribute with several interpolations is one binding with the static pieces between them. Its part compares the values one by one and joins and writes the string only when one of them changed. The same goes for the content of a raw text element.
+- #184 an attribute with several interpolations is one binding with the static pieces between them, its part joins the string and writes it when it changed. The same goes for the content of a raw text element.
 - #184 the parser rejects a template at parse time whose interpolations cannot be bound: a boolean, property or event binding that is not the whole attribute value, an interpolation in a comment, in a tag name or in an attribute name. Before, such templates were silently stringified or produced broken markup.
 - `toString()` writes every bound attribute with double quotes, whatever quotes the literal uses, and leaves no stray whitespace in a tag where a bound attribute or a directive was left out
 - an object or array in an attribute binding is written as JSON on the client too, like `toString()` and the attribute reflection do, instead of `[object Object]`
 - `null` and `undefined` among several interpolations of an attribute write nothing instead of the strings "null" and "undefined", client side and in `toString()`
 - a boolean attribute binding treats the string "false" as false in `toString()` too, like the client does
 - the hydrate flag is gone from the part API: a child node part knows from its binding whether it hydrates, nested parts bind to the server rendered markers on their first update
-- an array value is processed in one pass that resolves functions, flattens nested arrays, drops empty items, updates the template parts and collects the nodes, then one pass diffs them against the DOM. Before, an update walked the items five times
+- an array value is written in two passes: every position gets its item, the template part, text node or node, then one cursor walk brings the DOM in line with the items. A node that stays in place is never touched. Before, an update walked the items five times
+- a template instance and an array item are the nodes between their markers, the renderer keeps no lists of rendered nodes. A child node part that switches from a template to another value and back renders the template fresh
+- `unsafeHTML()` returns a plain object that carries the string, on the client as well, instead of a function that parses it. The child node part parses the string once per value. Code that called the returned function has to put the value into a template instead
 - `TemplateResult.toString()` joins the static segments of the literal with the written values, instead of running a regular expression replace over the whole template per call
-- `RawTextNodePart` is `TextContentPart`, `NodePart` is `DirectivePart`, `AttributePart` takes an element and a descriptor. Parts get all values of the template in `update(values)` and read their own by index
+- `RawTextNodePart` is `TextContentPart`, `NodePart` is `DirectivePart`, `AttributePart` takes an element and a descriptor. Parts get all values of the template in `update(values)` and read their own by index, there is no `Part` base class. The element parts share the DOM writers in `src/dom-parts/writers.js`
 
 ### FIXED
 
@@ -60,7 +62,8 @@ to [Semantic Versioning](http://semver.org/).
 ### REMOVED
 
 - `TemplateResult.parseParts()`, `TemplateResult.parseSSRUpdates()` and `createTemplateString()`, replaced by `parseTemplate()` in `src/dom-parts/parseTemplate.js`, which returns the descriptors, the client markup and the server segments of a literal
-- `src/dom-parts/RawTextNodePart.js` and `src/dom-parts/NodePart.js`, see `TextContentPart.js` and `DirectivePart.js`
+- `src/dom-parts/RawTextNodePart.js` and `src/dom-parts/NodePart.js`, see `TextContentPart.js` and `DirectivePart.js`. `src/dom-parts/PartMarkers.js` and `src/dom-parts/Part.js`, a template instance and a child node part know their start and end marker themselves
+- `TemplateResult.templateString`, the client markup of a literal is `parseTemplate(strings).clientHtml`
 - the DOM diffing helpers of the renderer before the dom-parts, `diffNodes`, `diffAttributes`, `hasChildNodes`, `getNodePath` and `decodeHTML` in `src/util/DOMHelper.js`, nothing in the library uses them. A project that imported them through `./src/util/DOMHelper.js` has to copy them.
 
 ## [1.3.0] - 2026-10-28
