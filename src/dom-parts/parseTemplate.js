@@ -11,8 +11,10 @@ import { partEndMarker, partStartMarker, templateEndMarker, templateStartMarker 
  * - `ssrSegments`: the static markup between the bindings, one more than the descriptors, so that toString() is
  *   segments and written values alternating.
  *
- * The client never reads a descriptor out of the HTML, it has the literal. The markers only say where a part sits
- * and, through the hash, whether the server rendered the same literal, see markers.js.
+ * The markup is the literal as written. The parser only follows it far enough to tell where an interpolation sits,
+ * cuts the bindings out and puts the markers in. The client never reads a descriptor out of the HTML, it has the
+ * literal. The markers only say where a part sits and, through the hash, whether the server rendered the same
+ * literal, see markers.js.
  */
 
 /** @typedef {{kind: 'node', index: number, marker: number}} NodeDescriptor */
@@ -84,44 +86,66 @@ export const templateHash = (strings) => {
 };
 
 /**
- * Splits the joined literal into operations: static markup, child node interpolations and elements with their
- * attributes, in document order. Interpolations are classified by where they sit.
- * @param {string} source - the strings joined with MARK
- * @return {object[]}
+ * @param {TemplateStringsArray | string[]} strings
+ * @return {ParsedTemplate}
  */
-const tokenize = (source) => {
-    const operations = [];
+const build = (strings) => {
+    const source = strings.join(MARK);
     const { length } = source;
+    const hash = templateHash(strings);
+    const descriptors = [];
+    const segments = [''];
+    let clientHtml = '';
     let position = 0;
+    let copied = 0; // the source up to here is in the output
     let index = 0; // of the next interpolation
-    let text = '';
+
     const fail = (message) => {
         throw new ParseTemplateError(message, { source: source.replaceAll(MARK, '${…}'), position });
     };
-    const flushText = () => {
-        if (text) operations.push({ type: 'html', text });
-        text = '';
+    const both = (markup) => {
+        clientHtml += markup;
+        segments[segments.length - 1] += markup;
+    };
+    const ssr = (markup) => {
+        segments[segments.length - 1] += markup;
+    };
+    /** copies the source up to the position into the output, as written */
+    const copyTo = (to) => {
+        both(source.slice(copied, to));
+        copied = to;
+    };
+    /** ends the static segment at a binding, the source up to the position is left out of the output */
+    const cut = (descriptor, to) => {
+        descriptors.push(descriptor);
+        segments.push('');
+        copied = to;
     };
     const skipWhitespace = () => {
         while (position < length && WHITESPACE.test(source[position])) position++;
     };
 
     /**
-     * Parses a start tag from its first attribute on, and the content of a raw text element.
+     * Parses a start tag from its first attribute on, and the content of a raw text element, and writes the element
+     * with its marker and without its bound attributes.
      * @param {string} tag
+     * @param {number} tagStart - the position of the <
      */
-    const parseElement = (tag) => {
+    const parseElement = (tag, tagStart) => {
         const lowerTag = tag.toLowerCase();
-        const attributes = [];
+        position = tagStart + 1 + tag.length;
+        /** @type {{from: number, to: number, descriptor: Descriptor}[]} the bindings in the tag with the source they take */
+        const bound = [];
+        let marker = -1; // the index of the first binding of the element
+        let tokenEnd = position; // the end of the last attribute or the tag name, before the whitespace after it
         let selfClosing = false;
-        let firstIndex = -1;
-        const bind = (attribute, span) => {
-            if (firstIndex === -1) firstIndex = index;
-            attribute.index = index;
+        const bind = (descriptor, span) => {
+            if (marker === -1) marker = index;
+            bound.push({ from: tokenEnd, to: position, descriptor: { ...descriptor, index, marker } });
             index += span;
-            attributes.push(attribute);
         };
         for (;;) {
+            tokenEnd = position;
             skipWhitespace();
             if (position >= length) fail(`the start tag <${tag}> is not closed`);
             const char = source[position];
@@ -140,8 +164,8 @@ const tokenize = (source) => {
             }
             if (char === MARK) {
                 // an interpolation at an attribute position is a directive
-                bind({ kind: 'directive' }, 1);
                 position++;
+                bind({ kind: 'directive' }, 1);
                 continue;
             }
             // an attribute: name, optionally = and a value
@@ -156,26 +180,25 @@ const tokenize = (source) => {
                 position++;
             }
             const name = source.slice(nameStart, position);
-            if (name.includes(MARK))
+            if (name.includes(MARK)) {
                 fail(
                     `an interpolation in the attribute name "${name.replaceAll(
                         MARK,
                         '${…}',
                     )}" of <${tag}> is not supported`,
                 );
-            const beforeEquals = position;
+            }
+            const nameEnd = position;
             skipWhitespace();
             if (source[position] !== '=') {
-                position = beforeEquals;
-                attributes.push({ kind: 'static', name, value: null, quote: '' });
+                position = nameEnd;
                 continue;
             }
             position++;
             skipWhitespace();
-            let quote = '';
             let value;
-            if (source[position] === '"' || source[position] === "'") {
-                quote = source[position];
+            const quote = source[position];
+            if (quote === '"' || quote === "'") {
                 const end = source.indexOf(quote, position + 1);
                 if (end === -1) fail(`the value of the attribute "${name}" of <${tag}> is not closed`);
                 value = source.slice(position + 1, end);
@@ -201,12 +224,11 @@ const tokenize = (source) => {
                     );
                 }
                 bind({ kind: 'attribute', name, strings, span }, span);
-            } else {
-                attributes.push({ kind: 'static', name, value, quote });
             }
         }
+        const tagEnd = position;
 
-        const operation = { type: 'element', tag, lowerTag, attributes, selfClosing, firstIndex };
+        let content;
         if (rawTextElements.has(lowerTag) && !selfClosing) {
             // the content of a raw text element is text up to its end tag, whatever it looks like. An end tag may
             // carry whitespace before its bracket, a formatter writes </style\n> when it wraps a line
@@ -216,23 +238,45 @@ const tokenize = (source) => {
             if (!match) fail(`the element <${tag}> has no end tag`);
             const strings = source.slice(position, match.index).split(MARK);
             const span = strings.length - 1;
-            operation.content = { strings, span, index: -1 };
             if (span > 0) {
-                if (firstIndex === -1) operation.firstIndex = index;
-                operation.content.index = index;
+                if (marker === -1) marker = index;
+                content = {
+                    to: match.index,
+                    descriptor: { kind: 'text', index, marker, tag: lowerTag, strings, span },
+                };
                 index += span;
             }
-            operation.endTag = match[0];
             position = match.index + match[0].length;
         }
-        operations.push(operation);
+
+        copyTo(tagStart);
+        if (marker !== -1) both(partStartMarker(marker));
+        for (const { from, to, descriptor } of bound) {
+            copyTo(from);
+            cut(descriptor, to);
+        }
+        // the tag is closed without the whitespace in front of the bracket. The browser does not close an element on
+        // "/>", the end tag is written for it
+        copyTo(tokenEnd);
+        copied = tagEnd;
+        if (!selfClosing) both('>');
+        else both(voidElements.has(lowerTag) ? ' />' : `></${tag}>`);
+        if (content) {
+            clientHtml += content.descriptor.strings.join('');
+            cut(content.descriptor, content.to);
+        }
     };
 
+    both(templateStartMarker(hash));
     while (position < length) {
         const char = source[position];
         if (char === MARK) {
-            flushText();
-            operations.push({ type: 'node', index: index++ });
+            copyTo(position);
+            both(partStartMarker(index));
+            clientHtml += partEndMarker(index);
+            cut({ kind: 'node', index, marker: index }, position + 1);
+            ssr(partEndMarker(index));
+            index++;
             position++;
             continue;
         }
@@ -240,9 +284,8 @@ const tokenize = (source) => {
             if (source.startsWith('<!--', position)) {
                 const end = source.indexOf('-->', position + 4);
                 if (end === -1) fail('a comment is not closed');
-                const comment = source.slice(position, end + 3);
-                if (comment.includes(MARK)) fail('an interpolation inside a comment is not supported');
-                text += comment;
+                if (source.slice(position, end).includes(MARK))
+                    fail('an interpolation inside a comment is not supported');
                 position = end + 3;
                 continue;
             }
@@ -250,109 +293,21 @@ const tokenize = (source) => {
             TAG_NAME.lastIndex = position;
             const tagMatch = TAG_NAME.exec(source);
             if (tagMatch) {
-                flushText();
-                position += tagMatch[0].length;
-                parseElement(tagMatch[1]);
+                parseElement(tagMatch[1], position);
                 continue;
             }
             if (source[position + 1] === '/') {
                 const end = source.indexOf('>', position);
                 if (end === -1) fail('an end tag is not closed');
-                const endTag = source.slice(position, end + 1);
-                if (endTag.includes(MARK)) fail('an interpolation inside an end tag is not supported');
-                text += endTag;
+                if (source.slice(position, end).includes(MARK))
+                    fail('an interpolation inside an end tag is not supported');
                 position = end + 1;
                 continue;
             }
         }
-        text += char;
         position++;
     }
-    flushText();
-    return operations;
-};
-
-/**
- * @param {{kind: 'static', name: string, value: string | null, quote: string}} attribute
- * @return {string} the attribute as it stands in the markup
- */
-const staticAttribute = ({ name, value, quote }) => {
-    if (value === null) return ` ${name}`;
-    if (quote === '' && value === '') return ` ${name}`;
-    return ` ${name}=${quote}${value}${quote}`;
-};
-
-/**
- * @param {TemplateStringsArray | string[]} strings
- * @return {ParsedTemplate}
- */
-const build = (strings) => {
-    const source = strings.join(MARK);
-    const operations = tokenize(source);
-    const hash = templateHash(strings);
-    const descriptors = [];
-    const segments = [''];
-    let clientHtml = '';
-    const both = (markup) => {
-        clientHtml += markup;
-        segments[segments.length - 1] += markup;
-    };
-    const ssr = (markup) => {
-        segments[segments.length - 1] += markup;
-    };
-    const cut = (descriptor) => {
-        descriptors.push(descriptor);
-        segments.push('');
-    };
-
-    both(templateStartMarker(hash));
-    for (const operation of operations) {
-        if (operation.type === 'html') {
-            both(operation.text);
-            continue;
-        }
-        if (operation.type === 'node') {
-            const { index } = operation;
-            both(partStartMarker(index));
-            clientHtml += partEndMarker(index);
-            cut({ kind: 'node', index, marker: index });
-            ssr(partEndMarker(index));
-            continue;
-        }
-        const { tag, lowerTag, attributes, selfClosing, firstIndex: marker, content, endTag } = operation;
-        both((marker === -1 ? '' : partStartMarker(marker)) + `<${tag}`);
-        for (const attribute of attributes) {
-            if (attribute.kind === 'static') {
-                both(staticAttribute(attribute));
-            } else if (attribute.kind === 'directive') {
-                cut({ kind: 'directive', index: attribute.index, marker });
-            } else {
-                const { index, name, strings, span } = attribute;
-                cut({ kind: 'attribute', index, marker, name, strings, span });
-            }
-        }
-        if (selfClosing) {
-            both(voidElements.has(lowerTag) ? ' />' : `></${tag}>`);
-        } else {
-            both('>');
-        }
-        if (content) {
-            if (content.span > 0) {
-                clientHtml += content.strings.join('');
-                cut({
-                    kind: 'text',
-                    index: content.index,
-                    marker,
-                    tag: lowerTag,
-                    strings: content.strings,
-                    span: content.span,
-                });
-            } else {
-                both(content.strings[0]);
-            }
-            both(endTag);
-        }
-    }
+    copyTo(length);
     both(templateEndMarker);
 
     const consumed = descriptors.reduce((sum, descriptor) => sum + (descriptor.span ?? 1), 0);
