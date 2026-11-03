@@ -203,6 +203,18 @@ describe('hydration of server rendered templates', () => {
         assert.equal(stripCommentMarkers(el.innerHTML), '<div></div>');
     });
 
+    it('removes server rendered content when the first client value is empty', async () => {
+        const template = (show) => html`<div>${show ? html`<b>on</b>` : null}</div>`;
+        const el = await serverRendered(template(true));
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div><b>on</b></div>');
+
+        render(template(false), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div></div>');
+
+        render(template(true), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div><b>on</b></div>');
+    });
+
     it('does not depend on whitespace around the markers', async () => {
         const template = (count) => html`<p data-count="${count}">count: ${count}</p>`;
         const el = await fixture(`<div>

@@ -48,6 +48,7 @@ to [Semantic Versioning](http://semver.org/).
 - a raw text element with one interpolation and static text around it, `<style>.a { color: ${color}; }</style>`, keeps the static text. Client side and on hydration the whole content was replaced by the value
 - a raw text end tag with whitespace before its closing bracket, `</style\n>` as a formatter writes it, is recognised
 - `isOfSameNodeType()` returns false for a missing node instead of throwing
+- a child node part whose first value on hydration is `null` or `undefined` removes the server rendered content between its markers. It stayed in place as long as the value was empty
 
 ### CHANGED
 

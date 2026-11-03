@@ -24,8 +24,12 @@ export class ChildNodePart {
      */
     hydrating;
 
-    /** @type {'empty' | 'text' | 'template' | 'node' | 'html' | 'array'} the kind of what is between the markers */
-    oldKind = 'empty';
+    /**
+     * The kind of what is between the markers, undefined until the first write: before it the markers may hold server
+     * rendered nodes, even an empty value has to be written then.
+     * @type {'empty' | 'text' | 'template' | 'node' | 'html' | 'array' | undefined}
+     */
+    oldKind = undefined;
 
     /** @type {any} the text, the template part, the node or the HTML string that is between the markers */
     oldValue = undefined;
