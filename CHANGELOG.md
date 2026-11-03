@@ -21,6 +21,7 @@ to [Semantic Versioning](http://semver.org/).
 ### ADDED
 
 - #119 a pushed `v*` tag creates the GitHub release after the npm publish, the release notes are the changelog section of the version followed by the generated pull request list. The publish stops when the tag does not match the version in `package.json`.
+- `docs/concepts/reactivity.md` walks through what triggers an update, how updates are batched in an animation frame and in which order hooks, render and watchers run. `docs/concepts/rendering.md` follows a template through parsing, the first render, updates, `toString()` and hydration. The templates docs no longer say that templates render with lit-html, the lifecycle docs say that a property set in `beforeUpdate` joins the pending update
 
 ### CHANGED
 

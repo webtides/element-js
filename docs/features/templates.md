@@ -1,10 +1,6 @@
 ### Rendering / TemplateElement
 
-The TemplateElement from _element-js_ can render templates using `lit-html`.
-
-For detailed information see the documentation on [lit-html.polymer-project-org](https://lit-html.polymer-project.org)
-
-> lit-html lets you write HTML templates in JavaScript, then efficiently render and re-render those templates together with data to create and update DOM
+The TemplateElement from _element-js_ renders templates with its own renderer. You write HTML in a template literal tagged with `html`, the renderer creates the DOM on the first render and updates only the values that changed after it. How that works step by step, in the browser and on the server, is described in [The renderer](../concepts/rendering.md).
 
 To render a template from your element just define a `template()` method and return a `tagged template literal`.
 
@@ -314,7 +310,7 @@ The templates you write for _element-js_ can easily be rendered on the server or
 - `<!--2-->` and `<!--/2-->` wrap the value of an interpolation between elements, `2` is the index of the value in the literal.
 - `<!--0-->` in front of an element says that the element has attribute, text or directive bindings, `0` is the index of the first one. One marker per element, however many bindings it has.
 
-What a binding means (its attribute name, the static text around it, whether it is a boolean, property or event binding) is not in the markup, the client reads it from the template literal. That is why the hash is there: the client hydrates a template only when the server rendered the same literal. Markup of another literal, or of another version of _element-js_ with another marker format, is rendered client side instead, with a warning in the console.
+What a binding means (its attribute name, the static text around it, whether it is a boolean, property or event binding) is not in the markup, the client reads it from the template literal. That is why the hash is there: the client hydrates a template only when the server rendered the same literal. Markup of another literal, or of another version of _element-js_ with another marker format, is rendered client side instead, with a warning in the console. [The renderer](../concepts/rendering.md) follows a template through `toString()` and hydration step by step.
 
 ##### Hydration
 
