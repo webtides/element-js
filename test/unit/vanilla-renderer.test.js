@@ -412,7 +412,7 @@ describe(`vanilla-renderer`, () => {
 
         await nextFrame();
         await nextFrame();
-        assert.equal(arrayElement.innerText, 'label2 label3 label4');
+        assert.equal(arrayElement.innerText, 'label2label3label4');
         arrayElement.list = [5];
 
         await nextFrame();
