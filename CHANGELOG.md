@@ -20,7 +20,6 @@ to [Semantic Versioning](http://semver.org/).
 
 ### ADDED
 
-- #119 a pushed `v*` tag creates the GitHub release after the npm publish, the release notes are the changelog section of the version followed by the generated pull request list. The publish stops when the tag does not match the version in `package.json`.
 - `docs/concepts/reactivity.md` walks through what triggers an update, how updates are batched in an animation frame and in which order hooks, render and watchers run. `docs/concepts/rendering.md` follows a template through parsing, the first render, updates, `toString()` and hydration. The templates docs no longer say that templates render with lit-html, the lifecycle docs say that a property set in `beforeUpdate` joins the pending update
 
 ### CHANGED
@@ -67,6 +66,16 @@ to [Semantic Versioning](http://semver.org/).
 - `src/dom-parts/RawTextNodePart.js` and `src/dom-parts/NodePart.js`, see `TextContentPart.js` and `DirectivePart.js`. `src/dom-parts/PartMarkers.js` and `src/dom-parts/Part.js`, a template instance and a child node part know their start and end marker themselves
 - `TemplateResult.templateString`, the client markup of a literal is `parseTemplate(strings).clientHtml`
 - the DOM diffing helpers of the renderer before the dom-parts, `diffNodes`, `diffAttributes`, `hasChildNodes`, `getNodePath` and `decodeHTML` in `src/util/DOMHelper.js`, nothing in the library uses them. A project that imported them through `./src/util/DOMHelper.js` has to copy them.
+
+## [1.3.1] - 2026-11-10
+
+### ADDED
+
+- #119 a pushed `v*` tag creates the GitHub release after the npm publish, the release notes are the changelog section of the version followed by the generated pull request list. The publish stops when the tag does not match the version in `package.json`.
+
+### FIXED
+
+- #192 `spreadAttributes()` leaves out attributes whose value is `undefined`, `null` or `NaN` in `toString()`, like it does on the element. The server output no longer carries `href='undefined'` or `aria-label='undefined'`.
 
 ## [1.3.0] - 2026-10-28
 

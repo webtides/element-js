@@ -64,12 +64,21 @@ const unsafeHTML = (string) => ({ __unsafeHTML: true, string });
  */
 export class SpreadAttributesDirective extends Directive {
     /**
+     * An attribute with one of these values is left out, on the element and in the string.
+     * @param {any} value
+     * @returns {boolean}
+     */
+    isOmitted(value) {
+        return value === undefined || value === null || isNaN(value);
+    }
+
+    /**
      * @param {Object.<string, any>} attributes
      */
     update(attributes) {
         for (const name of Object.keys(attributes)) {
             const value = attributes[name];
-            if (value === undefined || value === null || isNaN(value)) {
+            if (this.isOmitted(value)) {
                 this.node.removeAttribute(camelToDash(name));
             } else {
                 this.node.setAttribute(
@@ -86,6 +95,7 @@ export class SpreadAttributesDirective extends Directive {
      */
     stringify(attributes) {
         return Object.keys(attributes)
+            .filter((name) => !this.isOmitted(attributes[name]))
             .map((name) => {
                 let value = attributes[name];
                 return `${camelToDash(name)}='${encodeAttribute(
