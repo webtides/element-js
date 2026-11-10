@@ -1,6 +1,6 @@
-import { camelToDash, decodeAttribute, encodeAttribute, isNaN } from '../util/AttributeParser.js';
+import { camelToDash, encodeAttribute, isNaN } from '../util/AttributeParser.js';
 import { TemplateResult } from './TemplateResult.js';
-import { convertStringToHTML, convertStringToTemplate } from '../util/DOMHelper.js';
+import { convertStringToHTML } from '../util/DOMHelper.js';
 import { defineDirective, Directive } from '../util/Directive.js';
 
 /**
@@ -54,17 +54,21 @@ const choose = (value, cases, defaultCase) => {
 };
 
 /**
- * Renders a given string as HTML instead of text or as unescaped string in SSR mode
+ * Renders a given string as HTML instead of text, or as unescaped string in SSR mode.
+ * The returned function parses the string on its first call and carries the string, so that a child node part can
+ * tell the same HTML from new HTML without parsing it again.
  * @param {string} string
- * @returns {(function(): [Node]) | { __unsafeHTML: true, string: string }}
+ * @returns {(function(): Node[]) | { __unsafeHTML: true, string: string }}
  */
 const unsafeHTML = (string) => {
     if (!globalThis.DOMParser) {
         return { __unsafeHTML: true, string };
     }
-    const body = convertStringToHTML(string);
-    const childNodes = [...body.childNodes];
-    return () => childNodes;
+    let childNodes;
+    const nodes = () => (childNodes ??= [...convertStringToHTML(string).childNodes]);
+    nodes.__unsafeHTML = true;
+    nodes.string = string;
+    return nodes;
 };
 
 /**
