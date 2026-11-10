@@ -197,7 +197,7 @@ describe(`template bindings for rendering TemplateResults client side and server
         assert.isTrue(document.activeElement === input);
 
         render(template('after'), el);
-        assert.equal(stripCommentMarkers(el.innerHTML), '<div>after <input></div>');
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div>after<input></div>');
         // compared as booleans: a failing strictEqual on DOM nodes makes chai format the whole document
         assert.isTrue(el.querySelector('input') === input, 'the input is kept');
         assert.isTrue(document.activeElement === input, 'the focus is kept');
@@ -232,7 +232,7 @@ describe(`template bindings for rendering TemplateResults client side and server
         let list = [1, '2', true, html`<span>${'Test'}</span>`, () => 'Function'];
         const templateResult = html`<div>${list}</div>`;
         render(templateResult, el);
-        assert.equal(stripCommentMarkers(el.innerHTML), '<div>12true <span>Test</span>Function</div>');
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div>12true<span>Test</span>Function</div>');
         assert.equal(
             stripCommentMarkers(el.innerHTML),
             stripCommentMarkers(templateResult.toString()),
@@ -318,13 +318,13 @@ describe(`template bindings for rendering TemplateResults client side and server
         const el = document.createElement('div');
         const li = () => html`<li>b</li>`;
         render(list(['a', li()]), el);
-        assert.equal(stripCommentMarkers(el.innerHTML), '<ul>a <li>b</li></ul>');
+        assert.equal(stripCommentMarkers(el.innerHTML), '<ul>a<li>b</li></ul>');
 
         render(list([li(), 'a']), el);
         assert.equal(stripCommentMarkers(el.innerHTML), '<ul><li>b</li>a</ul>');
 
         render(list(['a', li()]), el);
-        assert.equal(stripCommentMarkers(el.innerHTML), '<ul>a <li>b</li></ul>');
+        assert.equal(stripCommentMarkers(el.innerHTML), '<ul>a<li>b</li></ul>');
     });
 
     it('correctly sanitizes an array of unsafe strings', async () => {
@@ -654,7 +654,7 @@ describe(`template bindings for rendering TemplateResults client side and server
         let active = true;
         const templateResult = html`<div>Hello ${name}<a class="link ${active ? 'is-active' : ''}">Label</a></div>`;
         render(templateResult, el);
-        assert.equal(stripCommentMarkers(el.innerHTML), '<div>Hello John <a class="link is-active">Label</a></div>');
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div>Hello John<a class="link is-active">Label</a></div>');
         assert.equal(
             stripCommentMarkers(el.innerHTML),
             stripCommentMarkers(templateResult.toString()),

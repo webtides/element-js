@@ -51,7 +51,7 @@ An example:
 | strategy | what it does |
 | --- | --- |
 | `path` | Precomputed `childNodes` index paths, one `reduceRight` per part. What `TemplatePart` did up to 1.2.12. |
-| `walker N` | `createTreeWalker(clone, SHOW_COMMENT)`, reads `N` from the `dom-part-N` marker, binds `parts[N]`. |
+| `walker N` | `createTreeWalker(clone, SHOW_COMMENT)`, reads `N` from the `<!--N-->` marker, binds `parts[N]`. |
 | `walker ordinal` | Same walker without parsing, the k-th part marker in document order binds `parts[k]`. |
 | `walker lit` | lit's approach: `SHOW_ELEMENT \| SHOW_COMMENT` walker, compares a running node index against precomputed indices. |
 

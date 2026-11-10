@@ -2,7 +2,7 @@
 // TODO renderer should actually not output any blanks and whitespaces that have to be removed for testing ...
 export const stripCommentMarkers = (html) =>
     html
-        .replace(/<!--(\/)?(dom|template)-part(-\d+)?(\?.*?)?-->/g, '')
+        .replace(/<!--\/?(?:t(?::[a-z0-9]+)?|\d+)-->/g, '')
         .replace(/\s+/g, ' ')
         .replaceAll(' >', '>')
         .replaceAll('> ', '>')

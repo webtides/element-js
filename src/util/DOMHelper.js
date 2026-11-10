@@ -135,6 +135,23 @@ export const convertStringToTemplate = (string) => {
 };
 
 /**
+ * Removes a node and its following siblings up to the end node, the end node stays. Walks forward, not a Range: the
+ * browser keeps every Range alive and updates it on each DOM mutation, one per part makes every later insertion pay
+ * for all of them.
+ * @param {Node} node
+ * @param {Node} endNode - a following sibling of the node, or the node itself to remove nothing
+ */
+export const removeNodesUntil = (node, endNode) => {
+    const parentNode = endNode.parentNode;
+    let current = node;
+    while (current !== endNode) {
+        const next = current.nextSibling;
+        parentNode.removeChild(current);
+        current = next;
+    }
+};
+
+/**
  * Encodes a html string
  * @param {string} html
  * @returns {string}
