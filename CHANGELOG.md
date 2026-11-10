@@ -18,10 +18,6 @@ to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
-### ADDED
-
-- #119 a pushed `v*` tag creates the GitHub release after the npm publish, the release notes are the changelog section of the version followed by the generated pull request list. The publish stops when the tag does not match the version in `package.json`.
-
 ### FIXED
 
 - #185 every `<style>`, `<script>`, `<textarea>` and `<title>` with interpolations gets its raw text part, not only the first one of a template, and an interpolation after a line break inside such an element is found as well
@@ -42,6 +38,16 @@ to [Semantic Versioning](http://semver.org/).
 ### REMOVED
 
 - the DOM diffing helpers of the renderer before the dom-parts, `diffNodes`, `diffAttributes`, `hasChildNodes`, `getNodePath` and `decodeHTML` in `src/util/DOMHelper.js`, nothing in the library uses them. A project that imported them through `./src/util/DOMHelper.js` has to copy them.
+
+## [1.3.1] - 2026-11-10
+
+### ADDED
+
+- #119 a pushed `v*` tag creates the GitHub release after the npm publish, the release notes are the changelog section of the version followed by the generated pull request list. The publish stops when the tag does not match the version in `package.json`.
+
+### FIXED
+
+- #192 `spreadAttributes()` leaves out attributes whose value is `undefined`, `null` or `NaN` in `toString()`, like it does on the element. The server output no longer carries `href='undefined'` or `aria-label='undefined'`.
 
 ## [1.3.0] - 2026-10-28
 
