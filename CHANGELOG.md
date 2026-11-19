@@ -30,6 +30,7 @@ to [Semantic Versioning](http://semver.org/).
 - #184 the hash is checked once per template instance on hydration, instead of comparing the descriptor of every marker
 - #184 an attribute with several interpolations is one binding with the static pieces between them, its part joins the string and writes it when it changed. The same goes for the content of a raw text element.
 - #184 the parser rejects a template at parse time whose interpolations cannot be bound: a boolean, property or event binding that is not the whole attribute value, an interpolation in a comment, in a tag name or in an attribute name. Before, such templates were silently stringified or produced broken markup.
+- a template that cannot be parsed throws a `ParseTemplateError` (`src/dom-parts/parseTemplate.js`), an `Error` subclass with a `details` property, instead of a plain object with the strings and the parsed parts on it
 - `toString()` writes every bound attribute with double quotes, whatever quotes the literal uses, and leaves no stray whitespace in a tag where a bound attribute or a directive was left out
 - an object or array in an attribute binding is written as JSON on the client too, like `toString()` and the attribute reflection do, instead of `[object Object]`
 - `null` and `undefined` among several interpolations of an attribute write nothing instead of the strings "null" and "undefined", client side and in `toString()`
@@ -44,19 +45,18 @@ to [Semantic Versioning](http://semver.org/).
 ### FIXED
 
 - #184 `toString()` wrote the content of `<style>` and `<script>` HTML encoded, `.a > .b` became `.a &gt; .b` in the delivered CSS and only hydration repaired it. The content of `<style>` and `<script>` is written as is, a value that contains the end tag of the element throws. `<textarea>` and `<title>` stay encoded, the parser decodes them
+- a child node part whose first value on hydration is `null` or `undefined` removes the server rendered content between its markers. It stayed in place as long as the value was empty
 - #185 every `<style>`, `<script>`, `<textarea>` and `<title>` with interpolations gets its raw text part, not only the first one of a template, and an interpolation after a line break inside such an element is found as well
 - a raw text element with one interpolation and static text around it, `<style>.a { color: ${color}; }</style>`, keeps the static text. Client side and on hydration the whole content was replaced by the value
 - a raw text end tag with whitespace before its closing bracket, `</style\n>` as a formatter writes it, is recognised
 - `isOfSameNodeType()` returns false for a missing node instead of throwing
-- a child node part whose first value on hydration is `null` or `undefined` removes the server rendered content between its markers. It stayed in place as long as the value was empty
+- an array that shrinks releases the template parts of the items that are gone. They were kept for a later growth: a list that was long once kept all its rows in memory, and an item that came back later took over the DOM and the state of the item at its position before. Such an item renders fresh now
 
 ### CHANGED
 
 - #187 the nodes between two markers are removed walking forward from the start marker, without collecting them backwards into a list first, clearing a long list is no longer slower than creating it
-- an array that shrinks releases the template parts of the items that are gone, they are no longer kept for a later growth
 - `unsafeHTML()` parses its string on the first render only, a render with the same string leaves the DOM alone without parsing
 - a child node part creates its text node when the first string arrives, parts that only render templates have none
-- `TemplateResult` throws `ParseTemplateError` instances, an `Error` subclass with a `details` property, instead of plain objects
 - `toString()` warns when it writes an object as text
 - `render()` recognises a node whose content was replaced from outside, by `innerHTML` or by a string rendered in between, and renders fresh instead of updating the detached instance
 
