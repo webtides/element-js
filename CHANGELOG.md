@@ -24,20 +24,15 @@ to [Semantic Versioning](http://semver.org/).
 - a raw text element with one interpolation and static text around it, `<style>.a { color: ${color}; }</style>`, keeps the static text. Client side and on hydration the whole content was replaced by the value
 - a raw text end tag with whitespace before its closing bracket, `</style\n>` as a formatter writes it, is recognised
 - `isOfSameNodeType()` returns false for a missing node instead of throwing
+- an array that shrinks releases the template parts of the items that are gone. They were kept for a later growth: a list that was long once kept all its rows in memory, and an item that came back later took over the DOM and the state of the item at its position before. Such an item renders fresh now
 
 ### CHANGED
 
 - #187 the nodes between two markers are removed walking forward from the start marker, without collecting them backwards into a list first, clearing a long list is no longer slower than creating it
-- an array that shrinks releases the template parts of the items that are gone, they are no longer kept for a later growth
 - `unsafeHTML()` parses its string on the first render only, a render with the same string leaves the DOM alone without parsing
 - a child node part creates its text node when the first string arrives, parts that only render templates have none
-- `TemplateResult` throws `ParseTemplateError` instances, an `Error` subclass with a `details` property, instead of plain objects
 - `toString()` warns when it writes an object as text
 - `render()` recognises a node whose content was replaced from outside, by `innerHTML` or by a string rendered in between, and renders fresh instead of updating the detached instance
-
-### REMOVED
-
-- the DOM diffing helpers of the renderer before the dom-parts, `diffNodes`, `diffAttributes`, `hasChildNodes`, `getNodePath` and `decodeHTML` in `src/util/DOMHelper.js`, nothing in the library uses them. A project that imported them through `./src/util/DOMHelper.js` has to copy them.
 
 ## [1.3.1] - 2026-11-10
 

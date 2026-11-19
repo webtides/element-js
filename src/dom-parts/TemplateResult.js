@@ -212,21 +212,6 @@ const ssrUpdatesCache = new WeakMap();
 const templatePartsCache = new WeakMap();
 
 /**
- * Thrown when the markers of a template do not line up with its values.
- */
-export class ParseTemplateError extends Error {
-    /**
-     * @param {string} message
-     * @param {object} details - the strings, the template string and what was parsed, for debugging
-     */
-    constructor(message, details) {
-        super(message);
-        this.name = 'ParseTemplateError';
-        this.details = details;
-    }
-}
-
-/**
  * @param {Node[] | NodeList} childNodes
  * @return {Comment|undefined} the first `<!--template-part-->` comment among the nodes
  */
@@ -417,10 +402,13 @@ export class TemplateResult {
 
         // We couldn't correctly parse updates from the template
         if (updates.length !== strings.length - 1) {
-            throw new ParseTemplateError(
-                'Could not parse updates from template correctly. Updates length has not the expected length.',
-                { strings, templateString, updates },
-            );
+            throw {
+                name: 'ParseTemplateError',
+                message: 'Could not parse updates from template correctly. Updates length has not the expected length.',
+                strings,
+                templateString,
+                updates,
+            };
         }
 
         return updates;
@@ -443,10 +431,17 @@ export class TemplateResult {
 
         // We couldn't correctly parse parts from the template
         if (parts.length !== this.strings.length - 1 || parts.includes(undefined)) {
-            throw new ParseTemplateError(
-                'Could not parse parts from template correctly. Parts length has not the expected length.',
-                { strings: this.strings, templateString: this.templateString, childNodes, parts },
-            );
+            throw {
+                name: 'ParseTemplateError',
+                message:
+                    'Could not parse parts from template correctly. Parts length has not the expected length. -> ' +
+                    JSON.stringify({
+                        strings: this.strings,
+                        templateString: this.templateString,
+                        childNodes,
+                        parts,
+                    }),
+            };
         }
 
         return parts;
