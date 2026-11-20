@@ -439,4 +439,16 @@ describe('hydration of server rendered templates', () => {
         assert.isTrue(textNode.parentNode === p, 'the server rendered text node is kept');
         assert.equal(textNode.data, 'Bar');
     });
+
+    it('keeps the static text of a raw text element on hydration and updates the interpolation', async () => {
+        // prettier-ignore
+        const template = (color) => html`<style>.a { color: ${color}; }</style><textarea>${color}</textarea>`;
+        const container = await serverRendered(template('red'));
+        assert.equal(container.querySelector('style').textContent, '.a { color: red; }');
+        render(template('red'), container);
+        assert.equal(container.querySelector('style').textContent, '.a { color: red; }');
+        render(template('blue'), container);
+        assert.equal(container.querySelector('style').textContent, '.a { color: blue; }');
+        assert.equal(container.querySelector('textarea').textContent, 'blue');
+    });
 });

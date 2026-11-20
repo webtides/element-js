@@ -4,7 +4,9 @@ import { TemplatePart } from './TemplatePart.js';
 import { walkPartMarkers } from './PartMarkers.js';
 
 const voidElements = /^(?:area|base|br|col|embed|hr|img|input|link|meta|source|track|wbr)$/i;
-const rawTextElements = /<(script|style|textarea|title)([^>]*)>(.*?)<\/\1>/i;
+// every raw text element of the template (g), with content that spans lines (s) and an end tag that may carry
+// whitespace before its closing bracket (</style\n>), which a formatter writes when it wraps the line
+const rawTextElements = /<(script|style|textarea|title)([^>]*)>(.*?)<\/\1\s*>/gis;
 const elements = /<([a-z]+[a-z0-9:._-]*)([^>]*?)(\/?)>/g;
 // TODO: v this will not match any values with escaped quotes like onClick='console.log("\'test")'
 const attributes = /([^\s=]*)=((?:")[^"]*(?:")|(?:')[^']*(?:')|[^\s\/>]*)|([^\s\/>]*)/g;
@@ -186,7 +188,12 @@ const getValue = (value) => {
                 case value.__unsafeHTML:
                     return value.string;
                 default:
-                    console.log('Cannot getValue for', value);
+                    console.warn(
+                        `element-js: toString() writes an object as the text "${String(
+                            value,
+                        )}", pass a primitive, an array, a TemplateResult or unsafeHTML()`,
+                        value,
+                    );
             }
             break;
         case 'function':
@@ -253,14 +260,16 @@ export class TemplateResult {
      * @param {Element} domNode
      */
     renderInto(domNode) {
-        const startNode = findTemplatePartStartNode(domNode.childNodes);
-
         let templatePart = templatePartsCache.get(domNode);
-        if (templatePart && startNode) {
+        // the cached instance is valid while both its markers are in the node, innerHTML, render() with a string or
+        // other code changing the node may have removed them
+        const { startNode: cachedStart, endNode: cachedEnd } = templatePart?.markers ?? {};
+        if (templatePart && cachedStart.parentNode === domNode && cachedEnd.parentNode === domNode) {
             templatePart.update(this);
             return;
         }
 
+        const startNode = findTemplatePartStartNode(domNode.childNodes);
         templatePart = new TemplatePart(startNode, this);
         templatePartsCache.set(domNode, templatePart);
 

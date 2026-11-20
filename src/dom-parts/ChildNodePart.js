@@ -5,65 +5,44 @@ import { TemplatePart } from './TemplatePart.js';
 import { PartMarkers } from './PartMarkers.js';
 
 /**
- * @param {Comment} commentNode
+ * Removes every node between the two markers, walking forward from the start marker. The markers are siblings,
+ * nested markers in between go with their nodes. Not a Range: the browser keeps every Range alive and updates it on
+ * each DOM mutation, one per part makes every later insertion pay for all of them.
+ * @param {Comment} startNode
+ * @param {Comment} endNode
+ */
+export const removeNodesBetweenComments = (startNode, endNode) => {
+    const parentNode = endNode.parentNode;
+    let node = startNode.nextSibling;
+    while (node !== endNode) {
+        const next = node.nextSibling;
+        parentNode.removeChild(node);
+        node = next;
+    }
+};
+
+/**
+ * @param {Comment} startNode
+ * @param {Comment} endNode
  * @param {Node[]} nodes
  */
-export const insertNodesBetweenComments = (commentNode, nodes) => {
+export const replaceNodesBetweenComments = (startNode, endNode, nodes) => {
+    removeNodesBetweenComments(startNode, endNode);
+    const parentNode = endNode.parentNode;
     for (const node of nodes) {
-        commentNode.parentNode.insertBefore(node, commentNode);
+        parentNode.insertBefore(node, endNode);
     }
 };
 
 /**
- * @param {Comment} commentNode
- * @param {Node[]} nodes
+ * @param {Comment} startNode
+ * @param {Comment} endNode
+ * @return {Node[]} the nodes between the markers, the markers themselves not included
  */
-export const replaceNodesBetweenComments = (commentNode, nodes) => {
-    removeNodesBetweenComments(commentNode);
-    for (const node of nodes) {
-        if (!commentNode.parentNode) {
-            console.error(`--- no parent comment ---`);
-        }
-        commentNode.parentNode.insertBefore(node, commentNode);
-    }
-};
-
-/**
- * @param {Comment} commentNode
- */
-export const removeNodesBetweenComments = (commentNode) => {
-    const nodes = getNodesBetweenComments(commentNode);
-    for (const node of nodes) {
-        commentNode.parentNode.removeChild(node);
-    }
-};
-
-/**
- * @param {Comment} commentNode
- * @param {boolean} includeComments
- * @return {Node[]}
- */
-export const getNodesBetweenComments = (commentNode, includeComments = false) => {
+export const getNodesBetweenComments = (startNode, endNode) => {
     const nodes = [];
-    let currentNode = includeComments ? commentNode : commentNode.previousSibling;
-    let nestingLevel = 0;
-
-    while (currentNode) {
-        if (includeComments) nodes.unshift(currentNode);
-
-        if (currentNode.nodeType === COMMENT_NODE && currentNode.data === commentNode.data) {
-            nestingLevel++;
-        }
-
-        if (currentNode.nodeType === COMMENT_NODE && currentNode.data === commentNode.data.replace('/', '')) {
-            if (nestingLevel === 0) {
-                break;
-            }
-            nestingLevel--;
-        }
-
-        if (!includeComments) nodes.unshift(currentNode);
-        currentNode = currentNode.previousSibling;
+    for (let node = startNode.nextSibling; node !== endNode; node = node.nextSibling) {
+        nodes.push(node);
     }
     return nodes;
 };
@@ -169,9 +148,9 @@ const resolveArrayItems = (values) => {
 export const processNodePart = ({ startNode, endNode }) => {
     let oldValueType = 'empty';
     let oldValue = undefined;
-    // string values are rendered into one text node that is reused across updates. Hydration takes over the server
-    // rendered text node as that node
-    let cachedTextNode = globalThis.document?.createTextNode('');
+    // string values are rendered into one text node that is reused across updates. It is created when the first
+    // string arrives, hydration takes over the server rendered text node as that node
+    let cachedTextNode;
 
     return (newValue, hydrate = false) => {
         const newValueType = getType(newValue);
@@ -179,28 +158,29 @@ export const processNodePart = ({ startNode, endNode }) => {
         if (oldValueType === newValueType && oldValue === newValue) return;
 
         if (newValueType === 'empty') {
-            removeNodesBetweenComments(endNode);
+            removeNodesBetweenComments(startNode, endNode);
         } else if (newValueType === 'text') {
             if (oldValueType !== 'text') {
                 const serverTextNode = startNode.nextSibling;
                 if (hydrate && serverTextNode.nodeType === TEXT_NODE && serverTextNode.nextSibling === endNode) {
                     cachedTextNode = serverTextNode;
                 } else {
-                    replaceNodesBetweenComments(endNode, [cachedTextNode]);
+                    cachedTextNode ??= document.createTextNode('');
+                    replaceNodesBetweenComments(startNode, endNode, [cachedTextNode]);
                 }
             }
             if (cachedTextNode.data !== String(newValue)) cachedTextNode.data = newValue;
         } else if (newValueType === 'templatePart') {
             // a template part bound to server rendered DOM (hydration) is in place already and is left alone
             if (newValue.childNodes[0].parentNode !== endNode.parentNode) {
-                replaceNodesBetweenComments(endNode, newValue.childNodes);
+                replaceNodesBetweenComments(startNode, endNode, newValue.childNodes);
             }
         } else {
             const nodes = newValueType === 'array' ? unwrapArray(newValue) : [newValue];
             // a type change replaces what is there. Server rendered nodes (hydration) go through the diff instead,
             // nodes that are in place already, for example a focused input, stay untouched
             if (oldValueType !== newValueType && !hydrate) {
-                replaceNodesBetweenComments(endNode, nodes);
+                replaceNodesBetweenComments(startNode, endNode, nodes);
             } else {
                 diffChildNodes(nodes, startNode, endNode);
             }
@@ -224,6 +204,9 @@ export class ChildNodePart extends Part {
     /** @type {TemplatePart[]} indexed like the items of an array value, only template items have a part */
     arrayParts = [];
 
+    /** @type {string|undefined} the HTML of the unsafeHTML() value that is rendered, if the value is one */
+    unsafeHTML = undefined;
+
     /**
      * @param {Node} startNode - the start comment marker node
      */
@@ -246,6 +229,11 @@ export class ChildNodePart extends Part {
      * @param {boolean} [hydrate] - bind nested template parts to the server rendered markers instead of cloning
      */
     update(value, hydrate = false) {
+        // unsafeHTML() marks its function with the HTML string. The same string again has nothing to do, the nodes
+        // of the last parse are in place and are not parsed again
+        const unsafeHTML = value?.__unsafeHTML ? value.string : undefined;
+        if (unsafeHTML !== undefined && unsafeHTML === this.unsafeHTML) return;
+        this.unsafeHTML = unsafeHTML;
         // functions are resolved completely and array items are normalized, parsing and updating have to work on the
         // same value
         let resolvedValue = value;
@@ -331,6 +319,8 @@ export class ChildNodePart extends Part {
                 parsedValues[index] = value;
             }
         }
+        // the parts of items beyond the new length are released, their nodes go away with the diff
+        this.arrayParts.length = values.length;
 
         return parsedValues;
     }

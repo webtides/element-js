@@ -16,6 +16,25 @@ to [Semantic Versioning](http://semver.org/).
 <!-- ### Removed -->
 <!-- ### Fixed -->
 
+## Unreleased
+
+### FIXED
+
+- #185 every `<style>`, `<script>`, `<textarea>` and `<title>` with interpolations gets its raw text part, not only the first one of a template, and an interpolation after a line break inside such an element is found as well
+- a raw text element with one interpolation and static text around it, `<style>.a { color: ${color}; }</style>`, keeps the static text. Client side and on hydration the whole content was replaced by the value
+- a raw text end tag with whitespace before its closing bracket, `</style\n>` as a formatter writes it, is recognised
+- `isOfSameNodeType()` returns false for a missing node instead of throwing
+- an array that shrinks releases the template parts of the items that are gone. They were kept for a later growth: a list that was long once kept all its rows in memory, and an item that came back later took over the DOM and the state of the item at its position before. Such an item renders fresh now
+
+### CHANGED
+
+- #187 the nodes between two markers are removed walking forward from the start marker, without collecting them backwards into a list first, clearing a long list is no longer slower than creating it
+- `unsafeHTML()` parses its string on the first render only, a render with the same string leaves the DOM alone without parsing
+- a child node part creates its text node when the first string arrives, parts that only render templates have none
+- `toString()` warns when it writes an object as text
+- `render()` recognises a node whose content was replaced from outside, by `innerHTML` or by a string rendered in between, and renders fresh instead of updating the detached instance. The same holds when only the start or the end marker of the template was removed
+- the marker helpers of `src/dom-parts/ChildNodePart.js` take the start and the end marker: `getNodesBetweenComments(startNode, endNode)`, `removeNodesBetweenComments(startNode, endNode)` and `replaceNodesBetweenComments(startNode, endNode, nodes)`. `getNodesBetweenComments()` no longer takes `includeComments`, `insertNodesBetweenComments()` is gone. They are renderer internals and work on its markers
+
 ## [1.3.1] - 2026-11-10
 
 ### ADDED

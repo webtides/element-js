@@ -116,8 +116,8 @@ export function getAllComposedElementChildren(domNode, instanceOfFilter = HTMLEl
  * @returns {boolean}
  */
 export function isOfSameNodeType(nodeA, nodeB) {
-    if (!nodeA && !nodeA.localName) return false;
-    if (!nodeB && !nodeB.localName) return false;
+    if (!nodeA || !nodeA.localName) return false;
+    if (!nodeB || !nodeB.localName) return false;
     return nodeA.localName === nodeB.localName;
 }
 

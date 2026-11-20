@@ -42,8 +42,9 @@ export class RawTextNodePart extends Part {
      * @param {string} value
      */
     update(value) {
-        // If we only have one sole interpolation, we can just apply the update
-        if (this.interpolations === 1) {
+        // an interpolation that is the whole content: the value is the content. Static text around a single
+        // interpolation goes through the replacement below, like several interpolations do
+        if (this.initialValue === '\x03') {
             this.node.textContent = value;
             return;
         }
