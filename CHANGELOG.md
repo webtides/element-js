@@ -32,7 +32,8 @@ to [Semantic Versioning](http://semver.org/).
 - `unsafeHTML()` parses its string on the first render only, a render with the same string leaves the DOM alone without parsing
 - a child node part creates its text node when the first string arrives, parts that only render templates have none
 - `toString()` warns when it writes an object as text
-- `render()` recognises a node whose content was replaced from outside, by `innerHTML` or by a string rendered in between, and renders fresh instead of updating the detached instance
+- `render()` recognises a node whose content was replaced from outside, by `innerHTML` or by a string rendered in between, and renders fresh instead of updating the detached instance. The same holds when only the start or the end marker of the template was removed
+- the marker helpers of `src/dom-parts/ChildNodePart.js` take the start and the end marker: `getNodesBetweenComments(startNode, endNode)`, `removeNodesBetweenComments(startNode, endNode)` and `replaceNodesBetweenComments(startNode, endNode, nodes)`. `getNodesBetweenComments()` no longer takes `includeComments`, `insertNodesBetweenComments()` is gone. They are renderer internals and work on its markers
 
 ## [1.3.1] - 2026-11-10
 

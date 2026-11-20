@@ -885,4 +885,15 @@ describe(`render() into a node whose content changed from outside`, () => {
         render(html`<p>${'three'}</p>`, el);
         assert.equal(stripCommentMarkers(el.innerHTML), '<p>three</p>');
     });
+
+    it('renders fresh after the end marker of the template was removed', async () => {
+        const el = document.createElement('div');
+        const template = (text) => html`${text}`;
+        render(template('one'), el);
+        el.lastChild.remove();
+        render(template('two'), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), 'two');
+        assert.equal(el.lastChild.nodeType, Node.COMMENT_NODE);
+        assert.equal(el.lastChild.data, '/template-part');
+    });
 });

@@ -261,9 +261,10 @@ export class TemplateResult {
      */
     renderInto(domNode) {
         let templatePart = templatePartsCache.get(domNode);
-        // the cached instance is valid while its markers are in the node, innerHTML or render() with a string may
-        // have removed them
-        if (templatePart && templatePart.markers.startNode.parentNode === domNode) {
+        // the cached instance is valid while both its markers are in the node, innerHTML, render() with a string or
+        // other code changing the node may have removed them
+        const { startNode: cachedStart, endNode: cachedEnd } = templatePart?.markers ?? {};
+        if (templatePart && cachedStart.parentNode === domNode && cachedEnd.parentNode === domNode) {
             templatePart.update(this);
             return;
         }
