@@ -149,19 +149,28 @@ export const shapes = [
 
 /**
  * Prepares everything a binding variant needs, once per shape. Mirrors what TemplatePart caches per `strings`:
- * the parsed fragment and the part descriptors with their paths. Additionally precomputes lit style node indices.
+ * the parsed fragment and one entry per part marker, in document order, with the childNodes path of the marker for
+ * the path strategy. Additionally precomputes lit style node indices. The parse API is imported here and not at the
+ * top of the module: the harness runs against the src/ of older commits for the macro comparison, the micro
+ * variants are never compared against a base.
  */
-export const prepare = (templateResult) => {
-    const fragment = convertStringToTemplate(templateResult.templateString);
-    // Node paths for the path strategy, computed here like TemplateResult.parseParts() did up to 1.2.12. The harness
-    // only uses library API that exists on every commit it may be pointed at, so no marker walker from src/.
-    const parts = templateResult.parseParts(fragment.childNodes).map((descriptor) => ({ ...descriptor }));
+export const prepare = async (templateResult) => {
+    const [{ parseTemplate }, { partIndexOf }] = await Promise.all([
+        import('../src/dom-parts/parseTemplate.js'),
+        import('../src/dom-parts/markers.js'),
+    ]);
+    const parsed = parseTemplate(templateResult.strings);
+    const fragment = convertStringToTemplate(parsed.clientHtml);
+    const parts = [];
+    const partsByIndex = [];
     const markerWalker = document.createTreeWalker(fragment, SHOW_COMMENT);
     let marker;
     while ((marker = markerWalker.nextNode())) {
-        const data = marker.data;
-        if (data.charCodeAt(0) === SLASH || !data.startsWith('dom-part-')) continue;
-        parts[parseInt(data.slice(9), 10)].path = getNodePath(marker);
+        const index = partIndexOf(marker.data);
+        if (index === -1) continue;
+        const part = { index, path: getNodePath(marker) };
+        parts.push(part);
+        partsByIndex[index] = part;
     }
 
     // lit style: index of each part marker in element+comment document order, in part order
@@ -170,7 +179,7 @@ export const prepare = (templateResult) => {
     let node;
     let nodeIndex = 0;
     while ((node = walker.nextNode())) {
-        if (node.nodeType === 8 && node.data.charCodeAt(0) !== SLASH && node.data !== 'template-part') {
+        if (node.nodeType === 8 && partIndexOf(node.data) !== -1) {
             partNodeIndex.push(nodeIndex);
         }
         nodeIndex++;
@@ -179,6 +188,8 @@ export const prepare = (templateResult) => {
     return {
         fragment,
         parts,
+        partsByIndex,
+        partIndexOf,
         partNodeIndex,
         partCount: parts.length,
         nodeCount: countNodes(fragment),
@@ -211,7 +222,7 @@ export const variants = {
         return sink;
     },
 
-    'walker comments (N from data)': ({ fragment, parts }, out) => {
+    'walker comments (N from data)': ({ fragment, parts, partsByIndex, partIndexOf }, out) => {
         const clone = document.importNode(fragment, true);
         const walker = document.createTreeWalker(clone, SHOW_COMMENT);
         const total = parts.length;
@@ -219,18 +230,16 @@ export const variants = {
         let found = 0;
         let sink = 0;
         while (found < total && (node = walker.nextNode())) {
-            const data = node.data;
-            if (data.charCodeAt(0) === SLASH || data === 'template-part') continue;
-            // 'dom-part-' is 9 chars, parseInt stops at '?'
-            const index = parseInt(data.slice(9), 10);
-            sink += parts[index] ? node.nodeType : 0;
+            const index = partIndexOf(node.data);
+            if (index === -1) continue;
+            sink += partsByIndex[index] ? node.nodeType : 0;
             found++;
             if (out) out.push(node);
         }
         return sink;
     },
 
-    'walker comments (ordinal)': ({ fragment, parts }, out) => {
+    'walker comments (ordinal)': ({ fragment, parts, partIndexOf }, out) => {
         const clone = document.importNode(fragment, true);
         const walker = document.createTreeWalker(clone, SHOW_COMMENT);
         const total = parts.length;
@@ -238,8 +247,7 @@ export const variants = {
         let found = 0;
         let sink = 0;
         while (found < total && (node = walker.nextNode())) {
-            const data = node.data;
-            if (data.charCodeAt(0) === SLASH || data === 'template-part') continue;
+            if (partIndexOf(node.data) === -1) continue;
             sink += parts[found] ? node.nodeType : 0;
             found++;
             if (out) out.push(node);
@@ -278,7 +286,7 @@ export const runMicro = async ({ iterations, samples: sampleCount }, onProgress)
     const entries = Object.entries(variants);
 
     for (const shape of shapes) {
-        const prepared = prepare(shape.template);
+        const prepared = await prepare(shape.template);
 
         // verification: every binding variant must resolve the same nodes as the path lookup
         const reference = [];

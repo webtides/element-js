@@ -20,11 +20,10 @@ const shadowTag = defineCE(
 /**
  * The markup the server delivers for an element that renders in shadow DOM.
  * @param {string} tag
- * @param {string} content - the rendered template
+ * @param {string} markup - what toString() of the element's template wrote
  * @return {string}
  */
-const serverMarkup = (tag, content) =>
-    `<${tag}><template shadowrootmode="open"><!--template-part-->${content}<!--/template-part--></template></${tag}>`;
+const serverMarkup = (tag, markup) => `<${tag}><template shadowrootmode="open">${markup}</template></${tag}>`;
 
 /**
  * Parses markup with a declarative shadow root into a fixture. innerHTML keeps a `<template shadowrootmode>` as a
@@ -49,7 +48,7 @@ describe(`declarative shadow dom template rendering for`, () => {
     it('hydrates the shadow root from the server if a template element with shadowrootmode was provided', async () => {
         const wrapper = await fixture('<div></div>');
         // the element is defined after parsing, so the server rendered node is known before the upgrade renders
-        wrapper.setHTMLUnsafe(serverMarkup('dsd-hydrated-el', '<div>shadow root content</div>'));
+        wrapper.setHTMLUnsafe(serverMarkup('dsd-hydrated-el', html`<div>shadow root content</div>`.toString()));
         const el = wrapper.firstElementChild;
         const serverDiv = el.shadowRoot.querySelector('div');
         customElements.define(
@@ -86,7 +85,7 @@ describe(`declarative shadow dom template rendering for`, () => {
                 }
             },
         );
-        const el = await declarativeFixture(serverMarkup(tag, '<div>styled</div>'));
+        const el = await declarativeFixture(serverMarkup(tag, html`<div>styled</div>`.toString()));
 
         assert.equal(el.shadowRoot.adoptedStyleSheets.length, 1);
         assert.equal(getComputedStyle(el.shadowRoot.querySelector('div')).color, color);
@@ -107,7 +106,7 @@ describe(`declarative shadow dom template rendering for`, () => {
                 }
             },
         );
-        const el = await declarativeFixture(serverMarkup(tag, '<p>global</p>'));
+        const el = await declarativeFixture(serverMarkup(tag, html`<p>global</p>`.toString()));
         const p = el.shadowRoot.querySelector('p');
         assert.equal(getComputedStyle(p).color, globalColor);
 

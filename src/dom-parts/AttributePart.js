@@ -1,182 +1,165 @@
-import { Part } from './Part.js';
-
-// marks the first update: it compares with the attribute in the DOM once, so a fresh clone, which carries the
-// placeholder, gets written and server rendered markup that fits already is left alone
-const NOT_SET = Symbol('not set');
+import { ElementPart } from './ElementPart.js';
+import { attributeValue, eventTypeOf, isBooleanTrue, isWholeValue, joinValues } from './values.js';
 
 /**
- * @param {Element} node
- * @param {String} name
- * @return {(function(*): void)|*}
+ * An attribute with one or more interpolations, `class="${a}"` or `class="link ${a} ${b}"`. A whole value writes
+ * objects and arrays as JSON and removes the attribute for null and undefined, several interpolations join to a
+ * string.
  */
-const processBooleanAttribute = (node, name) => {
-    let oldValue = NOT_SET;
-    return (newValue) => {
-        const value = !!newValue?.valueOf() && newValue !== 'false';
-        if (oldValue === NOT_SET && node.getAttribute(name) === (value ? '' : null)) {
-            oldValue = value;
-            return;
-        }
-        if (oldValue !== value) {
-            oldValue = value;
-            // not toggleAttribute(): server rendered markup may carry `name="false"`, true has to become `name=""`
-            if (value) {
-                node.setAttribute(name, '');
-            } else {
-                node.removeAttribute(name);
-            }
-        }
-    };
-};
+export class AttributePart extends ElementPart {
+    /** @type {string} */
+    name;
 
-/**
- * @param {Element} node
- * @param {String} name
- * @return {(function(*): void)|*}
- */
-const processPropertyAttribute = (node, name) => {
-    return (value) => {
-        node[name] = value;
-    };
-};
-
-/**
- * @param {Element} node
- * @param {String} name
- * @return {(function(*): void)|*}
- */
-const processEventAttribute = (node, name) => {
-    let oldValue = undefined;
-    let type = name.startsWith('@') ? name.slice(1) : name.toLowerCase().slice(2);
-
-    return (newValue) => {
-        if (oldValue !== newValue) {
-            if (oldValue) node.removeEventListener(type, oldValue);
-            if ((oldValue = newValue)) node.addEventListener(type, oldValue);
-        }
-    };
-};
-
-/**
- * @param {Element} node
- * @param {String} name
- * @return {(function(*): void)|*}
- */
-const processAttribute = (node, name) => {
-    let oldValue = NOT_SET;
-    return (newValue) => {
-        const value = newValue?.valueOf();
-        if (oldValue === NOT_SET && node.getAttribute(name) === (value == null ? null : String(value))) {
-            oldValue = value;
-            return;
-        }
-        if (oldValue !== value) {
-            oldValue = value;
-            if (value == null) {
-                node.removeAttribute(name);
-            } else {
-                node.setAttribute(name, value);
-            }
-        }
-    };
-};
-
-/** @type {Map<Element, AttributePart>} */
-const attributePartsCache = new WeakMap();
-
-/**
- * @param {Element} node
- * @param {String} name
- * @return {(function(*): void)|*}
- */
-export const processAttributePart = (node, name) => {
-    // boolean attribute: ?boolean=${...}
-    if (name.startsWith('?')) {
-        return processBooleanAttribute(node, name.slice(1));
-    }
-
-    // property attribute: .property=${...}
-    if (name.startsWith('.')) {
-        return processPropertyAttribute(node, name.slice(1));
-    }
-
-    // event attribute: @event=${...}
-    if (name.startsWith('@')) {
-        return processEventAttribute(node, name);
-    }
-
-    // "old school" event attribute: onevent=${...}. A function is the listener, any other value is written as an
-    // attribute: `on="${state}"` or `once="${flag}"` are attributes of the element that happen to start with "on"
-    if (name.startsWith('on')) {
-        const listener = processEventAttribute(node, name);
-        const attribute = processAttribute(node, name);
-        return (value) => {
-            const isListener = typeof value === 'function';
-            listener(isListener ? value : undefined);
-            attribute(isListener ? undefined : value);
-        };
-    }
-
-    // normal "string" attribute: attribute=${...}
-    return processAttribute(node, name);
-};
-
-/**
- * For updating a single attribute
- */
-export class AttributePart extends Part {
-    name = undefined;
-    interpolations = 1;
-    values = [];
-    currentValueIndex = 0;
-    initialValue = undefined;
+    /** @type {boolean} the binding is the whole attribute value */
+    whole;
 
     /**
-     * @param {Comment} node
-     * @param {String} name
-     * @param {String} initialValue
+     * @param {Element} element
+     * @param {import('./parseTemplate.js').AttributeDescriptor} descriptor
+     * @param {string} [name] - the attribute name without its prefix
      */
-    constructor(node, name, initialValue) {
-        // If we have multiple attribute parts with the same name, it means we have multiple
-        // interpolations inside that attribute. Instead of creating a new part, we will return the same
-        // as before and let it defer the update until the last interpolation gets updated
-        const attributePart = attributePartsCache.get(node.nextElementSibling);
-        if (attributePart && attributePart.name === name) {
-            attributePart.interpolations++;
-            node.__part = attributePart; // add Part to comment node for debugging in the browser
-            return attributePart;
-        }
-
-        super();
+    constructor(element, descriptor, name = descriptor.name) {
+        super(element, descriptor);
         this.name = name;
-        this.initialValue = initialValue;
-        this.processor = processAttributePart(node.nextElementSibling, this.name);
-        node.__part = this; // add Part to comment node for debugging in the browser
-        attributePartsCache.set(node.nextElementSibling, this);
+        this.whole = isWholeValue(descriptor);
     }
 
     /**
-     * @param {string | number | bigint | boolean | undefined | symbol | null} value
+     * @param {any[]} values
+     * @return {string | null} the text of the attribute, null removes it
      */
-    update(value) {
-        // If we only have one sole interpolation, we can just apply the update
-        if (this.initialValue === '\x03') {
-            this.processor(value);
-            return;
+    valueFrom(values) {
+        const { index, strings } = this.descriptor;
+        if (!this.whole) return joinValues(strings, values, index);
+        const value = values[index];
+        return value == null ? null : String(attributeValue(value));
+    }
+
+    read() {
+        return this.element.getAttribute(this.name);
+    }
+
+    /**
+     * @param {string | null} text
+     */
+    write(text) {
+        if (text === null) {
+            this.element.removeAttribute(this.name);
+        } else {
+            this.element.setAttribute(this.name, text);
         }
+    }
+}
 
-        // Instead of applying the update immediately, we check if the part has multiple interpolations
-        // and store the values for each interpolation in a list
-        this.values[this.currentValueIndex++] = value;
+/**
+ * A boolean attribute, `?disabled="${flag}"`. Present as `disabled=""`, the string "false" counts as false.
+ */
+export class BooleanAttributePart extends AttributePart {
+    /**
+     * @param {Element} element
+     * @param {import('./parseTemplate.js').AttributeDescriptor} descriptor
+     */
+    constructor(element, descriptor) {
+        super(element, descriptor, descriptor.name.slice(1));
+    }
 
-        // Only the last call to update (for the last interpolation) will actually trigger the update
-        // on the DOM processor. Here we can reset everything before the next round of updates
-        if (this.interpolations === this.currentValueIndex) {
-            this.currentValueIndex = 0;
-            let replaceIndex = 0;
-            // Note: this will coarse the values into strings, but it's probably ok since there can only be multiple values in string attributes?!
-            const parsedValue = this.initialValue.replace(/\x03/g, () => this.values[replaceIndex++]);
-            this.processor(parsedValue);
+    /**
+     * Not toggleAttribute(): server rendered markup may carry `name="false"`, true has to become `name=""`.
+     * @param {any[]} values
+     * @return {'' | null}
+     */
+    valueFrom(values) {
+        return isBooleanTrue(values[this.descriptor.index]) ? '' : null;
+    }
+}
+
+/**
+ * A property, `.value="${text}"`. Markup carries no properties, the first value is always set.
+ */
+export class PropertyPart extends ElementPart {
+    /** @type {string} */
+    name;
+
+    /**
+     * @param {Element} element
+     * @param {import('./parseTemplate.js').AttributeDescriptor} descriptor
+     */
+    constructor(element, descriptor) {
+        super(element, descriptor);
+        this.name = descriptor.name.slice(1);
+    }
+
+    write(value) {
+        this.element[this.name] = value;
+    }
+}
+
+/**
+ * An event listener, `@click="${listener}"`.
+ */
+export class EventPart extends ElementPart {
+    /** @type {string} */
+    type;
+
+    /**
+     * @param {Element} element
+     * @param {import('./parseTemplate.js').AttributeDescriptor} descriptor
+     */
+    constructor(element, descriptor) {
+        super(element, descriptor);
+        this.type = eventTypeOf(descriptor.name);
+    }
+
+    /**
+     * There is no listener before the first write.
+     */
+    read() {
+        return undefined;
+    }
+
+    write(listener) {
+        if (this.oldValue) this.element.removeEventListener(this.type, this.oldValue);
+        if (listener) this.element.addEventListener(this.type, listener);
+    }
+}
+
+/**
+ * An attribute that starts with "on", `onclick="${value}"`. A function is the listener, any other value is written
+ * as an attribute: `on="${state}"` or `once="${flag}"` are attributes of the element that happen to start with "on".
+ */
+export class OnEventPart extends AttributePart {
+    /** @type {string} */
+    type;
+
+    /**
+     * @param {Element} element
+     * @param {import('./parseTemplate.js').AttributeDescriptor} descriptor
+     */
+    constructor(element, descriptor) {
+        super(element, descriptor);
+        this.type = eventTypeOf(descriptor.name);
+    }
+
+    /**
+     * @param {any[]} values
+     * @return {Function | string | null} the listener, or the text of the attribute
+     */
+    valueFrom(values) {
+        const value = values[this.descriptor.index];
+        return typeof value === 'function' ? value : super.valueFrom(values);
+    }
+
+    write(value) {
+        const { element, type, oldValue } = this;
+        const wasListener = typeof oldValue === 'function';
+        const isListener = typeof value === 'function';
+        if (wasListener) element.removeEventListener(type, oldValue);
+        if (isListener) element.addEventListener(type, value);
+        // any other value is the attribute, a listener has none
+        if (!isListener) {
+            super.write(value);
+        } else if (!wasListener && oldValue !== null) {
+            super.write(null);
         }
     }
 }

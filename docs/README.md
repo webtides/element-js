@@ -52,6 +52,7 @@ If you need to support older Browsers like IE 11 or Edge 16-18 you will have to 
 -   #### [ES6 Classes & Options](./concepts/classes.md)
 -   #### [Lifecycle](./concepts/lifecycle.md)
 -   #### [Reactivity](./concepts/reactivity.md)
+-   #### [The Renderer](./concepts/rendering.md)
 -   #### [Hierarchy](./concepts/hierarchy.md)
 
 ### Features

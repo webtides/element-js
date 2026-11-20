@@ -2,6 +2,7 @@ import { fixture, defineCE, assert, nextFrame } from '@open-wc/testing';
 import { html, TemplateElement } from '../../src/TemplateElement.js';
 import { render } from '../../src/dom-parts/render.js';
 import { stripCommentMarkers } from '../util/testing-helpers.js';
+import { templateHash } from '../../src/dom-parts/parseTemplate.js';
 
 /**
  * Renders the template on the "server" (toString) into a container, like the SSR renderer would deliver it.
@@ -202,18 +203,30 @@ describe('hydration of server rendered templates', () => {
         assert.equal(stripCommentMarkers(el.innerHTML), '<div></div>');
     });
 
-    it('does not depend on whitespace around the markers', async () => {
-        const el = await fixture(`<div>
-            <!--template-part-->
+    it('removes server rendered content when the first client value is empty', async () => {
+        const template = (show) => html`<div>${show ? html`<b>on</b>` : null}</div>`;
+        const el = await serverRendered(template(true));
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div><b>on</b></div>');
 
-                <!--dom-part-0?type=attribute&name=data-count&initialValue=%03-->
+        render(template(false), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div></div>');
+
+        render(template(true), el);
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div><b>on</b></div>');
+    });
+
+    it('does not depend on whitespace around the markers', async () => {
+        const template = (count) => html`<p data-count="${count}">count: ${count}</p>`;
+        const el = await fixture(`<div>
+            <!--t:${templateHash(template(0).strings)}-->
+
+                <!--0-->
             <p data-count="0">
-                count:   <!--dom-part-1-->0<!--/dom-part-1-->
+                count:   <!--1-->0<!--/1-->
             </p>
 
-            <!--/template-part-->
+            <!--/t-->
         </div>`);
-        const template = (count) => html`<p data-count="${count}">count: ${count}</p>`;
         const p = el.querySelector('p');
 
         render(template(0), el);
@@ -334,7 +347,7 @@ describe('hydration of server rendered templates', () => {
         const el = await serverRendered(template([inner(), 'suffix']));
 
         render(template(['prefix', inner()]), el);
-        assert.equal(stripCommentMarkers(el.innerHTML), '<div>prefix <b>x</b></div>');
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div>prefix<b>x</b></div>');
     });
 
     it('renders an item of a mixed array client side when its server rendered markers do not match', async () => {
@@ -348,7 +361,7 @@ describe('hydration of server rendered templates', () => {
         assert.equal(warnings.length, 1);
         el.querySelector('button').click();
         assert.equal(clicks, 1);
-        assert.equal(stripCommentMarkers(el.innerHTML), '<div>prefix <button>b</button></div>');
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div>prefix<button>b</button></div>');
     });
 
     it('renders an item of a list client side when its server rendered markers do not match', async () => {
@@ -369,7 +382,7 @@ describe('hydration of server rendered templates', () => {
         const el = await serverRendered(template([inner()]));
 
         render(template(['prefix', inner()]), el);
-        assert.equal(stripCommentMarkers(el.innerHTML), '<div>prefix <li>x</li><li>x</li></div>');
+        assert.equal(stripCommentMarkers(el.innerHTML), '<div>prefix<li>x</li><li>x</li></div>');
         assert.equal(el.querySelectorAll('li').length, 2);
     });
 

@@ -16,7 +16,7 @@ Called when the element is about to be updated. Whenever a /reactive/ property c
 
 > Although the element will update/render after connecting to the DOM, the `beforeUpdate` hook won't be called for the first time. Only on subsequent update cycles.
 
-Property changes in this callback will not be applied in the current frame. They will be queued and processed in the next frame.
+The hook runs right when an update is requested, once for every changed property, before the frame of the update. Property changes in this callback join the pending update and are rendered with it. See [Reactivity](./reactivity.md) for the order of hooks, render and watchers.
 
 #### afterUpdate
 
