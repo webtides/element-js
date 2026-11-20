@@ -58,7 +58,8 @@ to [Semantic Versioning](http://semver.org/).
 - `unsafeHTML()` parses its string on the first render only, a render with the same string leaves the DOM alone without parsing
 - a child node part creates its text node when the first string arrives, parts that only render templates have none
 - `toString()` warns when it writes an object as text
-- `render()` recognises a node whose content was replaced from outside, by `innerHTML` or by a string rendered in between, and renders fresh instead of updating the detached instance
+- `render()` recognises a node whose content was replaced from outside, by `innerHTML` or by a string rendered in between, and renders fresh instead of updating the detached instance. The same holds when only the start or the end marker of the template was removed
+- the marker helpers of `src/dom-parts/ChildNodePart.js` take the start and the end marker: `getNodesBetweenComments(startNode, endNode)`, `removeNodesBetweenComments(startNode, endNode)` and `replaceNodesBetweenComments(startNode, endNode, nodes)`. `getNodesBetweenComments()` no longer takes `includeComments`, `insertNodesBetweenComments()` is gone. They are renderer internals and work on its markers
 
 ### REMOVED
 
@@ -66,6 +67,7 @@ to [Semantic Versioning](http://semver.org/).
 - `src/dom-parts/RawTextNodePart.js` and `src/dom-parts/NodePart.js`, see `TextContentPart.js` and `DirectivePart.js`. `src/dom-parts/PartMarkers.js` and `src/dom-parts/Part.js`, a template instance and a child node part know their start and end marker themselves
 - `TemplateResult.templateString`, the client markup of a literal is `parseTemplate(strings).clientHtml`
 - the DOM diffing helpers of the renderer before the dom-parts, `diffNodes`, `diffAttributes`, `hasChildNodes`, `getNodePath` and `decodeHTML` in `src/util/DOMHelper.js`, nothing in the library uses them. A project that imported them through `./src/util/DOMHelper.js` has to copy them.
+- the marker helpers `getNodesBetweenComments()`, `removeNodesBetweenComments()`, `replaceNodesBetweenComments()` and `processNodePart()` in `src/dom-parts/ChildNodePart.js`, a child node part writes between its markers itself
 
 ## [1.3.1] - 2026-11-10
 

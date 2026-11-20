@@ -27,9 +27,13 @@ export class TemplateResult {
      */
     renderInto(domNode) {
         let templatePart = templatePartsCache.get(domNode);
-        // the instance of the same literal is updated while its markers are in the node, innerHTML or render() with
-        // a string may have removed them. Another literal renders fresh
-        if (templatePart?.strings === this.strings && templatePart.startNode.parentNode === domNode) {
+        // the instance of the same literal is updated while both its markers are in the node, innerHTML, render() with
+        // a string or other code changing the node may have removed them. Another literal renders fresh
+        if (
+            templatePart?.strings === this.strings &&
+            templatePart.startNode.parentNode === domNode &&
+            templatePart.endNode.parentNode === domNode
+        ) {
             templatePart.update(this);
             return;
         }
